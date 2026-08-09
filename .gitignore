@@ -1,2 +1,19 @@
 /target
 node_modules/
+
+# Agent guidance stays untracked, as on the compiler and interpreter tracks.
+CLAUDE.md
+AGENTS.md
+.docs
+
+# insta writes these while a snapshot is under review; the reviewed .snap is
+# what gets committed (CONTRIBUTING.md, "the snapshot ritual").
+*.snap.new
+*.pending-snap
+
+# The CI artifact cache for the `wolf` binary at PIN. Downloaded, never built
+# here and never committed (ls00 §3).
+/.wolf-bin/
+
+# Latency-budget JSONL (D5 shape). Emitted, uploaded as an artifact, not tracked.
+/bench-results/

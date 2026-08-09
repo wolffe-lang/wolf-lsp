@@ -1,0 +1,225 @@
+# PR + trunk CI (ls00). Thin wrappers over `cargo xtask` — the commands are
+# the truth; this file is plumbing.
+#
+# The repo is split into two halves on purpose:
+#   * the SERVER-FREE half (fmt, clippy, test, sync-pin, independence, verify)
+#     always runs, on all three platforms;
+#   * the SERVER-DEPENDENT half runs only when a `wolf` binary at the pin can
+#     be acquired, and when it cannot it emits an explicit `SKIP:` line naming
+#     the reason. Silence is what turns a dark lane into a lane nobody notices
+#     is dark (ls00 §3).
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [trunk, main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  # Small case count in PR CI; nightly runs the large sweep (s01 convention).
+  PROPTEST_CASES: "256"
+
+jobs:
+  # The server-free gate, on the full D35 tier-1 host set.
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      # No `submodules:` key, deliberately. `upstream/` is the private wolf-lang
+      # repo and org policy disables deploy keys, so CI cannot clone it at all;
+      # the tracked `vendor/upstream` snapshot is the CI path (vendor/README.md).
+      # The gitlink pin stays visible via `git submodule status --cached`.
+      - uses: actions/checkout@v5
+
+      # The runner image ships some toolchain; `rust-toolchain.toml` names the
+      # one we test against. Install it explicitly — an implicit rustup
+      # proxy-install races the first cargo invocation and picks up neither
+      # rustfmt nor clippy.
+      - name: Install the pinned toolchain
+        run: |
+          rustup show active-toolchain
+          rustup component add rustfmt clippy
+
+      - name: Toolchain versions
+        run: |
+          rustc --version
+          cargo --version
+          cargo fmt --version
+          cargo clippy --version
+
+      - name: rustfmt
+        run: cargo fmt --all --check
+
+      - name: clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: test
+        run: cargo test --workspace
+
+      # PIN well-formed always; snapshot == submodule only where the submodule
+      # exists, which in CI is never.
+      - name: sync-pin
+        run: cargo xtask sync-pin
+
+      # Transcripts and capability profiles: parseable, valid, canonical.
+      - name: lspconf verify (server-free)
+        run: cargo run --quiet --bin lspconf -- verify
+
+  # Does a server exist at the pin? Report it, on every platform, and never
+  # fail the build for its absence — but never pass silently either.
+  server-lane:
+    name: server lane (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain
+
+      # ACQUISITION. The design (ls00 §3) is: download the tier-1 artifact
+      # wolf-lang's `xtask dist` publishes, keyed by the sha in PIN, into
+      # `.wolf-bin/`. That artifact does not exist yet — wolf-lang has no tags
+      # and no releases — so this step honestly reports SERVER UNAVAILABLE
+      # instead of pretending.
+      #
+      # What this step must NEVER become: a `cargo build` of the compiler. The
+      # interpreter track paid for that lesson (private submodule, no deploy
+      # keys), and a multi-minute compiler build per job to produce a binary we
+      # are supposed to download is the wrong shape regardless.
+      - name: Acquire the wolf binary at the pin
+        id: acquire
+        shell: bash
+        run: |
+          set -uo pipefail
+          pin=$(grep '^commit' vendor/upstream/PIN | cut -d= -f2 | tr -d ' "')
+          echo "pin=$pin" >> "$GITHUB_OUTPUT"
+          mkdir -p .wolf-bin
+          # Capture, then inspect. Never pipe a program's stdout straight into
+          # `grep -q`: grep exits at the first match and closes the pipe, the
+          # producer's exit-time flush hits EPIPE, and Rust's default
+          # SIGPIPE-ignore turns that into a nondeterministic panic (it showed
+          # up on macOS first, upstream).
+          rel_out=$(gh release list --repo tenseleyFlow/wolf-lang --limit 1 2>&1 || true)
+          if printf '%s' "$rel_out" | grep -q "wolf-"; then
+            echo "found a release listing; artifact download lands with the first tagged wolf-lang build"
+            echo "server=maybe" >> "$GITHUB_OUTPUT"
+          else
+            echo "SERVER UNAVAILABLE: wolf-lang publishes no artifact for pin $pin"
+            echo '  (no releases, no tags; the `wolf lsp` subcommand lands with wolf-lang s52)'
+            echo "server=none" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # `doctor` is the authority, not the acquisition step: it re-resolves the
+      # binary, compares `--version` against PIN, and prints the verdict. Exit
+      # 77 is "skipped", which is a success here and a failure under
+      # --require-server.
+      - name: lspconf doctor
+        shell: bash
+        run: |
+          set -uo pipefail
+          out=$(cargo run --quiet --bin lspconf -- doctor 2>&1)
+          rc=$?
+          printf '%s\n' "$out"
+          printf '%s\n' "$out" >> "$GITHUB_STEP_SUMMARY"
+          case "$rc" in
+            0)  echo "server READY at the pin" ;;
+            77) echo "::notice::server lane skipped — no wolf binary at the pin" ;;
+            *)  echo "::error::doctor failed with $rc"; exit "$rc" ;;
+          esac
+
+      - name: Conformance replay (server-dependent)
+        if: steps.acquire.outputs.server != 'none'
+        shell: bash
+        run: cargo run --quiet --bin lspconf -- --require-server replay
+
+      - name: Report the skip
+        if: steps.acquire.outputs.server == 'none'
+        shell: bash
+        run: |
+          echo "SKIP: no wolf binary at pin ${{ steps.acquire.outputs.pin }}"
+          echo "SKIP: conformance replay, capability profiles, and latency budgets are dark"
+          echo "SKIP: they light up when wolf-lang ships \`wolf lsp\` (s52) and a dist artifact"
+          {
+            echo "### Server lane: SKIPPED"
+            echo "No \`wolf\` binary at pin \`${{ steps.acquire.outputs.pin }}\`."
+            echo "Replay, profiles, and latency budgets are dark until wolf-lang s52."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # The editor layer talks to a process, or it does not talk (D34).
+  independence:
+    name: independence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain
+
+      - name: No compiler code, no compiler build, stdio only
+        run: cargo xtask independence
+
+      - name: The pin is a recorded revision, not a moving branch
+        shell: bash
+        run: |
+          set -uo pipefail
+          # Reads the gitlink the superproject records, which works without the
+          # submodule being checked out — the only way to verify a pin in a CI
+          # job that cannot clone it.
+          git submodule status --cached upstream || true
+          gitlink=$(git rev-parse HEAD:upstream 2>/dev/null || true)
+          if [ -z "$gitlink" ]; then
+            echo "::error::no gitlink recorded for upstream/."
+            echo "::error::.gitmodules names the submodule but no commit records a sha for it."
+            echo "::error::fix: git submodule add https://github.com/tenseleyFlow/wolf-lang.git upstream"
+            echo "::error::     git -C upstream checkout \$(grep '^commit' vendor/upstream/PIN | cut -d= -f2 | tr -d ' \"')"
+            echo "::error::     git add .gitmodules upstream"
+            exit 1
+          fi
+          echo "gitlink: $gitlink"
+
+      - name: The vendored PIN agrees with the recorded gitlink
+        shell: bash
+        run: |
+          set -uo pipefail
+          gitlink=$(git rev-parse HEAD:upstream 2>/dev/null || true)
+          pinned=$(grep '^commit' vendor/upstream/PIN | cut -d= -f2 | tr -d ' "')
+          if [ -z "$gitlink" ]; then
+            echo "::error::no gitlink for upstream/ — see the previous step"
+            exit 1
+          fi
+          if [ "$gitlink" != "$pinned" ]; then
+            echo "::error::PIN says $pinned but the submodule gitlink is $gitlink"
+            echo "::error::a pin bump moves both, in one commit (vendor/README.md)"
+            exit 1
+          fi
+          echo "pin and gitlink agree: $pinned"
+
+      - name: No CRLF reached the working tree
+        shell: bash
+        run: |
+          set -uo pipefail
+          # LSP positions are derived from byte offsets; a CRLF checkout
+          # silently shifts every column in every transcript. `.gitattributes`
+          # pins `eol=lf`, and this proves it held.
+          bad=$(git grep -Il $'\r' -- ':!*.png' ':!*.pdf' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::CRLF found in: $bad"
+            exit 1
+          fi
+          echo "no CRLF in tracked text files"

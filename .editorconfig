@@ -1,0 +1,22 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.rs]
+indent_size = 4
+max_line_length = 100
+
+[*.{md,toml,yml,yaml,json,jsonl}]
+indent_size = 2
+
+# Vendored corpus bytes are canonical `wolf fmt` output at a STYLE_VERSION.
+# Nothing in this repo may reformat them (ls00 §5); a sample whose bytes change
+# is a pin bump, in its own commit.
+[vendor/upstream/**]
+trim_trailing_whitespace = false
+insert_final_newline = false

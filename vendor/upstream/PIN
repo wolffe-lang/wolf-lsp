@@ -1,0 +1,11 @@
+# The wolf-lang commit this repo is keyed to. A bump is its own commit, with
+# the re-vendored data, and nothing else (vendor/README.md).
+commit = ecea37c312595bc7e8fbd20d1240200e1091e234
+# The exact `wolf --version` string that commit produces. `lspconf doctor`
+# fails on a mismatch: a stale local `wolf` producing green transcripts is the
+# failure mode the pin exists to prevent.
+version = "wolf 0.0.1 (pre-alpha)"
+# Does `wolf lsp` exist at this commit? Not yet — the subcommand lands with
+# wolf-lang's s52, which is queued behind s17. Until this flips to true, every
+# server-dependent step skips loudly with that reason (ls00 §3).
+serves_lsp = false

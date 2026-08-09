@@ -1,0 +1,19 @@
+[package]
+name = "lsp_harness"
+description = "Server location, JSON-RPC framing, and the pin/availability diagnosis."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+lsp_transcript.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+insta.workspace = true
+
+[lints.rust]
+unsafe_code = "forbid"

@@ -1,0 +1,76 @@
+# Nightly (ls00 §6): attempt the LATEST wolf-lang artifact rather than the
+# pinned one, and **report — never gate**.
+#
+# The point is early warning for capability drift ahead of a pin bump: if the
+# server upstream has started advertising something new, or has stopped
+# advertising something a transcript relies on, this job says so days before
+# someone bumps the pin and has to work out which of forty transcripts moved.
+#
+# It is report-only by construction. A nightly that can turn trunk red on
+# somebody else's commit is a nightly people learn to ignore.
+name: nightly
+
+on:
+  schedule:
+    - cron: "41 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  # The large sweep; PR CI runs 256 (s01 convention).
+  PROPTEST_CASES: "4096"
+
+jobs:
+  proptest-large:
+    name: property tests, large case count
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain
+      - run: cargo test --workspace
+
+  drift:
+    name: capability drift vs wolf-lang HEAD (report-only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain
+
+      - name: Attempt the latest wolf-lang artifact
+        id: latest
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          mkdir -p .wolf-bin
+          # Capture, then inspect — never pipe into `grep -q` (SIGPIPE/EPIPE).
+          out=$(gh release list --repo tenseleyFlow/wolf-lang --limit 1 2>&1 || true)
+          printf '%s\n' "$out"
+          if printf '%s' "$out" | grep -q "wolf-"; then
+            echo "server=maybe" >> "$GITHUB_OUTPUT"
+          else
+            echo "server=none" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report
+        shell: bash
+        run: |
+          set -uo pipefail
+          pin=$(grep '^commit' vendor/upstream/PIN | cut -d= -f2 | tr -d ' "')
+          {
+            echo "### Nightly drift check"
+            if [ "${{ steps.latest.outputs.server }}" = "none" ]; then
+              echo "SKIP: wolf-lang publishes no release artifact at all."
+              echo "Pinned at \`$pin\`. Nothing to compare against yet;"
+              echo "this lane lights up with wolf-lang's first tagged dist build."
+            else
+              echo "An artifact exists — capability comparison lands with ls01,"
+              echo "which owns the negotiated-\`ServerCapabilities\` snapshot."
+            fi
+          } | tee -a "$GITHUB_STEP_SUMMARY"

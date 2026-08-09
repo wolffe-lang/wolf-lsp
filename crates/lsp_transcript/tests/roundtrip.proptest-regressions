@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc ca8f90dbc8f62bf3dbc1ba021a691d0c3b4c793d15fc54aeede54ec7522eb491 # shrinks to t = Transcript { header: Header { transcript: 1, name: "prop/generated", wolf_pin: "ecea37c312595bc7e8fbd20d1240200e1091e234", profile: "minimal", workspace: "vendor/upstream/samples", recorded: "2026-08-09" }, records: [Record { seq: 0, dir: C2s, kind: Request, id: None, method: None, params: Some(Null), result: None, error: None, matcher: None, normalize: [], t_us: None }] }

@@ -1,0 +1,243 @@
+//! Round-trip and review-pattern tests.
+//!
+//! Two acceptance items from ls00 live here: a `proptest` proving
+//! parse→serialize→parse is a fixed point, and an `insta` snapshot of a
+//! hand-written two-message transcript that establishes the review pattern
+//! every later snapshot follows.
+
+use lsp_transcript::normalize::Normalizer;
+use lsp_transcript::record::{Dir, Header, Kind, Record, Transcript};
+use lsp_transcript::{Matcher, Stage, jsonl};
+use proptest::prelude::*;
+use serde_json::Value;
+
+fn fixture(name: &str) -> String {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures")
+        .join(name);
+    std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
+}
+
+// --------------------------------------------------- the review pattern --
+
+#[test]
+fn normalized_two_message_transcript() {
+    // The snapshot holds the NORMALIZED view (ls01 §3): a diff here is a
+    // behavior change, not a different run. Reviewing this diff is the whole
+    // ritual — see CONTRIBUTING.md.
+    let mut t = jsonl::parse(&fixture("open-hover.jsonl")).unwrap();
+    let workspace = std::path::PathBuf::from("/home/dev/wolf-lsp/vendor/upstream/samples");
+    Normalizer::new(Some(workspace)).run(&mut t);
+
+    let decisions: Vec<String> = t
+        .records
+        .iter()
+        .enumerate()
+        .map(|(i, r)| {
+            format!(
+                "seq {} {} {:?} -> {}",
+                r.seq,
+                r.dir,
+                t.method_for(i),
+                t.matcher_for(i)
+            )
+        })
+        .collect();
+
+    insta::assert_snapshot!(format!(
+        "{}\n{}",
+        jsonl::to_string(&t),
+        decisions.join("\n")
+    ));
+}
+
+#[test]
+fn normalization_is_idempotent() {
+    // Running the pipeline twice must not move anything: a stage that rewrote
+    // its own output would make every re-record a diff.
+    let mut once = jsonl::parse(&fixture("diagnostics.jsonl")).unwrap();
+    let ws = std::path::PathBuf::from("/home/dev/wolf-lsp/vendor/upstream/samples");
+    Normalizer::new(Some(ws.clone())).run(&mut once);
+    let mut twice = once.clone();
+    Normalizer::new(Some(ws)).run(&mut twice);
+    assert_eq!(jsonl::to_string(&once), jsonl::to_string(&twice));
+}
+
+#[test]
+fn two_machines_normalize_to_the_same_transcript() {
+    // The same session recorded under different roots and with different pids
+    // must compare equal — that is the definition of "incidental".
+    let raw = fixture("diagnostics.jsonl");
+    let unix_ws = "/home/dev/wolf-lsp/vendor/upstream/samples";
+    let win_ws = r"C:\actions\wolf-lsp\vendor\upstream\samples";
+
+    let mut a = jsonl::parse(&raw).unwrap();
+    Normalizer::new(Some(unix_ws.into())).run(&mut a);
+
+    let mut b = jsonl::parse(&raw.replace(unix_ws, &win_ws.replace('\\', "\\\\"))).unwrap();
+    Normalizer::new(Some(win_ws.into())).run(&mut b);
+
+    assert_eq!(jsonl::to_string(&a), jsonl::to_string(&b));
+    assert!(
+        jsonl::to_string(&a).contains("$WS"),
+        "the workspace was never elided"
+    );
+}
+
+#[test]
+fn ids_renumber_by_first_appearance_not_by_recorded_value() {
+    let text = concat!(
+        r#"{"name":"t/ids","profile":"minimal","recorded":"2026-08-09","transcript":1,"#,
+        r#""wolf_pin":"ecea37c312595bc7e8fbd20d1240200e1091e234","workspace":"vendor/upstream/samples"}"#,
+        "\n",
+        r#"{"dir":"c2s","id":900,"kind":"request","method":"initialize","seq":1}"#,
+        "\n",
+        r#"{"dir":"s2c","id":900,"kind":"response","result":{},"seq":2}"#,
+        "\n",
+        r#"{"dir":"c2s","id":17,"kind":"request","method":"shutdown","seq":3}"#,
+        "\n",
+    );
+    let mut t = jsonl::parse(text).unwrap();
+    Normalizer::new(None).run(&mut t);
+    let ids: Vec<&Value> = t.records.iter().filter_map(|r| r.id.as_ref()).collect();
+    assert_eq!(ids, vec![&Value::from(1), &Value::from(1), &Value::from(2)]);
+}
+
+// ------------------------------------------------------ the fixed point --
+
+fn arb_json(depth: u32) -> BoxedStrategy<Value> {
+    // Floats are deliberately absent: they are banned from assertions
+    // (report 09 §conformance harness), so generating them would test a shape
+    // no transcript may contain.
+    let leaf = prop_oneof![
+        Just(Value::Null),
+        any::<bool>().prop_map(Value::from),
+        any::<i32>().prop_map(Value::from),
+        "[a-zA-Z0-9/:_.$-]{0,12}".prop_map(Value::from),
+    ];
+    if depth == 0 {
+        return leaf.boxed();
+    }
+    let inner = arb_json(depth - 1);
+    prop_oneof![
+        4 => leaf,
+        1 => prop::collection::vec(inner.clone(), 0..3).prop_map(Value::from),
+        1 => prop::collection::hash_map("[a-z]{1,6}", inner, 0..3)
+            .prop_map(|m| Value::Object(m.into_iter().collect())),
+    ]
+    .boxed()
+}
+
+fn arb_matcher() -> impl Strategy<Value = Matcher> {
+    prop_oneof![
+        Just(Matcher::Exact),
+        Just(Matcher::Subset),
+        Just(Matcher::Ignore),
+        "[a-z]{0,6}".prop_map(|p| Matcher::Set(lsp_transcript::pointer::Pointer::parse(&p))),
+        "[a-z]{1,6}".prop_map(|p| Matcher::Regex(lsp_transcript::pointer::Pointer::parse(&p))),
+    ]
+}
+
+fn arb_record() -> impl Strategy<Value = Record> {
+    (
+        any::<u32>(),
+        prop_oneof![Just(Dir::C2s), Just(Dir::S2c)],
+        prop_oneof![
+            Just(Kind::Request),
+            Just(Kind::Response),
+            Just(Kind::Notification)
+        ],
+        proptest::option::of(any::<i32>().prop_map(Value::from)),
+        proptest::option::of("[a-z$/]{1,20}"),
+        proptest::option::of(arb_json(2)),
+        proptest::option::of(arb_json(2)),
+        proptest::option::of(arb_matcher()),
+        prop::collection::vec(
+            prop_oneof![
+                Just(Stage::Ids),
+                Just(Stage::Paths),
+                Just(Stage::Pid),
+                Just(Stage::Uri),
+                Just(Stage::Version),
+                Just(Stage::ServerInfo),
+                Just(Stage::Nulls),
+            ],
+            0..3,
+        ),
+        proptest::option::of(any::<u64>()),
+    )
+        .prop_map(
+            |(seq, dir, kind, id, method, params, result, matcher, normalize, t_us)| Record {
+                seq,
+                dir,
+                kind,
+                id,
+                method,
+                params,
+                result,
+                error: None,
+                matcher,
+                normalize,
+                t_us,
+            },
+        )
+}
+
+fn arb_transcript() -> impl Strategy<Value = Transcript> {
+    prop::collection::vec(arb_record(), 0..6).prop_map(|records| Transcript {
+        header: Header {
+            transcript: lsp_transcript::FORMAT_VERSION,
+            name: "prop/generated".to_string(),
+            wolf_pin: "ecea37c312595bc7e8fbd20d1240200e1091e234".to_string(),
+            profile: "minimal".to_string(),
+            workspace: "vendor/upstream/samples".to_string(),
+            recorded: "2026-08-09".to_string(),
+        },
+        records,
+    })
+}
+
+proptest! {
+    /// parse ∘ serialize is the identity on serialized transcripts.
+    ///
+    /// This is what makes a re-record reviewable: if serialization were not a
+    /// fixed point, every re-record would carry churn that hides the one line
+    /// that actually changed.
+    #[test]
+    fn serialize_parse_serialize_is_a_fixed_point(t in arb_transcript()) {
+        let once = jsonl::to_string(&t);
+        let reparsed = jsonl::parse(&once).expect("our own output must parse");
+        let twice = jsonl::to_string(&reparsed);
+        prop_assert_eq!(&once, &twice);
+        prop_assert_eq!(&reparsed, &jsonl::parse(&twice).unwrap());
+        prop_assert!(once.ends_with('\n'));
+        prop_assert!(!once.contains('\r'), "canonical form is LF only");
+    }
+
+    /// Every line is exactly one record: no embedded newlines, ever.
+    #[test]
+    fn one_message_per_line(t in arb_transcript()) {
+        let text = jsonl::to_string(&t);
+        prop_assert_eq!(text.lines().count(), t.records.len() + 1);
+    }
+
+    /// Object keys come out sorted at every depth.
+    #[test]
+    fn keys_are_sorted_everywhere(v in arb_json(3)) {
+        let mut sorted = v.clone();
+        lsp_transcript::record::sort_keys(&mut sorted);
+        fn check(v: &Value) -> bool {
+            match v {
+                Value::Object(m) => {
+                    let keys: Vec<&String> = m.keys().collect();
+                    let mut want = keys.clone();
+                    want.sort();
+                    keys == want && m.values().all(check)
+                }
+                Value::Array(a) => a.iter().all(check),
+                _ => true,
+            }
+        }
+        prop_assert!(check(&sorted));
+    }
+}

@@ -1,0 +1,55 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "xtask"]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/tenseleyFlow/wolf-lsp"
+rust-version = "1.97"
+
+# Dependencies stay thin on purpose (ls00 §7). The JSON-RPC framing is ours
+# (`lsp_harness::framing`, ~150 lines) rather than a crate, because ls01 has to
+# emit *deliberately malformed* and split frames — a library that only produces
+# well-formed output cannot test a server's parser.
+#
+# `regex` is the one addition beyond the sprint's list, and it is load-bearing:
+# the `regex:<path>` matcher is specified in ls00 §2, and hand-rolling a pattern
+# language for it would be a worse dependency than the crate.
+#
+# There is deliberately NO dependency on any `wolf_*` crate, and none is ever
+# permitted: this repo talks to a `wolf` process over stdio or it does not talk
+# (D34). `cargo xtask independence` enforces that.
+[workspace.dependencies]
+lsp_transcript = { path = "crates/lsp_transcript" }
+lsp_harness = { path = "crates/lsp_harness" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1"
+insta = "1"
+proptest = "1"
+
+[package]
+name = "wolf-lsp"
+description = "Conformance harness and editor clients for the wolf language server (`wolf lsp`)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+
+[[bin]]
+name = "lspconf"
+path = "src/main.rs"
+
+[dependencies]
+lsp_harness.workspace = true
+lsp_transcript.workspace = true
+serde_json.workspace = true
+
+[lints.rust]
+# A transcript harness has no performance argument that buys `unsafe`
+# (mirroring wolf-interp, which forbids it for the same reason).
+unsafe_code = "forbid"

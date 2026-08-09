@@ -1,0 +1,58 @@
+# The `.lu` samples this repo tests against — few files, stable bytes.
+#
+# `vendor/upstream/samples/` is the ONLY source of `.lu` used by tests. No
+# ad-hoc copies, no fixtures forked out of the corpus: an editing-session
+# fixture (ls01 §7) is an *edit script over* a sample, so a pin bump re-bases
+# it instead of orphaning it.
+#
+# **Never reformat a sample.** Corpus bytes are canonical `wolf fmt` output at
+# a STYLE_VERSION; reformatting forks the pin. A sample whose bytes change is
+# a pin bump, in its own commit.
+#
+# `path` is corpus-relative at the pin, so re-vendoring is a mechanical copy
+# and `cargo xtask sync-pin` is a per-path byte comparison.
+
+[[sample]]
+path = "hello.lu"
+reason = "smoke: the smallest complete program — didOpen/hover/documentSymbol subject for every client's first transcript"
+
+[[sample]]
+path = "strings.lu"
+reason = "position encoding: BMP multi-byte (U+2013, U+2026) where byte length != UTF-16 length != char count, plus `{x}` f-string interpolation and a `\"\"\"` block whose dedent depends on column arithmetic"
+
+[[sample]]
+path = "errors.lu"
+reason = "documentSymbol nesting: structs, functions, and `!T` error rows at three depths, with a multi-byte character in the header comment"
+
+[[sample]]
+path = "traits/golden_missing_bound.lu"
+reason = "pinned diagnostics: `//! check: fail(E0501)` — the one-truth subject (ls01 §9), where `wolf build` and `wolf lsp` must agree exactly"
+
+[[sample]]
+path = "regions.lu"
+reason = "formatting subject: the largest canonical `wolf fmt` output in the set, so a formatting response is a real byte-for-byte claim"
+
+[[sample]]
+path = "resolve/two_mod/main.lu"
+reason = "multi-module workspace: entry file of a two-module package, for cross-file navigation and workspace-wide diagnostics"
+
+[[sample]]
+path = "resolve/two_mod/geometry/shapes.lu"
+reason = "multi-module workspace: the member `resolve/two_mod/main.lu` imports; never opened directly as an entry point"
+
+# --- Known gap, deliberately not papered over -------------------------------
+#
+# ls01 §5 requires **astral-plane** text (an emoji: one char, two UTF-16 units,
+# four bytes) with positions before, between, and after the surrogate pair, plus
+# combining marks and a ZWJ sequence. No file in the corpus at this pin contains
+# any character above the BMP — the richest sample here tops out at U+2026.
+#
+# The rule is that fixtures are requested upstream, never forked locally (ls00
+# §5): a locally-authored `.lu` would not be canonical `wolf fmt` output and
+# would drift from the corpus the compiler actually tests. So this is filed as
+# a wolf-lang corpus request, and ls01's encoding suite is incomplete until the
+# pin that carries it. Recording the gap here is the point; a suite that
+# quietly skips its hardest case is worse than one that says it cannot run it.
+[gap.astral_plane]
+needed_by = "ls01 §5 (UTF-16 / positionEncoding correctness)"
+status = "requested upstream; no astral-plane sample exists at this pin"

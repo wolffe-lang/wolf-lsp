@@ -1,0 +1,10 @@
+---
+source: crates/lsp_transcript/tests/roundtrip.rs
+expression: "format!(\"{}\\n{}\", jsonl::to_string(&t), decisions.join(\"\\n\"))"
+---
+{"name":"fackr/open-hover","profile":"fackr","recorded":"2026-08-09","transcript":1,"wolf_pin":"ecea37c312595bc7e8fbd20d1240200e1091e234","workspace":"vendor/upstream/samples"}
+{"dir":"c2s","id":1,"kind":"request","method":"initialize","params":{"capabilities":{"general":{"positionEncodings":["utf-16"]}},"processId":0,"rootUri":"file://$WS"},"seq":1}
+{"dir":"s2c","id":1,"kind":"response","normalize":["serverinfo"],"result":{"capabilities":{"hoverProvider":true,"positionEncoding":"utf-16","textDocumentSync":1}},"seq":2}
+
+seq 1 c2s Some("initialize") -> subset
+seq 2 s2c Some("initialize") -> subset

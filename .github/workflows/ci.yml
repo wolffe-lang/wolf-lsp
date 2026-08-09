@@ -114,8 +114,11 @@ jobs:
           # producer's exit-time flush hits EPIPE, and Rust's default
           # SIGPIPE-ignore turns that into a nondeterministic panic (it showed
           # up on macOS first, upstream).
-          rel_out=$(gh release list --repo tenseleyFlow/wolf-lang --limit 1 2>&1 || true)
-          if printf '%s' "$rel_out" | grep -q "wolf-"; then
+          # Structured query: prose messages contain the repo name, which a
+          # loose grep once matched ("no releases found in .../wolf-lang").
+          n_rel=$(gh release list --repo tenseleyFlow/wolf-lang --limit 1 \
+            --json tagName --jq 'length' 2>/dev/null || echo 0)
+          if [ "$n_rel" -gt 0 ]; then
             echo "found a release listing; artifact download lands with the first tagged wolf-lang build"
             echo "server=maybe" >> "$GITHUB_OUTPUT"
           else

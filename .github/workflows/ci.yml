@@ -134,6 +134,7 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
+          set +e   # shell: bash wraps with -e; exit 77 is data here, not death
           out=$(cargo run --quiet --bin lspconf -- doctor 2>&1)
           rc=$?
           printf '%s\n' "$out"

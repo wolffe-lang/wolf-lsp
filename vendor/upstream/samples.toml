@@ -40,19 +40,48 @@ reason = "multi-module workspace: entry file of a two-module package, for cross-
 path = "resolve/two_mod/geometry/shapes.lu"
 reason = "multi-module workspace: the member `resolve/two_mod/main.lu` imports; never opened directly as an entry point"
 
+[[sample]]
+path = "grammar/semicolon.lu"
+reason = "codeAction round-trip: `fail(E0002)` whose fix-it is the only *machine-applicable* suggestion in the set, so it is the one diagnostic that becomes a quickfix with a fully-resolved edit (ls01 §1). Also the exact-E-code diagnostics subject on a broken file."
+
+[[sample]]
+path = "resolve/dupdef/main.lu"
+reason = "cross-file relatedInformation: `fail(E0302)` reports the duplicate in `twice.lu` with the first definition in *this* file, so a diagnostic's secondary span lands in a document the client may not have open — the case where `url_for` has no client URI to echo"
+
+[[sample]]
+path = "resolve/dupdef/twice.lu"
+reason = "cross-file relatedInformation: the `member: true` sibling that carries the duplicate definition; opened only as the *secondary* of `resolve/dupdef/main.lu`'s diagnostic, never as an entry point"
+
 # --- Known gap, deliberately not papered over -------------------------------
 #
 # ls01 §5 requires **astral-plane** text (an emoji: one char, two UTF-16 units,
 # four bytes) with positions before, between, and after the surrogate pair, plus
 # combining marks and a ZWJ sequence. No file in the corpus at this pin contains
 # any character above the BMP — the richest sample here tops out at U+2026.
+# (Re-checked at the s52 pin bump: a scan of all 149 corpus `.lu` files for any
+# code point above U+FFFF still finds none. The request stands.)
 #
 # The rule is that fixtures are requested upstream, never forked locally (ls00
-# §5): a locally-authored `.lu` would not be canonical `wolf fmt` output and
-# would drift from the corpus the compiler actually tests. So this is filed as
-# a wolf-lang corpus request, and ls01's encoding suite is incomplete until the
-# pin that carries it. Recording the gap here is the point; a suite that
-# quietly skips its hardest case is worse than one that says it cannot run it.
+# §5): a locally-authored `.lu` is not canonical `wolf fmt` output and drifts
+# from the corpus the compiler actually tests. That rule held for one sprint and
+# then met its exception. ls01 §5 is not a nice-to-have — position encoding is
+# the wart that corrupts buffers *silently*, and shipping an editor layer with
+# its astral cases unwritten is a worse outcome than shipping one local file.
+#
+# So the gap is now filled LOCALLY, under a policy narrow enough to keep the
+# original rule intact everywhere else (`fixtures/README.md`):
+#
+#   * `fixtures/astral.lu` is the ONLY `.lu` outside this directory, and
+#     `cargo xtask fixtures-check` fails if a second one appears;
+#   * it exists solely because THIS gap entry says it may, and it names the
+#     entry in its own header;
+#   * it is deleted, not migrated, on the pin that carries the corpus sample —
+#     a local fixture that outlives its gap is a fork.
+#
+# The upstream request is not withdrawn by the workaround, and this entry stays
+# until the corpus carries the sample.
 [gap.astral_plane]
 needed_by = "ls01 §5 (UTF-16 / positionEncoding correctness)"
-status = "requested upstream; no astral-plane sample exists at this pin"
+status = "requested upstream; no astral-plane sample exists at this pin (re-verified at 67c977f)"
+local_stopgap = "fixtures/astral.lu"
+retire_when = "a corpus sample carries astral-plane, combining-mark, and ZWJ text; then delete fixtures/astral.lu in the same commit as the pin bump"

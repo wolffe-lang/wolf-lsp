@@ -700,7 +700,12 @@ mod tests {
         let p = PathBuf::from("/work/my samples/a.lu");
         let uri = file_uri(&p);
         assert!(uri.contains("%20"), "{uri}");
-        assert_eq!(uri_to_path(&uri).unwrap(), p);
+        // compare in slash-normalized form — on Windows the PathBuf
+        // separator differs while the URI stays forward-slashed
+        assert_eq!(
+            uri_to_path(&uri).unwrap(),
+            PathBuf::from(crate::slash_path(&p))
+        );
     }
 
     #[test]

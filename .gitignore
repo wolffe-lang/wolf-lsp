@@ -25,3 +25,8 @@ AGENTS.md
 clients/vscode/out/
 clients/vscode/.vscode-test/
 clients/vscode/*.vsix
+
+# The Zed extension's build output. `/target` above is anchored at the repo
+# root and does not cover a crate that is deliberately outside the workspace
+# (ls06). The artifact is a wasm32-wasip2 component built on demand.
+clients/zed/target/

@@ -262,6 +262,7 @@ fn capture_cmd(root: &Path, args: &[String]) -> ExitCode {
         profile,
         workspace,
         workspace_dir,
+        repo_root: root.to_path_buf(),
         pin_commit: pin.commit.clone(),
         recorded: today(),
     };

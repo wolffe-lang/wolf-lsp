@@ -1,6 +1,12 @@
 [workspace]
 resolver = "3"
 members = ["crates/*", "xtask"]
+# `clients/zed` is a real cargo crate and deliberately NOT a member: it builds
+# for `wasm32-wasip2` only, and pulling a wasm-only cdylib into
+# `cargo test --workspace` would make the harness's own gate depend on a
+# toolchain target the harness does not need. Cargo needs it excluded rather
+# than merely unlisted, because it lives under this workspace's directory.
+exclude = ["clients/zed"]
 
 [workspace.package]
 version = "0.0.1"

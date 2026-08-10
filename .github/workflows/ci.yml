@@ -102,6 +102,22 @@ jobs:
       - name: grammar-drift (VS Code derived artifacts)
         run: cargo xtask grammar-drift
 
+      # ls06's two editor-free gates. `config-check` is the only thing that
+      # reads all four config-tier clients at once, and the invariants it holds
+      # are exactly the ones no single editor can check: that every client
+      # spawns `wolf lsp` and nothing else (D34), that `.wolfi` is attached to
+      # no server anywhere, that no editor references the empty
+      # `tree-sitter-wolf`, and that the formatter's two numbers are the same
+      # numbers in all of them.
+      - name: config-check (helix + zed + the shared numbers)
+        run: cargo xtask config-check
+
+      # The emacs keyword drift gate, in Rust rather than elisp so that it runs
+      # on a machine with no Emacs — the `emacs-mode` job below needs the editor
+      # and this must not depend on that job being green.
+      - name: emacs-check (derived keyword list)
+        run: cargo xtask emacs-check
+
       # Transcripts and their scripts: parseable, valid, canonical, and each
       # transcript still has the script that regenerates it.
       - name: lspconf verify (server-free)
@@ -416,6 +432,192 @@ jobs:
             echo "suites, the fuzz oracles and the latency budgets all run green against a"
             echo "locally-built binary — see \`README.md\`, *Running the server lane locally*."
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # ------------------------------------------------------------------------
+  # ls06, the config tier. Three jobs rather than one, so a red row in
+  # docs/MATRIX.md names exactly one job and one editor.
+  # ------------------------------------------------------------------------
+
+  # Helix (T2). The whole value of this lane is that HELIX does the parsing:
+  # `cargo xtask helix-health` drops `clients/helix/languages.toml` into a temp
+  # config dir and reads `hx --health` back.
+  #
+  # Two behaviours shape it, both verified rather than assumed:
+  #   * `hx --health` ALWAYS exits 0 — unknown language, missing server,
+  #     unparseable fragment, all zero — so the assertion is entirely on stdout;
+  #   * it prints `Tree-sitter parser: ✓` for a grammar that does not exist, so
+  #     the check reads the `Highlight queries:` line and ignores the other.
+  #
+  # The command SKIPS with exit 77 when it cannot prove helix loaded our
+  # fragment, so a platform whose config directory is not `$XDG_CONFIG_HOME`
+  # reports a skip instead of passing vacuously. windows is in the matrix for
+  # exactly that reason: the skip is the information.
+  helix-config:
+    name: helix config (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain
+
+      # From the release assets rather than three package managers, for the
+      # same reason the Neovim lane does it: all three runners agree on a
+      # version, and an asset rename fails loudly instead of silently falling
+      # back to a system helix that is a different editor than the one named.
+      - name: Install helix (linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL -o hx.tar.xz \
+            https://github.com/helix-editor/helix/releases/download/25.07.1/helix-25.07.1-x86_64-linux.tar.xz
+          tar xJf hx.tar.xz
+          echo "$PWD/helix-25.07.1-x86_64-linux" >> "$GITHUB_PATH"
+
+      - name: Install helix (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL -o hx.tar.xz \
+            https://github.com/helix-editor/helix/releases/download/25.07.1/helix-25.07.1-aarch64-macos.tar.xz
+          xattr -c hx.tar.xz || true
+          tar xJf hx.tar.xz
+          echo "$PWD/helix-25.07.1-aarch64-macos" >> "$GITHUB_PATH"
+
+      - name: Install helix (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Invoke-WebRequest -Uri `
+            'https://github.com/helix-editor/helix/releases/download/25.07.1/helix-25.07.1-x86_64-windows.zip' `
+            -OutFile hx.zip
+          Expand-Archive -Path hx.zip -DestinationPath .
+          "$PWD\helix-25.07.1-x86_64-windows" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: helix version
+        shell: bash
+        run: hx --version
+
+      # Exit 77 is a SKIP with a reason, not a pass and not a death — the same
+      # contract `lspconf doctor` uses (ls00 §3). It is surfaced in the job
+      # summary so a dark lane is a lane somebody notices is dark.
+      - name: hx --health against the shipped fragment
+        shell: bash
+        run: |
+          set +e
+          out=$(cargo run --quiet --bin xtask -- helix-health 2>&1)
+          code=$?
+          echo "$out"
+          if [ "$code" = "77" ]; then
+            {
+              echo "### helix lane: SKIPPED on ${{ matrix.os }}"
+              echo ""
+              echo '```'
+              echo "$out"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          exit "$code"
+
+  # Zed (T2). CI BUILDS the wasm; CI does NOT run Zed. That asymmetry is the
+  # honest state of this row and it is recorded in docs/MATRIX.md rather than
+  # hidden: Zed's dev-extension install is a GUI action (`zed::InstallDevExtension`)
+  # with no CLI flag and no settings.json equivalent, so there is no headless
+  # path in and therefore no recorded session and no capability profile.
+  #
+  # ubuntu only: the artifact is a `wasm32-wasip2` component and is
+  # platform-independent, so building it three times would cost three times as
+  # much to prove the same thing.
+  zed-extension:
+    name: zed extension (wasm build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain
+
+      # `wasm32-wasip2`, not wasip1. Zed's `extension_builder.rs` pins
+      # `const RUST_TARGET: &str = "wasm32-wasip2"`; ls06 §2 says wasip1 and is
+      # out of date. Delta recorded in the campaign closeout.
+      - name: Add the wasm target
+        run: rustup target add wasm32-wasip2
+
+      # The host check first: it is fast, and it separates "the API usage is
+      # wrong" from "the wasm toolchain is unhappy" — two failures that look
+      # identical when only the second command runs.
+      - name: Type-check against the host target
+        run: cargo check --manifest-path clients/zed/Cargo.toml
+
+      - name: Build the extension component
+        run: cargo build --manifest-path clients/zed/Cargo.toml --target wasm32-wasip2 --release
+
+      - name: The component exists and is not empty
+        shell: bash
+        run: |
+          set -euo pipefail
+          wasm=clients/zed/target/wasm32-wasip2/release/zed_wolf.wasm
+          test -s "$wasm"
+          ls -l "$wasm"
+
+  # Emacs (T2). Binary-free: `tests/mode-test.el` asserts the mode, the syntax
+  # table, the formatter's numbers, the keyword set and the README/`.el`
+  # agreement, none of which needs a `wolf` on PATH — which is what keeps this
+  # lane from being dark on a runner (ls00 §3).
+  #
+  # `tests/server-test.el` is deliberately NOT run here: it needs a `wolf`
+  # binary at the pin and would exit 77 on every runner. It runs locally, and
+  # the session it records is committed as transcripts/emacs/smoke.jsonl.
+  emacs-mode:
+    name: emacs mode (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Emacs (linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends emacs-nox
+
+      - name: Install Emacs (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: brew install emacs
+
+      - name: Install Emacs (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          choco install emacs --no-progress -y
+          "C:\Program Files\Emacs\emacs\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      # Presence is the gate. eglot has shipped in-tree since Emacs 29, so the
+      # floor is 29 and there is no package to install for the LSP half.
+      - name: Emacs version (the floor is 29, for bundled eglot)
+        shell: bash
+        run: |
+          emacs --version | head -1
+          emacs --batch --eval "(require 'eglot)" --eval "(princ \"eglot is bundled\n\")"
+
+      - name: The mode lane
+        shell: bash
+        run: |
+          emacs --batch -l clients/emacs/tests/mode-test.el \
+                -f ert-run-tests-batch-and-exit
 
   # The editor layer talks to a process, or it does not talk (D34).
   independence:

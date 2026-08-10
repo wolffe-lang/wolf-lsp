@@ -11,8 +11,12 @@ contract). This repo makes editors speak to it:
 - the protocol **conformance harness** (recorded JSON-RPC session replay
   against `wolf lsp`, capability snapshots, latency budgets)
 - first-class clients: **fackr**, **facsimile**, Neovim, VS Code
-- config-native tier: Helix, Zed · documented tier: Emacs (eglot), JetBrains
+- config tier: Helix, Zed, Emacs (eglot) · documented tier: JetBrains (LSP4IJ)
 - marketplace/packaging for all of the above
+
+Which editors are supported, at what verification level, and when each was last
+checked: [`docs/MATRIX.md`](docs/MATRIX.md). Every row there names its CI job or
+says plainly that it has never been run.
 
 Sprint plan: the `lsp` track (`lsNN`) in the wolf metarepo.
 Dual-licensed MIT or Apache-2.0.

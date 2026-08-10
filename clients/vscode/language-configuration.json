@@ -1,0 +1,65 @@
+// Editor behaviour that is NOT the language server's job: comment form,
+// bracket matching, auto-closing, and indentation. VS Code parses this file as
+// JSONC, so the reasons live next to the rules.
+//
+// Every number here is read off the pinned toolchain
+// (`upstream/crates/wolf_fmt/src/lib.rs`: INDENT = 4, WIDTH = 100), the same
+// way `clients/nvim/ftplugin/wolf.lua` reads them. A hand-picked tab width in
+// an editor config is a second formatter with an opinion.
+{
+  // `//` only. **Wolf has no block comment** — "nesting arguments lose to
+  // simplicity + lexer speed" — so there is no `blockComment` key. Adding one
+  // would give `editor.action.blockComment` a construct the lexer rejects.
+  "comments": {
+    "lineComment": "//"
+  },
+
+  "brackets": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"]
+  ],
+
+  "autoClosingPairs": [
+    { "open": "{", "close": "}" },
+    { "open": "[", "close": "]" },
+    { "open": "(", "close": ")" },
+    // No single-quote pair: wolf has **no character literal**, so `'` is never
+    // an opening delimiter and auto-closing one would fight every apostrophe
+    // typed in a comment.
+    { "open": "\"", "close": "\"", "notIn": ["string"] }
+  ],
+
+  "surroundingPairs": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"],
+    ["\"", "\""]
+  ],
+
+  // Attributes are `#[…]`, a bounded region — wolf has no preprocessor, so `#`
+  // must never swallow the rest of the line.
+  "indentationRules": {
+    "increaseIndentPattern": "^((?!//).)*(\\{[^}\"']*|\\([^)\"']*|\\[[^\\]\"']*)$",
+    "decreaseIndentPattern": "^\\s*[}\\])].*$"
+  },
+
+  // Doc comments continue on Enter; a plain `//` does not. `///` and `//!` are
+  // matched before `//` because the first rule that matches wins.
+  "onEnterRules": [
+    {
+      "beforeText": "^\\s*///.*$",
+      "action": { "indent": "none", "appendText": "/// " }
+    },
+    {
+      "beforeText": "^\\s*//!.*$",
+      "action": { "indent": "none", "appendText": "//! " }
+    }
+  ]
+
+  // No `wordPattern`. VS Code's default already selects unicode identifiers,
+  // so `IDENT ::= ('_' XID_Continue+) | (XID_Start XID_Continue*)` needs no
+  // help here — the limitation `clients/nvim/inventory.md` records for Vim's
+  // byte-range `iskeyword` (XID beyond latin-1 clips `w` motions) simply does
+  // not exist in this editor.
+}

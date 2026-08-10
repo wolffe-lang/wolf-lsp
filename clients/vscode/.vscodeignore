@@ -1,0 +1,31 @@
+# What must NOT reach a user's machine.
+#
+# ls05 §3: "a vsix that ships the corpus is a vsix nobody downloads". `vsce`
+# already prunes devDependencies, so the interesting exclusions are the ones it
+# would otherwise keep: the TypeScript sources, the compiled test tree, and the
+# `.vscode-test` download cache (a full VS Code build — hundreds of megabytes —
+# sitting in the package directory).
+#
+# The vendored spec and the transcripts are not listed because they are not in
+# this directory at all. That is the structural version of the rule, and it is
+# the reason `clients/vscode/` holds no `.lu` file (`tests/nvim_plugin.rs`
+# asserts that for the whole of `clients/`).
+
+.vscode/**
+.vscode-test/**
+.vscode-test.mjs
+
+# Sources and the build's intermediate output. `out/*.js` is what ships.
+src/**
+**/*.ts
+**/*.map
+tsconfig.json
+
+# The test tree: compiled, and useless to a user.
+out/test/**
+
+# Development metadata.
+.gitignore
+.eslintrc*
+package-lock.json
+*.vsix

@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "outDir": "out",
+    "rootDir": "src",
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": true,
+
+    // `vscode-oniguruma`'s own `.d.ts` mentions the `WebAssembly` namespace,
+    // which lives in `lib.dom.d.ts`. The alternative fix is adding "DOM" to
+    // `lib`, and that is worse: it would put `window`, `document` and `fetch`
+    // in scope for an extension that runs in Node and must never reach for
+    // them. Skipping declaration-file checking costs nothing here — this
+    // project ships no `.d.ts` of its own.
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"]
+}

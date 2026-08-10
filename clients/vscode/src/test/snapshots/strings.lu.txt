@@ -1,0 +1,138 @@
+  1 "//! check: run(exit=0)"     comment.line.documentation.wolf
+  2 "//! phase: resolve"         comment.line.documentation.wolf
+  3 "//! conforms: str.multiline, str.slice, str.views, str.regex_literal, str.interp" comment.line.documentation.wolf
+  4 "//!"                        comment.line.documentation.wolf
+  5 "//! Strings (D24–D26): UTF-8 always, byte-offset checked slicing (never" comment.line.documentation.wolf
+  6 "//! UB), `^n` indexing from the end, zero-copy views, `\"\"\"` dedent by the" comment.line.documentation.wolf
+  7 "//! closing delimiter's column, `re\"…\"` generalized literals, format specs." comment.line.documentation.wolf
+  9 "fn"                         storage.type.wolf
+  9 " main() "                   —
+  9 "->"                         keyword.operator.wolf
+  9 "!"                          keyword.operator.wolf
+  9 "int"                        support.type.wolf
+  9 " {"                         —
+ 10 "let"                        storage.type.wolf
+ 10 " poem "                     —
+ 10 "="                          keyword.operator.wolf
+ 10 "\"\"\""                     string.quoted.triple.wolf punctuation.definition.string.begin.wolf
+ 11 "        the wolf runs"      string.quoted.triple.wolf
+ 12 "        the moon watches"   string.quoted.triple.wolf
+ 13 "\"\"\""                     string.quoted.triple.wolf punctuation.definition.string.end.wolf
+ 13 "// dedented to the closing quotes' column" comment.line.double-slash.wolf
+ 15 "// byte-offset slicing: checked (trap in debug, `get` recoverable)" comment.line.double-slash.wolf
+ 16 "let"                        storage.type.wolf
+ 16 " head "                     —
+ 16 "="                          keyword.operator.wolf
+ 16 " poem["                     —
+ 16 ".."                         keyword.operator.wolf
+ 16 "8"                          constant.numeric.decimal.wolf
+ 16 "]          "                —
+ 16 "// \"the wolf\""            comment.line.double-slash.wolf
+ 17 "let"                        storage.type.wolf
+ 17 " tail "                     —
+ 17 "="                          keyword.operator.wolf
+ 17 " poem["                     —
+ 17 "^"                          keyword.operator.wolf
+ 17 "13"                         constant.numeric.decimal.wolf
+ 17 ".."                         keyword.operator.wolf
+ 17 "]        "                  —
+ 17 "// last 13 bytes: \"moon watches\\n\"" comment.line.double-slash.wolf
+ 18 "let"                        storage.type.wolf
+ 18 " mid "                      —
+ 18 "="                          keyword.operator.wolf
+ 18 " poem.get("                 —
+ 18 "4"                          constant.numeric.decimal.wolf
+ 18 ".."                         keyword.operator.wolf
+ 18 "8"                          constant.numeric.decimal.wolf
+ 18 ") "                         —
+ 18 "else"                       keyword.control.conditional.wolf
+ 18 "|"                          keyword.operator.wolf
+ 18 "_"                          —
+ 18 "|"                          keyword.operator.wolf
+ 18 "\""                         string.quoted.double.wolf punctuation.definition.string.begin.wolf
+ 18 "\""                         string.quoted.double.wolf punctuation.definition.string.end.wolf
+ 20 "// zero-copy views; no s[i] char indexing exists (D25)" comment.line.double-slash.wolf
+ 21 "var"                        storage.type.wolf
+ 21 " words "                    —
+ 21 "="                          keyword.operator.wolf
+ 21 "0"                          constant.numeric.decimal.wolf
+ 22 "for"                        keyword.control.repeat.wolf
+ 22 " _ "                        —
+ 22 "in"                         keyword.control.repeat.wolf
+ 22 " poem.words() { words "     —
+ 22 "+="                         keyword.operator.wolf
+ 22 "1"                          constant.numeric.decimal.wolf
+ 22 " }"                         —
+ 23 "let"                        storage.type.wolf
+ 23 " lines "                    —
+ 23 "="                          keyword.operator.wolf
+ 23 " poem.lines().count()"      —
+ 25 "// generalized literals: compiled at comptime where possible" comment.line.double-slash.wolf
+ 26 "let"                        storage.type.wolf
+ 26 " vowels "                   —
+ 26 "="                          keyword.operator.wolf
+ 26 "re"                         string.quoted.other.generalized.wolf support.function.generalized.wolf
+ 26 "\""                         string.quoted.other.generalized.wolf punctuation.definition.string.begin.wolf
+ 26 "[aeiou]+"                   string.quoted.other.generalized.wolf
+ 26 "\""                         string.quoted.other.generalized.wolf punctuation.definition.string.end.wolf
+ 27 "let"                        storage.type.wolf
+ 27 " hits "                     —
+ 27 "="                          keyword.operator.wolf
+ 27 " vowels.find_all(poem).count()" —
+ 29 "// format specs, comptime-checked against argument types (D26)" comment.line.double-slash.wolf
+ 30 "    print("                 —
+ 30 "\""                         string.quoted.double.wolf punctuation.definition.string.begin.wolf
+ 30 "{"                          string.quoted.double.wolf meta.embedded.expression.wolf punctuation.section.interpolation.begin.wolf
+ 30 "words"                      string.quoted.double.wolf meta.embedded.expression.wolf
+ 30 ":>3"                        string.quoted.double.wolf meta.embedded.expression.wolf constant.other.format-spec.wolf
+ 30 "}"                          string.quoted.double.wolf meta.embedded.expression.wolf punctuation.section.interpolation.end.wolf
+ 30 " words, "                   string.quoted.double.wolf
+ 30 "{"                          string.quoted.double.wolf meta.embedded.expression.wolf punctuation.section.interpolation.begin.wolf
+ 30 "lines"                      string.quoted.double.wolf meta.embedded.expression.wolf
+ 30 "}"                          string.quoted.double.wolf meta.embedded.expression.wolf punctuation.section.interpolation.end.wolf
+ 30 " lines, "                   string.quoted.double.wolf
+ 30 "{"                          string.quoted.double.wolf meta.embedded.expression.wolf punctuation.section.interpolation.begin.wolf
+ 30 "hits"                       string.quoted.double.wolf meta.embedded.expression.wolf
+ 30 "}"                          string.quoted.double.wolf meta.embedded.expression.wolf punctuation.section.interpolation.end.wolf
+ 30 " vowel runs"                string.quoted.double.wolf
+ 30 "\""                         string.quoted.double.wolf punctuation.definition.string.end.wolf
+ 30 ")"                          —
+ 31 "    print("                 —
+ 31 "\""                         string.quoted.double.wolf punctuation.definition.string.begin.wolf
+ 31 "head="                      string.quoted.double.wolf
+ 31 "{"                          string.quoted.double.wolf meta.embedded.expression.wolf punctuation.section.interpolation.begin.wolf
+ 31 "head"                       string.quoted.double.wolf meta.embedded.expression.wolf
+ 31 "}"                          string.quoted.double.wolf meta.embedded.expression.wolf punctuation.section.interpolation.end.wolf
+ 31 " mid="                      string.quoted.double.wolf
+ 31 "{"                          string.quoted.double.wolf meta.embedded.expression.wolf punctuation.section.interpolation.begin.wolf
+ 31 "mid"                        string.quoted.double.wolf meta.embedded.expression.wolf
+ 31 "}"                          string.quoted.double.wolf meta.embedded.expression.wolf punctuation.section.interpolation.end.wolf
+ 31 " tail="                     string.quoted.double.wolf
+ 31 "{"                          string.quoted.double.wolf meta.embedded.expression.wolf punctuation.section.interpolation.begin.wolf
+ 31 "tail.trim()"                string.quoted.double.wolf meta.embedded.expression.wolf
+ 31 "}"                          string.quoted.double.wolf meta.embedded.expression.wolf punctuation.section.interpolation.end.wolf
+ 31 "\""                         string.quoted.double.wolf punctuation.definition.string.end.wolf
+ 31 ")"                          —
+ 33 "if"                         keyword.control.conditional.wolf
+ 33 " words "                    —
+ 33 "="                          keyword.operator.wolf
+ 33 "="                          keyword.operator.wolf
+ 33 "6"                          constant.numeric.decimal.wolf
+ 33 " && lines "                 —
+ 33 "="                          keyword.operator.wolf
+ 33 "="                          keyword.operator.wolf
+ 33 "2"                          constant.numeric.decimal.wolf
+ 33 " && head "                  —
+ 33 "="                          keyword.operator.wolf
+ 33 "="                          keyword.operator.wolf
+ 33 "\""                         string.quoted.double.wolf punctuation.definition.string.begin.wolf
+ 33 "the wolf"                   string.quoted.double.wolf
+ 33 "\""                         string.quoted.double.wolf punctuation.definition.string.end.wolf
+ 33 " { "                        —
+ 33 "0"                          constant.numeric.decimal.wolf
+ 33 " } "                        —
+ 33 "else"                       keyword.control.conditional.wolf
+ 33 " { "                        —
+ 33 "1"                          constant.numeric.decimal.wolf
+ 33 " }"                         —
+ 34 "}"                          —

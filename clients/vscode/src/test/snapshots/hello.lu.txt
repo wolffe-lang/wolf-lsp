@@ -1,0 +1,29 @@
+  1 "//! check: run(exit=0, stdout=\"hello, wolf\")" comment.line.documentation.wolf
+  2 "//! phase: mem"             comment.line.documentation.wolf
+  3 "//! conforms: str.interp"   comment.line.documentation.wolf
+  4 "//!"                        comment.line.documentation.wolf
+  5 "//! The first program. Every string literal is an f-string (D26/X9);" comment.line.documentation.wolf
+  6 "//! `main` returns `!int` (D30) with the last expression as the value." comment.line.documentation.wolf
+  7 "//! `print` appends a newline; stdout matching ignores the trailing one." comment.line.documentation.wolf
+  9 "fn"                         storage.type.wolf
+  9 " main() "                   —
+  9 "->"                         keyword.operator.wolf
+  9 "!"                          keyword.operator.wolf
+  9 "int"                        support.type.wolf
+  9 " {"                         —
+ 10 "let"                        storage.type.wolf
+ 10 " who "                      —
+ 10 "="                          keyword.operator.wolf
+ 10 "\""                         string.quoted.double.wolf punctuation.definition.string.begin.wolf
+ 10 "wolf"                       string.quoted.double.wolf
+ 10 "\""                         string.quoted.double.wolf punctuation.definition.string.end.wolf
+ 11 "    print("                 —
+ 11 "\""                         string.quoted.double.wolf punctuation.definition.string.begin.wolf
+ 11 "hello, "                    string.quoted.double.wolf
+ 11 "{"                          string.quoted.double.wolf meta.embedded.expression.wolf punctuation.section.interpolation.begin.wolf
+ 11 "who"                        string.quoted.double.wolf meta.embedded.expression.wolf
+ 11 "}"                          string.quoted.double.wolf meta.embedded.expression.wolf punctuation.section.interpolation.end.wolf
+ 11 "\""                         string.quoted.double.wolf punctuation.definition.string.end.wolf
+ 11 ")"                          —
+ 12 "0"                          constant.numeric.decimal.wolf
+ 13 "}"                          —

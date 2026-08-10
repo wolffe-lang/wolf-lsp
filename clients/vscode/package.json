@@ -1,0 +1,180 @@
+{
+  "name": "wolf",
+  "displayName": "Wolf",
+  "description": "Wolf language support. `wolf lsp` is the compiler; this extension starts it and gets out of the way.",
+  "version": "0.0.1",
+  "license": "MIT OR Apache-2.0",
+  "publisher": "wolf-lang-unpublished",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tenseleyFlow/wolf-lsp.git",
+    "directory": "clients/vscode"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "engines": {
+    "vscode": "^1.82.0"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:wolf",
+    "workspaceContains:**/wolf.pkg"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "wolf",
+        "aliases": [
+          "Wolf",
+          "wolf"
+        ],
+        "extensions": [
+          ".lu"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "wolfi",
+        "aliases": [
+          "Wolf interface"
+        ],
+        "extensions": [
+          ".wolfi"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "wolf-pkg",
+        "aliases": [
+          "Wolf manifest"
+        ],
+        "filenames": [
+          "wolf.pkg",
+          "wolf.sum"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "wolf",
+        "scopeName": "source.wolf",
+        "path": "./syntaxes/wolf.tmLanguage.json"
+      },
+      {
+        "language": "wolfi",
+        "scopeName": "source.wolfi",
+        "path": "./syntaxes/wolfi.tmLanguage.json"
+      },
+      {
+        "language": "wolf-pkg",
+        "scopeName": "source.wolf-pkg",
+        "path": "./syntaxes/wolf-pkg.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "Wolf",
+      "properties": {
+        "wolf.serverPath": {
+          "type": "string",
+          "default": "",
+          "scope": "machine-overridable",
+          "markdownDescription": "Path to the `wolf` binary. Empty means `wolf` on `PATH`.\n\nThere is no separate language server to install: `wolf lsp` is a subcommand of the compiler (D34)."
+        },
+        "wolf.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "scope": "window",
+          "markdownDescription": "Log the LSP traffic to the **Wolf Language Server** output channel. `verbose` includes message bodies."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "wolf.restartServer",
+        "title": "Restart Language Server",
+        "category": "Wolf"
+      },
+      {
+        "command": "wolf.showServerLog",
+        "title": "Show Server Log",
+        "category": "Wolf"
+      },
+      {
+        "command": "wolf.showVersion",
+        "title": "Show Version",
+        "category": "Wolf"
+      }
+    ],
+    "problemMatchers": [
+      {
+        "name": "wolf",
+        "owner": "wolf",
+        "source": "wolf",
+        "fileLocation": [
+          "autoDetect",
+          "${workspaceFolder}"
+        ],
+        "pattern": [
+          {
+            "regexp": "^(error|warning)\\[(E\\d+)\\]:\\s+(.*)$",
+            "severity": 1,
+            "code": 2,
+            "message": 3
+          },
+          {
+            "regexp": "^\\s*-->\\s+(.+):(\\d+):(\\d+)$",
+            "file": 1,
+            "line": 2,
+            "column": 3
+          }
+        ]
+      }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "wolf",
+        "required": [
+          "command"
+        ],
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "The wolf subcommand to run, e.g. `build`."
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/grammar.js && node ./out/test/runTest.js",
+    "test:grammar": "node ./out/test/grammar.js",
+    "test:extension": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "install:vsix": "node ./out/test/installVsix.js"
+  },
+  "dependencies": {
+    "vscode-languageclient": "9.0.1"
+  },
+  "devDependencies": {
+    "@types/mocha": "10.0.10",
+    "@types/node": "22.19.2",
+    "@types/vscode": "1.82.0",
+    "@vscode/test-electron": "2.5.2",
+    "@vscode/vsce": "3.9.2",
+    "mocha": "10.8.2",
+    "typescript": "5.9.3",
+    "vscode-oniguruma": "2.0.1",
+    "vscode-textmate": "9.3.2"
+  }
+}

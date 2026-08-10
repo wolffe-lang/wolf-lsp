@@ -29,3 +29,15 @@ out/test/**
 .eslintrc*
 package-lock.json
 *.vsix
+
+# Repository review artifacts, deliberately NOT shipped (ls07 §1).
+#
+# `inventory.md` is the generated-grammar provenance table — one of four in this
+# repo that cross-check each other — and `PACKAGE-CONTENTS.txt` is the reviewed
+# list of what this file produces. Both are addressed to a reviewer of wolf-lsp,
+# not to somebody who downloaded an editor extension; shipping them drops two
+# documents into a user's extensions directory that only make sense beside a
+# checkout they do not have. Each exclusion shows up as a line in
+# PACKAGE-CONTENTS.txt's diff, which is why that list exists.
+inventory.md
+PACKAGE-CONTENTS.txt

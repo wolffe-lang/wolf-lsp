@@ -1,0 +1,21 @@
+{
+  "client": "wolf.nvim",
+  "client_version": "0.0.1",
+  "artifact": "plugin tree — clients/nvim/, published as the generated wolf.nvim mirror",
+  "wolf": {
+    "min": "0.0.1",
+    "max_tested": "0.0.1",
+    "pin": "70bdd35c9d24c5bfba2c46e6334f886d8b2fe474",
+    "pin_version_string": "wolf 0.0.1 (pre-alpha)"
+  },
+  "verified": {
+    "date": "2026-08-10",
+    "host": "local (linux x86-64)",
+    "evidence": [
+      "transcripts/nvim/smoke.jsonl",
+      "profiles/nvim.json",
+      "clients/nvim/tests/plugin_spec.lua"
+    ]
+  },
+  "warning_surface": ":checkhealth wolf"
+}

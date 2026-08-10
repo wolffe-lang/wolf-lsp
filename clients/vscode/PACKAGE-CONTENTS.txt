@@ -1,0 +1,32 @@
+// REVIEWED: what `vsce package` puts in the vsix, projected.
+//
+// Regenerate with `UPDATE_SNAPSHOTS=1 npm run test:manifest` and then READ THE
+// DIFF — that reading is the entire purpose of this file. A line appearing here
+// is a decision to ship a file to every user; a line disappearing is a decision
+// to stop. `npm run test:manifest` fails on any difference.
+//
+// The interior of `node_modules` is collapsed to the package SET on purpose:
+// the raw `vsce ls` output is ~200 lines of a dependency nobody here controls,
+// and a reviewer who has to skim those stops reading the ten that matter.
+# authored files
+CHANGELOG.md
+LICENSE.md
+README.md
+compat.json
+language-configuration.json
+out/compat.js
+out/extension.js
+out/pin.js
+package.json
+syntaxes/wolf-pkg.tmLanguage.json
+syntaxes/wolf.tmLanguage.json
+syntaxes/wolfi.tmLanguage.json
+# runtime dependency packages
+node_modules/balanced-match
+node_modules/brace-expansion
+node_modules/minimatch
+node_modules/semver
+node_modules/vscode-jsonrpc
+node_modules/vscode-languageclient
+node_modules/vscode-languageserver-protocol
+node_modules/vscode-languageserver-types

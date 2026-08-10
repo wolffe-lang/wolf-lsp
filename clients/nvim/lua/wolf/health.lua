@@ -126,23 +126,69 @@ local function check_binary()
     return bin
   end
 
+  local compat = require('wolf.compat')
+  local range = compat.min == compat.max_tested and ('exactly %s'):format(compat.min)
+    or ('%s .. %s'):format(compat.min, compat.max_tested)
+
   if version == pin.version then
     health.ok(('version `%s` — matches the pin this plugin was verified against'):format(version))
-  else
-    -- Not an error. ls07 owns the supported *range*; until it exists the only
-    -- fact this repo has is one exact pin, and calling every other build
-    -- "unsupported" would be inventing a policy. What it can honestly say is
-    -- that nothing verified this combination.
-    health.warn(
-      ('version `%s`, but this plugin was verified against `%s`'):format(version, pin.version),
-      {
-        ('The verified pin is wolf-lang `%s`.'):format(pin.commit:sub(1, 7)),
-        'A newer wolf is normally fine — the plugin only sends standard LSP.',
-        'A supported version RANGE lands with plugin distribution (ls07); until',
-        'then this line reports the mismatch and makes no compatibility claim.',
-      }
-    )
+    health.info(('declared range: wolf %s (%s %s, verified %s)'):format(
+      range,
+      compat.client,
+      compat.client_version,
+      compat.verified
+    ))
+    return bin
   end
+
+  -- Not an error, and never a refusal (ls07 §3). The plugin declares a RANGE
+  -- of wolf versions in `compat.json`; this reports which side of it the
+  -- binary is on, names both versions and the upgrade path, and lets the
+  -- client attach anyway. An out-of-range server usually mostly works, and
+  -- blocking the user's editor is worse than warning them.
+  --
+  -- Pre-1.0 that range is a PIN RANGE and is one version wide, because
+  -- wolf-lang tags no releases and the suite has been run against exactly one
+  -- build. `docs/COMPAT.md` states the posture rather than implying a
+  -- stability this track cannot provide. The word "unsupported" is deliberately
+  -- absent, here and in every other surface: it is a policy nobody set.
+  local verdict = require('wolf.version').verdict(version)
+  local advice = {
+    ('The verified pin is wolf-lang `%s` (`%s`).'):format(pin.commit:sub(1, 7), pin.version),
+    ('%s %s declares wolf %s, verified %s.'):format(
+      compat.client,
+      compat.client_version,
+      range,
+      compat.verified
+    ),
+  }
+  if verdict.state == 'above' then
+    vim.list_extend(advice, {
+      ('`%s` is NEWER than any wolf the conformance suite has been run'):format(verdict.found),
+      'against. Usually fine — the plugin only sends standard LSP — but nothing',
+      'verified this combination. Update the plugin, or report what broke:',
+      'https://github.com/tenseleyFlow/wolf-lsp/issues',
+    })
+  elseif verdict.state == 'below' then
+    vim.list_extend(advice, {
+      ('`%s` is OLDER than the floor this plugin declares.'):format(verdict.found),
+      'Update the wolf toolchain, or install a plugin version whose range covers it.',
+    })
+  else
+    vim.list_extend(advice, {
+      'That string carries no MAJOR.MINOR.PATCH, so no range comparison was made.',
+      'Check what `serverPath` points at — it may not be wolf at all.',
+    })
+  end
+
+  health.warn(
+    ('version `%s`, but this plugin was verified against `%s` (declared range: wolf %s)'):format(
+      version,
+      pin.version,
+      range
+    ),
+    advice
+  )
   return bin
 end
 

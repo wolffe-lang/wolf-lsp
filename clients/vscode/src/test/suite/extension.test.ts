@@ -18,11 +18,14 @@
 // asserted exactly.
 
 import { execFileSync } from 'child_process';
+import * as fs from 'fs';
 import * as path from 'path';
 
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 
+import { COMPAT } from '../../compat';
+import { declaredRange, versionTriple, versionVerdict } from '../../extension';
 import { PIN } from '../../pin';
 
 const EXTENSION_ID = 'wolf-lang-unpublished.wolf';
@@ -165,6 +168,45 @@ suite('wolf: contributions and activation (no toolchain needed)', () => {
 				`package.json contributes \`${forbidden}\`, which the server does not serve`,
 			);
 		}
+	});
+
+	// ls07 §3. The two states this whole compatibility statement exists for —
+	// a wolf below `min`, a wolf above `max_tested` — are unreachable by
+	// running anything: exactly one wolf build exists. So the comparison is
+	// exported as a pure function and driven with strings. What the
+	// notification then does with the verdict is deliberately NOT asserted:
+	// VS Code exposes no API for reading its own notifications, which is
+	// recorded in `clients/vscode/README.md` rather than papered over with a
+	// test that only appears to cover it.
+	test('the declared wolf range is compared numerically and refuses nothing', () => {
+		assert.deepStrictEqual(versionTriple('wolf 0.0.1 (pre-alpha)'), [0, 0, 1]);
+		assert.deepStrictEqual(versionTriple('wolf 1.2.30'), [1, 2, 30]);
+		assert.strictEqual(versionTriple('wolf 9.9.9-not-the-pin'), undefined);
+		assert.strictEqual(versionTriple('some other program'), undefined);
+
+		// The lexical bug, pinned: `0.10.0 < 0.9.0` as strings, so a string
+		// compare warns on precisely the upgrades it should stay quiet about.
+		assert.strictEqual(versionVerdict('wolf 0.0.0'), 'below');
+		assert.strictEqual(versionVerdict(`wolf ${COMPAT.min}`), 'in-range');
+		assert.strictEqual(versionVerdict('wolf 99.0.0'), 'above');
+		assert.strictEqual(versionVerdict('not a version'), 'unparseable');
+
+		// Pre-1.0 the range is a pin range and is one version wide. Stated
+		// rather than assumed: if it widens, this is where someone notices the
+		// boundary cases above changed meaning.
+		assert.strictEqual(COMPAT.min, COMPAT.maxTested);
+		assert.strictEqual(declaredRange(), `exactly ${COMPAT.min}`);
+
+		// And it is the range `compat.json` declares, not a second copy
+		// somebody typed into the extension. `out/` is two levels under the
+		// extension root; `compat.json` sits at it.
+		const compatJson = JSON.parse(
+			fs.readFileSync(path.resolve(__dirname, '..', '..', '..', 'compat.json'), 'utf8'),
+		);
+		assert.strictEqual(COMPAT.min, compatJson.wolf.min);
+		assert.strictEqual(COMPAT.maxTested, compatJson.wolf.max_tested);
+		assert.strictEqual(COMPAT.clientVersion, compatJson.client_version);
+		assert.strictEqual(PIN.commit, compatJson.wolf.pin);
 	});
 
 	test('the language configuration matches the zero-option formatter', async () => {

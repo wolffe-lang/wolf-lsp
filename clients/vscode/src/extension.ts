@@ -22,14 +22,25 @@ import {
 	TransportKind,
 } from 'vscode-languageclient/node';
 
+import { COMPAT } from './compat';
 import { PIN } from './pin';
 
-/// The docs page ls07 owns. Until it exists, the repository README is the
-/// install instruction that is actually true, so that is what the notification
-/// links to — a link to a page nobody has written is worse than no link.
+/// The install instruction that is actually true. There is no marketplace
+/// listing and no published wolf release, so the repository README is the whole
+/// story — and a notification linking to a page nobody has written would be
+/// worse than one linking nowhere.
 const INSTALL_URL = 'https://github.com/tenseleyFlow/wolf-lsp#installing';
 
 let client: LanguageClient | undefined;
+
+/// The out-of-range warning fires **at most once per session** (ls07 §3).
+///
+/// Module scope, not `ExtensionContext` state: `wolf.restartServer` and a
+/// `wolf.serverPath` change both re-enter `start()`, and a user who is already
+/// mid-way through fixing their toolchain does not need the same modal-free
+/// nag on every restart. It resets when the extension host does, which is the
+/// definition of "per session" that a user would recognise.
+let compatWarned = false;
 
 /// The output channel is created once and OUTLIVES the client, because
 /// `Wolf: Show Server Log` has to work after a crash — which is the moment
@@ -107,12 +118,115 @@ export function probeVersion(command: string): string | undefined {
 	}
 }
 
+// ------------------------------------------------------ the wolf range --
+
+/// Where a version string sits relative to the range `compat.json` declares.
+///
+/// Exported and pure so the extension suite can drive the two states no machine
+/// running these tests can produce — a wolf below `min` and a wolf above
+/// `max_tested` — without a stand-in binary. There is exactly one wolf build in
+/// existence, so both boundaries are unreachable any other way.
+///
+/// Numeric, not lexical: `0.10.0 < 0.9.0` as strings, and a check that gets
+/// that backwards warns on precisely the upgrades it should stay quiet about.
+export type Verdict = 'in-range' | 'below' | 'above' | 'unparseable';
+
+export function versionTriple(versionString: string): [number, number, number] | undefined {
+	for (const word of versionString.split(/\s+/)) {
+		const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(word);
+		if (m) {
+			return [Number(m[1]), Number(m[2]), Number(m[3])];
+		}
+	}
+	return undefined;
+}
+
+export function versionVerdict(versionString: string): Verdict {
+	const found = versionTriple(versionString);
+	const min = versionTriple(COMPAT.min);
+	const max = versionTriple(COMPAT.maxTested);
+	if (found === undefined || min === undefined || max === undefined) {
+		return 'unparseable';
+	}
+	const cmp = (a: [number, number, number], b: [number, number, number]): number => {
+		for (let i = 0; i < 3; i++) {
+			if (a[i]! !== b[i]!) {
+				return a[i]! < b[i]! ? -1 : 1;
+			}
+		}
+		return 0;
+	};
+	if (cmp(found, min) < 0) {
+		return 'below';
+	}
+	if (cmp(found, max) > 0) {
+		return 'above';
+	}
+	return 'in-range';
+}
+
+/// The human-readable range, collapsed when it is one version wide — which it
+/// is today, and will be until wolf-lang publishes a second release.
+export function declaredRange(): string {
+	return COMPAT.min === COMPAT.maxTested
+		? `exactly ${COMPAT.min}`
+		: `${COMPAT.min} .. ${COMPAT.maxTested}`;
+}
+
+/// One message, once, naming both versions and the upgrade path — and then the
+/// server starts anyway (ls07 §3).
+///
+/// No modal, no repetition, no auto-update, no refusal to run. An out-of-range
+/// server usually mostly works, and blocking someone's editor over a version
+/// comparison is a worse outcome than a notification they dismiss. The word
+/// "unsupported" does not appear: nobody set that policy.
+///
+/// The output channel gets the line unconditionally, warning or not, because
+/// the channel is where someone looks *after* dismissing the toast.
+function warnIfOutOfRange(version: string): void {
+	const verdict = versionVerdict(version);
+	const range = declaredRange();
+	out().appendLine(
+		`wolf: found ${version}; this extension declares wolf ${range} (verified ${COMPAT.verified}) — ${verdict}`,
+	);
+	if (verdict === 'in-range' || compatWarned) {
+		return;
+	}
+	compatWarned = true;
+
+	const detail =
+		verdict === 'above'
+			? 'newer than any wolf this extension has been tested against'
+			: verdict === 'below'
+				? 'older than the oldest wolf this extension declares'
+				: 'not a version string this extension can compare';
+	void vscode.window
+		.showWarningMessage(
+			`Wolf: \`${version}\` is ${detail} (declared range: wolf ${range}). ` +
+				`Editing is unaffected — this is a warning, not a refusal.`,
+			'Show Server Log',
+			'Compatibility',
+		)
+		.then((choice) => {
+			if (choice === 'Show Server Log') {
+				out().show(true);
+			} else if (choice === 'Compatibility') {
+				void vscode.env.openExternal(vscode.Uri.parse(COMPAT_URL));
+			}
+		});
+}
+
+/// `docs/COMPAT.md` on the repository, which is the only place the range is
+/// explained — there is no published documentation site.
+const COMPAT_URL = 'https://github.com/tenseleyFlow/wolf-lsp/blob/trunk/docs/COMPAT.md';
+
 // ----------------------------------------------------------- the client --
 
 async function start(): Promise<void> {
 	const command = serverCommand();
+	const version = probeVersion(command);
 
-	if (probeVersion(command) === undefined) {
+	if (version === undefined) {
 		// ONE notification, non-modal, no retry loop, no auto-download.
 		// `showWarningMessage` returns a promise nobody awaits: blocking
 		// activation on a user's attention is how an extension becomes the
@@ -139,6 +253,11 @@ async function start(): Promise<void> {
 		);
 		return;
 	}
+
+	// Before the client starts, so the line is already in the channel if the
+	// handshake then fails — a version mismatch is the first thing anyone would
+	// want to see in that log, and a message emitted after a throw is not there.
+	warnIfOutOfRange(version);
 
 	const serverOptions: ServerOptions = {
 		command,
@@ -184,28 +303,51 @@ async function restart(): Promise<void> {
 
 // ------------------------------------------------------------- commands --
 
-/// What is installed, what this extension was verified against, and no verdict.
+/// What is installed, what this extension declares, and which side of the range
+/// the binary is on.
 ///
-/// The extension does NOT refuse to start against a version it does not
-/// recognise, and does not call one "unsupported": a supported version RANGE is
-/// ls07's to define, and the only honest fact this repository holds today is
-/// one exact pin. Reporting the mismatch and getting out of the way is the
-/// behaviour `:checkhealth wolf` settled on for the same reason.
+/// The extension does NOT refuse to start against a version outside its range
+/// and does not call one "unsupported" — that is a policy nobody set, and an
+/// out-of-range server usually mostly works. Reporting it and getting out of
+/// the way is the behaviour `:checkhealth wolf` settled on for the same reason.
+///
+/// Pre-1.0 the range is one version wide because wolf-lang tags no releases and
+/// the suite has been run against exactly one build. `docs/COMPAT.md` states
+/// that posture rather than implying a stability this track cannot provide.
 async function showVersion(): Promise<void> {
 	const command = serverCommand();
 	const version = probeVersion(command);
 	const lines = [
 		`extension    ${extensionVersion()}`,
 		`wolf         ${version ?? `not found (\`${command}\` did not run)`}`,
+		`declares     wolf ${declaredRange()} (verified ${COMPAT.verified})`,
 		`verified at  ${PIN.version} (wolf-lang ${PIN.commit.slice(0, 7)})`,
 		`server       ${client ? 'running' : 'not running'}`,
 	];
-	if (version !== undefined && version !== PIN.version) {
-		lines.push(
-			'',
-			'This is not the build the extension was verified against. That is not',
-			'known to be a problem — the supported range is not defined yet (ls07).',
-		);
+	if (version !== undefined) {
+		const verdict = versionVerdict(version);
+		lines.push(`range        ${verdict}`);
+		if (verdict === 'above') {
+			lines.push(
+				'',
+				'This wolf is newer than anything the conformance suite has been run',
+				'against. Usually fine — the extension only sends standard LSP — but',
+				'nothing verified this combination. Update the extension, or report',
+				'what broke: https://github.com/tenseleyFlow/wolf-lsp/issues',
+			);
+		} else if (verdict === 'below') {
+			lines.push(
+				'',
+				'This wolf is older than the floor the extension declares. Update the',
+				'toolchain, or install an extension version whose range covers it.',
+			);
+		} else if (verdict === 'unparseable') {
+			lines.push(
+				'',
+				'That string carries no MAJOR.MINOR.PATCH, so no range comparison was',
+				'made. Check what `wolf.serverPath` points at — it may not be wolf.',
+			);
+		}
 	}
 	out().appendLine(lines.join('\n'));
 	out().show(true);

@@ -378,6 +378,87 @@ return {
   },
 
   {
+    -- ls07 §3, the pure half: the range comparison itself, driven with version
+    -- strings no machine here can produce. A wolf older than `min` and a wolf
+    -- newer than `max_tested` are the two states the whole compatibility
+    -- statement exists for, and neither is reachable by running a binary —
+    -- there is exactly one wolf build in existence.
+    --
+    -- Numeric ordering is asserted explicitly because the lexical bug is silent
+    -- and backwards: `0.10.0 < 0.9.0` as strings, so a string compare warns on
+    -- precisely the upgrades it should stay quiet about.
+    name = 'compat: the declared range is compared numerically, and never called unsupported',
+    fn = function()
+      local version = require('wolf.version')
+      local compat = require('wolf.compat')
+
+      eq({ 0, 0, 1 }, version.parse('wolf 0.0.1 (pre-alpha)'), 'parses the pin string')
+      eq({ 1, 2, 30 }, version.parse('wolf 1.2.30'), 'parses a bare triple')
+      eq(nil, version.parse('wolf 9.9.9-not-the-pin'), 'a suffixed word is not a triple')
+      eq(nil, version.parse('some other program'), 'no triple at all')
+
+      eq(1, version.cmp({ 0, 10, 0 }, { 0, 9, 0 }), '0.10.0 is above 0.9.0, numerically')
+      eq(-1, version.cmp({ 0, 9, 0 }, { 0, 10, 0 }), 'and 0.9.0 is below it')
+      eq(0, version.cmp({ 1, 2, 3 }, { 1, 2, 3 }), 'equal is equal')
+
+      -- The declared range today is one version wide, and the test states that
+      -- rather than assuming it: if it ever widens, this is where someone
+      -- notices that the two boundary cases below changed meaning.
+      eq(compat.min, compat.max_tested, 'pre-1.0 the range is a pin range, one version wide')
+
+      eq('in-range', version.verdict('wolf ' .. compat.min).state, 'the floor is in range')
+      eq('above', version.verdict('wolf 99.0.0').state, 'a newer wolf is above the range')
+      eq('below', version.verdict('wolf 0.0.0').state, 'an older wolf is below it')
+      eq('unparseable', version.verdict('not a version').state, 'nonsense is nonsense')
+      eq('99.0.0', version.verdict('wolf 99.0.0').found, 'the verdict names what it found')
+    end,
+  },
+
+  {
+    -- And the impure half: the message a user actually reads. Driven through
+    -- `:checkhealth wolf` with a stand-in binary, because the claim that
+    -- matters is not "the comparison is right" but "the warning names both
+    -- versions, names the range, offers a next step, and refuses nothing".
+    name = 'compat: an out-of-range binary warns, names both versions, and blocks nothing',
+    fn = function()
+      local original = vim.g.wolf
+      local dir = vim.fn.tempname()
+      vim.fn.mkdir(dir, 'p')
+
+      local fake, body
+      if vim.fn.has('win32') == 1 then
+        fake = vim.fs.joinpath(dir, 'wolf.bat')
+        body = { '@echo off', 'if "%1"=="--version" (echo wolf 99.0.0) else (exit /b 0)' }
+      else
+        fake = vim.fs.joinpath(dir, 'wolf')
+        body = { '#!/bin/sh', 'case "$1" in --version) echo "wolf 99.0.0" ;; *) exit 0 ;; esac' }
+      end
+      vim.fn.writefile(body, fake)
+      vim.fn.setfperm(fake, 'rwxr-xr-x')
+
+      vim.g.wolf = { serverPath = fake }
+      vim.cmd('checkhealth wolf')
+      local report = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), '\n')
+      vim.cmd('bwipeout!')
+      vim.g.wolf = original
+
+      local compat = require('wolf.compat')
+      truthy(report:find('99.0.0', 1, true), 'names the version it found')
+      truthy(report:find(compat.max_tested, 1, true), 'names the range it declares')
+      truthy(report:find('NEWER', 1, true), 'says WHICH side of the range it is on')
+      truthy(report:find('issues', 1, true), 'offers a next step, not only a verdict')
+      -- The word this plugin may never say about a version nobody set a policy
+      -- for, and the behaviour it may never take.
+      assert(not report:lower():find('unsupported', 1, true), 'no unsupported claim')
+      assert(not report:lower():find('refus', 1, true), 'nothing is refused')
+      -- Everything else still renders. A version mismatch collapsing the rest
+      -- of the report is the failure mode a check bolted into the wrong place
+      -- produces, and it is invisible unless something asserts the other lines.
+      truthy(report:find('`a.lu` → wolf', 1, true), 'filetype detection is unaffected')
+    end,
+  },
+
+  {
     -- The committed `doc/tags` is what makes `:h wolf-lsp` work for a user who
     -- installed the plugin by unpacking it, with no `:helptags` run. A stale
     -- or missing tags file is invisible until someone asks for help.

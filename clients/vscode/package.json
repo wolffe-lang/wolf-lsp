@@ -157,8 +157,9 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
-    "test": "node ./out/test/grammar.js && node ./out/test/runTest.js",
+    "test": "node ./out/test/grammar.js && node ./out/test/manifest.js && node ./out/test/runTest.js",
     "test:grammar": "node ./out/test/grammar.js",
+    "test:manifest": "node ./out/test/manifest.js",
     "test:extension": "node ./out/test/runTest.js",
     "package": "vsce package",
     "install:vsix": "node ./out/test/installVsix.js"

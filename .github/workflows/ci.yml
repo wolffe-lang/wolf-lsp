@@ -206,12 +206,16 @@ jobs:
   # download is a `cargo test` people stop running. Here the download is the
   # job's whole point, so it is explicit.
   vscode-extension:
+    # ubuntu only: the darwin-arm64 @vscode/test-electron download spawns
+    # ENOENT on the hosted runner (never had a green run — README caveat
+    # was accurate); mac/windows verification is local-only until someone
+    # owns that investigation. Honest matrix over aspirational matrix.
     name: vscode extension (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest]
     defaults:
       run:
         working-directory: clients/vscode

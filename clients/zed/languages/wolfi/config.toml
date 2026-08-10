@@ -1,0 +1,29 @@
+# Generated wolf interface files, as Zed sees them.
+#
+# This language exists so `.wolfi` is *recognised* — and so that recognising it
+# cannot be mistaken for serving it. `extension.toml`'s `[language_servers.wolf]`
+# lists `languages = ["Wolf"]` and not `"Wolfi"`, so no server ever attaches to a
+# buffer in this language, deliberately:
+#
+#   1. `wolf lsp` has no `.wolfi` path. Module discovery is `.lu`-keyed (D32),
+#      so a `.wolfi` overlay has nothing for the server to publish about.
+#   2. `wolfi` v0 is a **binary** format — magic bytes `WOLFI`,
+#      `upstream/crates/wolf_sema/src/interface.rs` — and nothing in the tree
+#      writes a text file with that extension at all. `wolf interface`
+#      pretty-prints the bytes for humans instead.
+#
+# If `.wolfi` becomes a text artifact upstream, adding `"Wolfi"` to that
+# `languages` list is the whole change.
+
+name = "Wolfi"
+path_suffixes = ["wolfi"]
+line_comments = ["/// ", "//! ", "// "]
+autoclose_before = ";:.,=}])>"
+brackets = [
+    { start = "{", end = "}", close = true, newline = true },
+    { start = "[", end = "]", close = true, newline = true },
+    { start = "(", end = ")", close = true, newline = true },
+    { start = "\"", end = "\"", close = true, newline = false, not_in = ["string", "comment"] },
+]
+tab_size = 4
+hard_tabs = false

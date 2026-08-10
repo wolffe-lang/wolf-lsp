@@ -1,0 +1,32 @@
+# The Zed extension crate.
+#
+# Excluded from the root workspace (see the root `Cargo.toml`): it builds for
+# `wasm32-wasip2`, not for the host, and pulling a wasm-only cdylib into
+# `cargo test --workspace` would make the harness's own gate depend on a
+# toolchain target the harness does not need.
+
+[package]
+name = "zed_wolf"
+version = "0.0.1"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/tenseleyFlow/wolf-lsp"
+publish = false
+
+[lib]
+path = "src/lib.rs"
+# Zed loads extensions as WebAssembly components; `cdylib` is what produces one.
+crate-type = ["cdylib"]
+
+[dependencies]
+# 0.7.0 is the newest version PUBLISHED to crates.io. `zed_extension_api` 0.8.0
+# exists in the Zed tree with `publish = false` against it ("Change back to
+# `true` when we're ready to publish v0.8.0"), so it cannot be depended on from
+# here. An extension built against an older API stays compatible with newer Zed;
+# the incompatible direction is newer API against older Zed.
+zed_extension_api = "0.7.0"
+
+# `edition = "2021"`, not the workspace's 2024, and not by oversight: this crate
+# is deliberately not a workspace member, so it inherits nothing, and 2021 is
+# what every published Zed extension uses today. There is no language feature in
+# ~40 lines of glue that would argue for the newer edition.

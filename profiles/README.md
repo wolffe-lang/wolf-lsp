@@ -29,11 +29,35 @@ that owes each:
 | `facsimile` | ls03    | **derived** — read off `facsimile@1242ffa` and the session it recorded |
 | `nvim`      | ls04    | **derived** — read off `neovim@v0.12.4` and the session it recorded |
 | `vscode`    | ls05    | **derived** — read off `vscode@df53daa` (1.132.0) and the session it recorded |
-| `helix`     | ls06    | owed |
+| `helix`     | ls06    | **derived** — read off `helix@25.07.1` and the session it recorded |
+| `emacs`     | ls06    | **derived** — read off `emacs@30.2` (eglot 1.17.30) and the session it recorded |
 | `zed`       | ls06    | owed |
 
 Marking one of those `synthetic` to make the list shorter does not work:
 `missing_derived` keys off the provenance, not the filename.
+
+`emacs` is a **seventh** row, added by ls06 where ls01 §4 named six. eglot turned
+out to be drivable under `emacs --batch`, so there is a real session to read a
+profile off — and a tracked client whose profile nothing watches for staleness is
+exactly the gap this list exists to close. Membership is a claim about
+*tracking*, not about tier; `docs/MATRIX.md` is where tiers live.
+
+**`zed` is the one row still owed, and it is owed for a reason no amount of
+effort in this sprint could remove.** Zed's dev-extension install is a GUI action
+(`zed::InstallDevExtension`); its CLI has no `--install-extension` and no
+`--dev-extension` flag, and `auto_install_extensions` covers *published*
+extensions by id rather than dev extensions. There is no headless way to load the
+extension, so there is no headless way to record what Zed's client sends. The
+slot stays empty until somebody runs Zed on a desktop with the capture shim on
+`PATH`.
+
+`helix`'s and `emacs`'s `commit` fields are release versions for the same reason
+`nvim`'s is, and with the same honesty caveat: both were read off distribution
+packages (`extra/helix 25.07.1-2`, `extra/emacs-nox 30.2-3`) that publish no
+build sha, and the `source` list carries the full version banner so the exact
+build is identifiable. What the sprint requires is that the profile be stamped
+with the version it was read from — a client's declared capabilities move between
+releases and a stale profile is a lie — and a version satisfies that directly.
 
 `nvim`'s `commit` is a **release tag**, not a sha, and that is the honest
 recording rather than a shortcut: `nvim --version` publishes no build sha, and

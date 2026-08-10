@@ -1,0 +1,66 @@
+# The wolf language, as Zed sees it.
+#
+# Every value here is READ OFF the pinned toolchain rather than chosen:
+#   upstream/crates/wolf_fmt/src/doc.rs — INDENT = 4, WIDTH = 100
+#   vendor/upstream/spec/grammar.ebnf   — `//` line comments, no block form
+# An editor config that picks its own indent width is a second formatter with an
+# opinion, which is the exact thing a zero-option formatter exists to prevent
+# (D34).
+
+name = "Wolf"
+
+# `.lu` — lupus. Wolf source, and the only extension `wolf lsp` serves: module
+# discovery is `.lu`-keyed (D32).
+path_suffixes = ["lu"]
+
+# **There is deliberately no `grammar` key.**
+#
+# `grammar` is `Option<Arc<str>>` in Zed's `LanguageConfig` and defaults to
+# `None`; Zed's own built-in "Plain Text" language ships with none. With no
+# grammar, `language_registry` takes the branch that attaches no queries at all
+# — so this file's comments, brackets, autoclose and indent behaviour all work
+# and only tree-sitter highlighting is absent. That is a strictly better failure
+# than pointing at `tree-sitter-wolf`, which has no `grammar.js` yet and whose
+# build failure would take the whole extension — language server included —
+# down with it.
+#
+# Consequence, stated plainly: **a `.lu` buffer in Zed has no syntax
+# highlighting today.** Diagnostics, hover, symbols, formatting and code actions
+# all still arrive, because those come from the server.
+
+# `[gram.lex.comment]`: `//` line comments, with `///` (item doc) and `//!`
+# (inner doc) as prefixes of the same form. Listed longest-first because Zed
+# matches in order, so a doc comment is not re-flowed as a plain one.
+#
+# **Wolf has no block comment** — "nesting arguments lose to simplicity + lexer
+# speed" — so there is no `block_comment` and no `documentation_comment` key.
+# Adding either would hand Zed's comment commands a construct the lexer rejects.
+line_comments = ["/// ", "//! ", "// "]
+
+autoclose_before = ";:.,=}])>"
+
+brackets = [
+    { start = "{", end = "}", close = true, newline = true },
+    { start = "[", end = "]", close = true, newline = true },
+    { start = "(", end = ")", close = true, newline = true },
+    # No single-quote pair: wolf has **no character literal**, so `'` is never an
+    # opening delimiter and auto-closing one would fight every apostrophe typed
+    # in a comment.
+    { start = "\"", end = "\"", close = true, newline = false, not_in = ["string", "comment"] },
+]
+
+# `wolf_fmt::doc::INDENT` = 4, and spaces: every byte of canonical output is a
+# space, so a tab in a wolf file is a formatting diff waiting to happen.
+tab_size = 4
+hard_tabs = false
+
+# With no grammar there is no `indents.scm`, so these regexes are the whole
+# auto-indent story. They are deliberately **lookahead-free** — Zed compiles
+# them with the Rust `regex` crate, which has no `(?!…)`, so the
+# `^((?!//).)*…` form used in `clients/vscode/language-configuration.json`
+# (JavaScript regex, lookahead supported) cannot be transliterated here. The
+# cost is that a `{` inside a trailing line comment still increases indent; the
+# alternative was a pattern that fails to compile and silently disables indent
+# altogether.
+increase_indent_pattern = "^.*(\\{[^}\"']*|\\([^)\"']*|\\[[^\\]\"']*)$"
+decrease_indent_pattern = "^\\s*[}\\])].*$"

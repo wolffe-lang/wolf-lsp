@@ -1,0 +1,196 @@
+{
+  "capabilities": {
+    "experimental": {},
+    "general": {
+      "positionEncodings": [
+        "utf-32",
+        "utf-8",
+        "utf-16"
+      ]
+    },
+    "textDocument": {
+      "codeAction": {
+        "codeActionLiteralSupport": {
+          "codeActionKind": {
+            "valueSet": [
+              "quickfix",
+              "refactor",
+              "refactor.extract",
+              "refactor.inline",
+              "refactor.rewrite",
+              "source",
+              "source.organizeImports"
+            ]
+          }
+        },
+        "dataSupport": true,
+        "dynamicRegistration": false,
+        "isPreferredSupport": true,
+        "resolveSupport": {
+          "properties": [
+            "edit",
+            "command"
+          ]
+        }
+      },
+      "completion": {
+        "completionItem": {
+          "deprecatedSupport": true,
+          "resolveSupport": {
+            "properties": [
+              "documentation",
+              "details",
+              "additionalTextEdits"
+            ]
+          },
+          "snippetSupport": false,
+          "tagSupport": {
+            "valueSet": [
+              1
+            ]
+          }
+        },
+        "contextSupport": true,
+        "dynamicRegistration": false
+      },
+      "declaration": {
+        "dynamicRegistration": false,
+        "linkSupport": true
+      },
+      "definition": {
+        "dynamicRegistration": false,
+        "linkSupport": true
+      },
+      "documentHighlight": {
+        "dynamicRegistration": false
+      },
+      "documentSymbol": {
+        "dynamicRegistration": false,
+        "hierarchicalDocumentSymbolSupport": true,
+        "symbolKind": {
+          "valueSet": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26
+          ]
+        }
+      },
+      "formatting": {
+        "dynamicRegistration": false
+      },
+      "hover": {
+        "contentFormat": [
+          "plaintext"
+        ],
+        "dynamicRegistration": false
+      },
+      "implementation": {
+        "dynamicRegistration": false,
+        "linkSupport": true
+      },
+      "inlayHint": {
+        "dynamicRegistration": false
+      },
+      "publishDiagnostics": {
+        "codeDescriptionSupport": false,
+        "relatedInformation": false,
+        "tagSupport": {
+          "valueSet": [
+            1,
+            2
+          ]
+        }
+      },
+      "rangeFormatting": {
+        "dynamicRegistration": false
+      },
+      "references": {
+        "dynamicRegistration": false
+      },
+      "rename": {
+        "dynamicRegistration": false
+      },
+      "signatureHelp": {
+        "dynamicRegistration": false,
+        "signatureInformation": {
+          "activeParameterSupport": true,
+          "documentationFormat": [
+            "plaintext"
+          ],
+          "parameterInformation": {
+            "labelOffsetSupport": true
+          }
+        }
+      },
+      "synchronization": {
+        "didSave": true,
+        "dynamicRegistration": false,
+        "willSave": true,
+        "willSaveWaitUntil": true
+      },
+      "typeDefinition": {
+        "dynamicRegistration": false,
+        "linkSupport": true
+      }
+    },
+    "window": {
+      "showDocument": {
+        "support": true
+      },
+      "workDoneProgress": true
+    },
+    "workspace": {
+      "applyEdit": true,
+      "configuration": true,
+      "didChangeWatchedFiles": {
+        "dynamicRegistration": true
+      },
+      "executeCommand": {
+        "dynamicRegistration": false
+      },
+      "symbol": {
+        "dynamicRegistration": false
+      },
+      "workspaceEdit": {
+        "documentChanges": true
+      },
+      "workspaceFolders": true
+    }
+  },
+  "expects_encoding": "utf-8",
+  "profile": "emacs",
+  "provenance": {
+    "client": "emacs",
+    "commit": "30.2",
+    "kind": "derived",
+    "read_on": "2026-08-10",
+    "repository": "https://git.savannah.gnu.org/git/emacs.git",
+    "source": [
+      "GNU Emacs 30.2 with bundled eglot 1.17.30 (Arch Linux extra/emacs-nox 30.2-3); lisp/progmodes/eglot.el:eglot-client-capabilities",
+      "transcripts/emacs/smoke.jsonl"
+    ]
+  }
+}

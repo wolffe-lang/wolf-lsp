@@ -1,0 +1,50 @@
+# Zed extension manifest for wolf — tier 2, the config tier.
+#
+# Zed is the one editor in this repo where "config tier" is a lie told by the
+# label: a Zed extension that supplies a **language server** cannot be TOML at
+# all. Binary discovery lives in `language_server_command`, a Rust function
+# compiled to WebAssembly (`src/lib.rs`). Everything else — the language, its
+# comment form, its brackets, its indent — is the two `config.toml` files under
+# `languages/`, and those really are config.
+#
+# `schema_version = 1` is the manifest format, not this extension's version.
+
+id = "wolf"
+name = "Wolf"
+description = "Wolf language support: diagnostics, hover, symbols, formatting and code actions from `wolf lsp`."
+version = "0.0.1"
+schema_version = 1
+authors = ["wolf-lang contributors"]
+repository = "https://github.com/tenseleyFlow/wolf-lsp"
+
+# One server, named `wolf`, for one language. The id on the left is what a user
+# writes under `"lsp"` in `settings.json` to override the binary path, and it is
+# also what `LspSettings::for_worktree` is asked for in `src/lib.rs` — those
+# three spellings have to agree and there is a test that says so.
+#
+# `languages` is the plural, current form; the singular `language` key is
+# deprecated in Zed's `LanguageServerManifestEntry`. The value is the language's
+# `name` from `languages/wolf/config.toml`, NOT a file extension.
+#
+# `Wolfi` is deliberately absent from this list. `wolfi` v0 is a *binary* format
+# (magic bytes `WOLFI`, `upstream/crates/wolf_sema/src/interface.rs`) and `wolf
+# lsp` discovers modules by `.lu` alone (D32), so attaching the server to
+# `.wolfi` documents would produce a buffer that looks supported and is not.
+# This is the same ruling ls04 and ls05 reached.
+[language_servers.wolf]
+name = "wolf"
+languages = ["Wolf"]
+
+# The tree-sitter grammar block stays COMMENTED OUT because
+# `tenseleyFlow/tree-sitter-wolf` is a seed commit with no `grammar.js` in it
+# (`b1b2c17`, "scaffold; grammar port to follow opportunistically"). Zed builds
+# every grammar named here when the extension is installed, so a block pointing
+# at an empty repository would fail the install outright — the extension would
+# not load at all, and the language server would go with it.
+#
+# Uncomment when the grammar exists, add `grammar = "wolf"` to
+# `languages/wolf/config.toml`, and add `languages/wolf/highlights.scm`.
+#
+#   [grammars.wolf]
+#   repository = "https://github.com/tenseleyFlow/tree-sitter-wolf"
+#   commit = "TODO"

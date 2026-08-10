@@ -1,0 +1,106 @@
+# Helix language configuration for wolf — tier 2, the config tier.
+#
+# This file is a FRAGMENT. Helix merges `$XDG_CONFIG_HOME/helix/languages.toml`
+# over its built-in defaults key by key, so appending these blocks to your own
+# file is the whole install (`README.md`). It is also the exact bytes CI drops
+# into a temp config dir before running `hx --health wolf`, so the thing that
+# is verified and the thing that is documented cannot drift apart.
+#
+# Every number here is READ OFF the pinned toolchain rather than chosen:
+#   upstream/crates/wolf_fmt/src/doc.rs — INDENT = 4, WIDTH = 100
+#   vendor/upstream/spec/grammar.ebnf   — `//` line comments, no block form
+# An editor config that picks its own indent width is a second formatter with
+# an opinion, which is the exact thing a zero-option formatter exists to
+# prevent (D34).
+
+# --------------------------------------------------------------- wolf --
+
+[[language]]
+name = "wolf"
+scope = "source.wolf"
+injection-regex = "wolf"
+
+# `.lu` — lupus. Wolf source, and the ONLY extension `wolf lsp` serves:
+# module discovery is `.lu`-keyed (D32 makes every `.lu` in a directory one
+# module), so this is the file-type set the server can actually answer about.
+file-types = ["lu"]
+
+# `wolf.pkg` is the manifest and the workspace root marker; `.git` is the
+# fallback for a checkout that has not been `wolf init`ed yet. Order matters —
+# helix takes the FIRST match walking up, so a package root beats the repo
+# root and a monorepo opens one server per package rather than one per repo.
+roots = ["wolf.pkg", ".git"]
+
+# `[gram.lex.comment]`: `//` line comments, with `///` (item doc) and `//!`
+# (inner doc) as prefixes of the same form. **Wolf has no block comment** —
+# "nesting arguments lose to simplicity + lexer speed" — so there is no
+# `block-comment-tokens` key here. Adding one would give helix's `C` binding a
+# construct the lexer rejects.
+comment-tokens = ["//"]
+
+# `wolf_fmt::doc::INDENT` = 4, and spaces: every byte of canonical output is a
+# space, so `unit` is four of them and never `"\t"`.
+indent = { tab-width = 4, unit = "    " }
+
+# `wolf_fmt::doc::WIDTH` = 100, so helix's ruler and `:reflow` agree with the
+# formatter instead of arguing with it.
+text-width = 100
+
+language-servers = ["wolf"]
+
+# `wolf lsp` serves `textDocument/formatting`, and format-on-save routes
+# through it. There is deliberately NO `formatter = { command = "wolf", args =
+# ["fmt", "-"] }` beside this: helix prefers a configured external formatter
+# OVER the language server, so setting one would silently take every save off
+# the path this repository tests and onto an untested second spawn of the same
+# binary. One formatting path, and it is the one the transcripts cover.
+auto-format = true
+
+[language-server.wolf]
+command = "wolf"
+args = ["lsp"]
+
+# -------------------------------------------------------------- wolfi --
+
+# `.wolfi` is its OWN language with **no language server**, and that is a
+# deliberate ruling rather than an omission — the same one ls04 and ls05
+# reached for the same two reasons:
+#
+#   1. `wolf lsp` has no `.wolfi` path. Module discovery is `.lu`-keyed, so a
+#      `.wolfi` overlay has nothing for the server to publish about.
+#   2. `wolfi` v0 is a **binary** format — magic bytes `WOLFI`,
+#      `upstream/crates/wolf_sema/src/interface.rs` — and nothing in the tree
+#      writes a text file with that extension at all. `wolf interface`
+#      pretty-prints the bytes for humans instead.
+#
+# Attaching a server to documents it ignores produces a buffer that looks
+# supported and is not. If `.wolfi` becomes a text artifact upstream, adding
+# `language-servers = ["wolf"]` here is the whole change.
+[[language]]
+name = "wolfi"
+scope = "source.wolf"
+file-types = ["wolfi"]
+roots = ["wolf.pkg", ".git"]
+comment-tokens = ["//"]
+indent = { tab-width = 4, unit = "    " }
+text-width = 100
+
+# ------------------------------------------------------------ grammar --
+
+# The tree-sitter grammar block stays COMMENTED OUT because
+# `tenseleyFlow/tree-sitter-wolf` is a seed commit with no `grammar.js` in it
+# (`b1b2c17`, "scaffold; grammar port to follow opportunistically"). Shipping a
+# `[[grammar]]` that points at it would make `hx -g fetch` fail and `hx` noisy
+# at startup, and noisy startup is how users delete config.
+#
+# Uncomment when the grammar exists, then `hx -g fetch && hx -g build`.
+#
+#   [[grammar]]
+#   name = "wolf"
+#   source = { git = "https://github.com/tenseleyFlow/tree-sitter-wolf", rev = "TODO" }
+#
+# Until then a wolf buffer in helix has **no syntax highlighting at all** —
+# helix has no regex-highlighting fallback the way Neovim and VS Code do, so
+# there is nothing to ship in its place. `hx --health wolf` reports this on the
+# "Highlight queries" line; it does NOT report it on the "Tree-sitter parser"
+# line, which prints ✓ for a grammar that does not exist (see README).

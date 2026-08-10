@@ -247,3 +247,71 @@ facsimile (which SIGTERMs) and fackr (which SIGKILLs after 100 ms),
 `exit`. A server that exited on `shutdown` without responding would produce a
 five-second stall and then a forced kill on every window close. *Holds today;
 the recorded transcript ends on the `shutdown` response followed by `exit`.*
+
+## From Helix (ls06, `25.07.1`)
+
+Helix is the first client that is *neither* hand-rolled nor well-behaved: it
+implements the protocol competently and then declines to finish it.
+
+**Survive a client that never sends `shutdown` or `exit`, leaving no orphan.**
+Helix sends **neither**, and this was verified across all three quit paths —
+`:q`, `:qa` and `:q!` — each producing a recorded session that ends at the last
+response with no handshake at all. It is a different shape from facsimile's
+(which SIGTERMs then SIGKILLs) and fackr's (which sends both and then kills):
+helix simply drops the process. So the server must treat stdin EOF as a normal
+end of session and exit cleanly on it. *Holds today; asserted by
+`tests/semantics.rs::a_client_that_vanishes_leaves_no_orphan`, and confirmed by
+`transcripts/helix/smoke.jsonl` ending on the `formatting` response with no
+orphaned process left behind.*
+
+**Answer `utf-8` when the client offers all three with utf-8 first.** Helix
+declares `general.positionEncodings: ["utf-8", "utf-32", "utf-16"]` — note the
+order differs from Neovim's `["utf-8", "utf-16", "utf-32"]` while producing the
+same negotiated result, because wolf's own preference is what decides. Like
+Neovim, helix converts correctly to whatever is negotiated, so a *wrong* choice
+here is invisible rather than broken, which is worse. *Holds today; asserted by
+`profiles/helix.json`'s `expects_encoding`.*
+
+**Do not require `textDocument/didSave`.** The recorded session contains none;
+diagnostics arrive on open and on change. *Holds today.*
+
+**Expect `documentSymbol`, `hover` and `codeAction` only when asked.** Unlike VS
+Code — nine unprompted `codeAction` requests in a 42-record session — helix
+issues each exactly once, when the user presses the key. The 17-record helix
+transcript contains no unrequested traffic of any kind. That is recorded not as
+a constraint but as the *contrast*: the request-rate constraint VS Code imposes
+is a VS Code property, not an LSP one, and a server tuned only against helix
+would be surprised by it.
+
+## From Emacs / eglot (ls06, `30.2`, eglot 1.17.30)
+
+**Answer `utf-8` even though the client asks for `utf-32` first.** eglot
+declares `general.positionEncodings: ["utf-32", "utf-8", "utf-16"]`, and wolf
+answers `utf-8` because the *server's* preference decides. eglot is therefore
+the first client tracked here whose own first choice the server declines — every
+other client either offers one encoding, or offers utf-8 first. If the
+negotiation rule ever changed to honour client order, this is the client where
+it would show up first and silently: eglot converts correctly to whatever is
+negotiated, so the columns would stay self-consistent and merely be different.
+*Holds today; asserted by `profiles/emacs.json`'s `expects_encoding` and by the
+negotiation recorded in `transcripts/emacs/smoke.jsonl`.*
+
+**Expect `workspace/didChangeConfiguration` immediately after `initialized`,
+carrying nothing useful.** eglot sends it on connect with the (empty) workspace
+configuration, before any user action. A server that treated an unsolicited
+`didChangeConfiguration` as an error, or that waited for settings before serving,
+would break a client behaving perfectly. *Holds today — `wolf lsp` reads no
+settings and ignores the notification.*
+
+**`shutdown` then `exit`, and the client waits for the `shutdown` response.**
+Same contract as `vscode-languageclient`. eglot additionally **reconnects** on an
+unexpected server exit (`eglot-autoreconnect`, default 3 s), so a server that
+exited on `shutdown` without responding would not merely stall — it would be
+respawned, and the user would see an editor that appears to work while leaking a
+process per window close. *Holds today; the recorded transcript ends on the
+`shutdown` response followed by `exit`.*
+
+**Tolerate two `didOpen`s before the first request.** eglot opens every already-
+visiting buffer in the project the moment it connects, so a session that starts
+with two files visited sends two `didOpen` notifications back to back and
+expects a publish for each. *Holds today.*

@@ -163,9 +163,28 @@ impl Record {
     /// record's own, which is right for requests and notifications.
     #[must_use]
     pub fn effective_matcher(&self, method: Option<&str>) -> Matcher {
-        self.matcher.clone().unwrap_or_else(|| {
-            crate::defaults::for_method(method.or(self.method.as_deref()), self.kind)
-        })
+        if let Some(explicit) = self.matcher.clone() {
+            return explicit;
+        }
+        // An ERROR response is not the method's result shape.
+        //
+        // The defaults table is keyed by method, and rightly so — but it
+        // answers "how do I compare a `documentSymbol` result", and a
+        // `documentSymbol` that *failed* carries `{code, message}` instead.
+        // Handing that object to `set:` produces "needs an array in the
+        // transcript" on two identical payloads, which is the worst kind of
+        // failure: a mismatch report about a difference that is not there.
+        //
+        // Every error response therefore defaults to [`Matcher::Subset`],
+        // which compares exactly what the claim is — the JSON-RPC `code` the
+        // server refused with — plus the `message` beside it. Pinning that
+        // prose is deliberate and cheap: these strings are the shim's own
+        // constants, and a rewording is one `lspconf record` away from a
+        // reviewed one-line diff.
+        if self.kind == Kind::Response && self.result.is_none() && self.error.is_some() {
+            return Matcher::Subset;
+        }
+        crate::defaults::for_method(method.or(self.method.as_deref()), self.kind)
     }
 }
 

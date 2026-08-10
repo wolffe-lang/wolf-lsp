@@ -22,14 +22,18 @@
 //!   they are.
 //! - [`normalize`] — what is elided first, and the unconditional/opt-in split.
 //! - [`defaults`] — the stability contract, in one table.
+//! - [`encoding`] — byte offsets ⇄ LSP positions, written independently of
+//!   the server's own conversion so the encoding suite compares two things.
 
 pub mod defaults;
+pub mod encoding;
 pub mod jsonl;
 pub mod matcher;
 pub mod normalize;
 pub mod pointer;
 pub mod record;
 
+pub use encoding::{Encoding, LineIndex, Position};
 pub use jsonl::Error as JsonlError;
 pub use matcher::{Matcher, Mismatch};
 pub use normalize::{Normalizer, Stage};

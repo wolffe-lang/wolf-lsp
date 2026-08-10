@@ -323,3 +323,59 @@ fn a_header_with_an_abbreviated_pin_is_rejected() {
         "{errs:#?}"
     );
 }
+
+/// An error response must not be compared with the *method's* matcher.
+///
+/// Regression from ls01's first full replay: `textDocument/documentSymbol`
+/// defaults to `set:` (its result is an array), and a `$/cancelRequest` turns
+/// that same exchange into `{"code":-32800,"message":"…"}`. Routing the error
+/// through `set:` reported "needs an array in the transcript" while printing
+/// two identical payloads — a mismatch about a difference that was not there.
+#[test]
+fn an_error_response_defaults_to_subset_whatever_the_method() {
+    use lsp_transcript::record::{Dir, Kind, Record};
+
+    let error = Record {
+        seq: 1,
+        dir: Dir::S2c,
+        kind: Kind::Response,
+        id: Some(serde_json::json!(2)),
+        method: None,
+        params: None,
+        result: None,
+        error: Some(serde_json::json!({"code": -32800, "message": "cancelled"})),
+        matcher: None,
+        normalize: Vec::new(),
+        t_us: None,
+    };
+    assert_eq!(
+        error.effective_matcher(Some("textDocument/documentSymbol")),
+        Matcher::Subset
+    );
+    // The success case still gets the method's matcher.
+    let ok = Record {
+        result: Some(serde_json::json!([])),
+        error: None,
+        ..error.clone()
+    };
+    assert!(matches!(
+        ok.effective_matcher(Some("textDocument/documentSymbol")),
+        Matcher::Set(_)
+    ));
+    // And an explicit `match` still wins over both.
+    let pinned = Record {
+        matcher: Some(Matcher::Exact),
+        ..error.clone()
+    };
+    assert_eq!(
+        pinned.effective_matcher(Some("textDocument/documentSymbol")),
+        Matcher::Exact
+    );
+}
+
+/// The two payloads that fooled the old default, compared for real.
+#[test]
+fn two_identical_error_payloads_compare_equal() {
+    let payload = serde_json::json!({"code": -32601, "message": "no such method"});
+    assert!(Matcher::Subset.compare(&payload, &payload).is_ok());
+}

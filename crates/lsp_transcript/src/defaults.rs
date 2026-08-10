@@ -16,6 +16,16 @@
 //!   canonical style, D34), so it is [`Matcher::Exact`].
 //! - Incidental server chatter (`window/logMessage`, `$/progress`) carries no
 //!   claim and is ignored; a transcript that wants to assert on it says so.
+//!
+//! # What this table does *not* cover
+//!
+//! It is keyed by method, and a method has two answers: a result and an error.
+//! Every entry below describes the **result** shape, so an error response —
+//! whose payload is `{code, message}` whatever the method — must not be routed
+//! through it. That case is handled one level up, in
+//! [`crate::record::Record::effective_matcher`], which sends error responses to
+//! [`Matcher::Subset`] before consulting this file. Putting the rule here
+//! instead would mean duplicating it into every arm.
 
 use crate::matcher::Matcher;
 use crate::pointer::Pointer;

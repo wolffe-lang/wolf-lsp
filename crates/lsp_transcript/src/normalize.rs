@@ -64,6 +64,16 @@ pub enum Stage {
     /// sends `{"x": null}` and one that omits `x` compare equal — LSP's own
     /// optionality rule. Opt-in, because a few methods do distinguish them.
     Nulls,
+    /// Sort the arrays LSP leaves unordered — `diagnostics` and
+    /// `relatedInformation` — by `(uri, range, code, message)`, at any depth.
+    ///
+    /// The `set:` matcher already compares those arrays as multisets, so this
+    /// stage changes no verdict. What it changes is the **snapshot**: a
+    /// normalized view whose diagnostic order depends on which worker thread
+    /// finished first churns for no reason, and a churning snapshot stops
+    /// being read. Opt-in, because `documentSymbol` nesting order *is*
+    /// behavior and must never be sorted away.
+    DiagSort,
 }
 
 /// Stages every record gets whether or not it asks.
@@ -79,6 +89,7 @@ impl Stage {
             Stage::Version => "version",
             Stage::ServerInfo => "serverinfo",
             Stage::Nulls => "nulls",
+            Stage::DiagSort => "diagsort",
         }
     }
 }
@@ -98,7 +109,7 @@ impl fmt::Display for ParseStageError {
         write!(
             f,
             "unknown normalization stage `{}` — expected one of: \
-             ids, paths, pid, uri, version, serverinfo, nulls",
+             ids, paths, pid, uri, version, serverinfo, nulls, diagsort",
             self.0
         )
     }
@@ -118,6 +129,7 @@ impl FromStr for Stage {
             "version" => Stage::Version,
             "serverinfo" => Stage::ServerInfo,
             "nulls" => Stage::Nulls,
+            "diagsort" => Stage::DiagSort,
             other => return Err(ParseStageError(other.to_string())),
         })
     }
@@ -220,6 +232,11 @@ impl Normalizer {
                         drop_nulls(v);
                     }
                 }
+                Stage::DiagSort => {
+                    for v in rec.values_mut() {
+                        sort_unordered(v);
+                    }
+                }
             }
         }
     }
@@ -294,6 +311,73 @@ fn drop_member(value: &mut Value, name: &str) {
         }
         _ => {}
     }
+}
+
+/// Arrays whose order the protocol leaves free, and which this stage sorts.
+const UNORDERED_ARRAYS: &[&str] = &["diagnostics", "relatedInformation"];
+
+/// Sort every unordered array in the value, at any depth.
+fn sort_unordered(value: &mut Value) {
+    match value {
+        Value::Object(map) => {
+            for (key, v) in map.iter_mut() {
+                sort_unordered(v);
+                if UNORDERED_ARRAYS.contains(&key.as_str())
+                    && let Value::Array(items) = v
+                {
+                    items.sort_by_cached_key(diagnostic_sort_key);
+                }
+            }
+        }
+        Value::Array(items) => {
+            for item in items {
+                sort_unordered(item);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// `(uri, range, code, message)` — the sprint's identity tuple, rendered as a
+/// sortable string.
+///
+/// Every component is fixed-width-padded rather than compared numerically,
+/// because the key has to be *one* orderable value and a diagnostic on line 2
+/// must sort before one on line 10. A tuple of `Value`s would need an `Ord`
+/// impl on `Value`, which `serde_json` deliberately does not provide.
+fn diagnostic_sort_key(item: &Value) -> String {
+    let s = |ptr: &str| -> String {
+        item.pointer(ptr)
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string()
+    };
+    let n = |ptr: &str| -> String {
+        format!(
+            "{:010}",
+            item.pointer(ptr).and_then(Value::as_u64).unwrap_or(0)
+        )
+    };
+    // `code` is a string or a number depending on the server; render either.
+    let code = match item.get("code") {
+        Some(Value::String(c)) => c.clone(),
+        Some(other) => other.to_string(),
+        None => String::new(),
+    };
+    // Related information nests the range under `location`; a diagnostic does
+    // not. Concatenating both keeps one key function for both array kinds.
+    [
+        s("/location/uri"),
+        n("/range/start/line"),
+        n("/range/start/character"),
+        n("/range/end/line"),
+        n("/range/end/character"),
+        n("/location/range/start/line"),
+        n("/location/range/start/character"),
+        code,
+        s("/message"),
+    ]
+    .join("\u{1f}")
 }
 
 fn drop_nulls(value: &mut Value) {

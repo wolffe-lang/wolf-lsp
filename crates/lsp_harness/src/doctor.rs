@@ -34,8 +34,12 @@ pub enum Availability {
         expected: String,
     },
     /// The binary matches the pin, but `wolf lsp` does not exist at that pin.
-    /// Today's state: the subcommand lands with wolf-lang's s52, queued behind
-    /// s17. A skip, and the honest one.
+    ///
+    /// This was the *normal* state through ls00 and is now a historical one:
+    /// wolf-lang's s52 shipped the subcommand, so reaching this state means the
+    /// pin was moved backwards past it. Still a skip rather than a failure —
+    /// the binary is the right one for what it claims to be — but the reason it
+    /// prints has changed from "not written yet" to "you are behind".
     PinPredatesLsp { path: PathBuf, version: String },
     /// A server at the pin, ready to be driven.
     Ready { path: PathBuf },
@@ -70,7 +74,10 @@ impl Availability {
             Availability::NoPin(e) => format!("{e}"),
             Availability::NoBinary => format!(
                 "no wolf binary at pin {at} \
-                 (checked $WOLF_BIN, .wolf-bin/, PATH; wolf-lang publishes no release artifact yet)"
+                 (checked $WOLF_BIN, .wolf-bin/, PATH). wolf-lang publishes no release \
+                 artifact yet, so CI cannot acquire one and this lane stays dark there; \
+                 locally, build it once from the submodule and set $WOLF_BIN — see the \
+                 README's `Running the server lane locally`"
             ),
             Availability::Unversioned { path, reason } => {
                 format!("{} would not report a version: {reason}", path.display())
@@ -85,8 +92,10 @@ impl Availability {
                 path.display()
             ),
             Availability::PinPredatesLsp { path, .. } => format!(
-                "no `wolf lsp` at pin {at}: {} is the pinned binary, but the subcommand \
-                 lands with wolf-lang's s52 (queued behind s17)",
+                "no `wolf lsp` at pin {at}: {} is the pinned binary, but this pin predates \
+                 wolf-lang's s52, which is the commit that added the subcommand. \
+                 Bump the pin (vendor/README.md) — the harness cannot drive a server that \
+                 does not exist, and will not pretend to",
                 path.display()
             ),
             Availability::Ready { path } => format!("{} serves LSP at pin {at}", path.display()),
@@ -183,7 +192,7 @@ impl fmt::Display for Doctor {
                     if p.serves_lsp {
                         "exists at this pin"
                     } else {
-                        "ABSENT at this pin (wolf-lang s52)"
+                        "ABSENT at this pin — it predates wolf-lang s52"
                     }
                 )?;
             }

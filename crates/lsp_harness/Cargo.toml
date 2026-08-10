@@ -10,6 +10,7 @@ publish = false
 
 [dependencies]
 lsp_transcript.workspace = true
+serde.workspace = true
 serde_json.workspace = true
 
 [dev-dependencies]

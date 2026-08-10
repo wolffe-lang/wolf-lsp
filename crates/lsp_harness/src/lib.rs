@@ -8,18 +8,33 @@
 //! is the exact failure this track exists to avoid. A capability an editor
 //! wants is a wolf-lang sprint, not a shim here.
 //!
-//! Spawn and replay land in ls01, on top of [`framing`]. What ls00 owns is the
-//! half that runs *without* a server, plus the loud, reasoned skip for the
-//! half that does not: see [`doctor`].
+//! ls00 owned the half that runs *without* a server, plus the loud, reasoned
+//! skip for the half that does not ([`doctor`]). ls01 built the other half on
+//! top of it: [`session`] spawns and correlates, [`script`] is the committed
+//! session DSL, [`drive`] interprets one against the other, and [`profiles`]
+//! holds the capability documents negotiation is asserted against.
 
+pub mod bench;
 pub mod doctor;
+pub mod drive;
 pub mod framing;
+pub mod fuzz;
 pub mod locate;
+pub mod onetruth;
 pub mod pin;
+pub mod profiles;
+pub mod record;
+pub mod replay;
+pub mod script;
+pub mod session;
 
 pub use doctor::{Availability, Doctor};
+pub use drive::Driver;
 pub use locate::{Located, Source, locate_server};
 pub use pin::Pin;
+pub use profiles::Profile;
+pub use script::Script;
+pub use session::Session;
 
 /// Everything matched.
 pub const EXIT_OK: i32 = 0;
@@ -74,6 +89,44 @@ pub fn upstream_root(repo_root: &std::path::Path) -> std::path::PathBuf {
     }
 }
 
+/// The `.lu` samples `vendor/upstream/samples.toml` lists, in file order.
+///
+/// A four-key manifest does not justify a TOML dependency (ls00 §7 keeps this
+/// repo thin); `path = "…"` inside `[[sample]]` is the whole grammar this needs
+/// and `cargo xtask vendor-check` fails loudly if the file drifts from what is
+/// actually on disk. Deliberately does **not** read the `[gap.*]` tables: a gap
+/// is a statement about a file that does not exist, and a caller iterating
+/// samples must not receive one.
+pub fn samples(repo_root: &std::path::Path) -> Result<Vec<String>, String> {
+    let manifest = repo_root
+        .join("vendor")
+        .join("upstream")
+        .join("samples.toml");
+    let text = std::fs::read_to_string(&manifest)
+        .map_err(|e| format!("{}: {e}", slash_path(&manifest)))?;
+    let mut out = Vec::new();
+    let mut in_sample = false;
+    for raw in text.lines() {
+        let line = raw.trim();
+        if line.starts_with('[') {
+            in_sample = line == "[[sample]]";
+            continue;
+        }
+        if !in_sample {
+            continue;
+        }
+        if let Some(rest) = line.strip_prefix("path")
+            && let Some((_, value)) = rest.split_once('=')
+        {
+            out.push(value.trim().trim_matches('"').to_string());
+        }
+    }
+    if out.is_empty() {
+        return Err(format!("{}: lists no samples", slash_path(&manifest)));
+    }
+    Ok(out)
+}
+
 /// Render a path with `/` separators on every platform.
 ///
 /// Transcripts travel between machines and get diffed; a Windows `\` in a
@@ -121,6 +174,31 @@ mod tests {
             "{}",
             up.display()
         );
+    }
+
+    #[test]
+    fn samples_reads_the_manifest_and_skips_the_gap_tables() {
+        let list = samples(&repo_root()).unwrap();
+        assert!(list.contains(&"hello.lu".to_string()), "{list:?}");
+        assert!(
+            list.iter().all(|p| p.ends_with(".lu")),
+            "a non-sample key leaked in: {list:?}"
+        );
+        // `[gap.astral_plane]` carries a `local_stopgap` path; it is not a
+        // sample and must never be iterated as one.
+        assert!(
+            !list.iter().any(|p| p.contains("fixtures/")),
+            "the gap table leaked into the sample list: {list:?}"
+        );
+    }
+
+    #[test]
+    fn every_listed_sample_is_actually_on_disk() {
+        let root = repo_root();
+        for sample in samples(&root).unwrap() {
+            let path = root.join("vendor/upstream/samples").join(&sample);
+            assert!(path.is_file(), "{sample} is listed but missing");
+        }
     }
 
     #[test]

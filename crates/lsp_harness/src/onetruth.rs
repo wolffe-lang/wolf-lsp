@@ -26,21 +26,20 @@
 //! divergence, it does not hide it. [`Divergence::filing`] renders the report
 //! that goes on the upstream issue, with both records attached.
 //!
-//! # Two comparisons, because one of them cannot be positional
+//! # Two comparisons, one of which is not yet positional
 //!
-//! A `diag_schema: 1` line identifies a span's file by **integer index** with no
-//! index→path table anywhere in the output. Index 0 is the entry file, so a
-//! diagnostic whose primary span lands there can be compared *positionally* —
-//! code, severity, span, message, related information. A diagnostic whose
-//! primary lands in some *other* file of the package cannot: nothing in the
-//! output says which file index 1 is.
+//! A `diag_schema: 1` line identifies a span's file by **integer index**. Index
+//! 0 is the entry file, so a diagnostic whose primary span lands there is
+//! compared *positionally* — code, severity, span, message, related
+//! information.
 //!
 //! Mirroring the server's own filter and comparing only index 0 would make this
 //! check agree by construction — and it would hide the exact failure it exists
 //! to find. wolf's module rule is D32: every `.lu` in a directory is ONE module,
 //! so `wolf build` on an entry reports diagnostics whose primary span is in a
 //! *sibling*, and an editor that never publishes those shows a clean file for a
-//! package that does not build.
+//! package that does not build. That is not hypothetical: it is what this check
+//! found (DIV-LSP-001, fixed upstream in `7117882`).
 //!
 //! So there are two comparisons:
 //!
@@ -48,8 +47,16 @@
 //!   this is the one the encoding suite feeds into.
 //! - **reachability** — every build diagnostic, wherever its primary lands,
 //!   must be published to *some* document of the module. Compared by
-//!   `(code, severity, message)` because that is all the output permits.
-//!   [`SECONDARY_FILE_TABLE_REQUEST`] is what would make this positional too.
+//!   `(code, severity, message)`.
+//!
+//! [`SECONDARY_FILE_TABLE_REQUEST`] records why the second one is weaker than
+//! the first, and that the blocker has since been removed: pin `70bdd35` grants
+//! the request with an additive `files` member (index → path, SourceMap intern
+//! order), so a sibling-primary diagnostic can now be resolved to a path and
+//! compared positionally against the publish for *that* URI. Doing so is an
+//! ls01 change, not an ls03 one, and it is owed — until it lands, a
+//! sibling-primary diagnostic published to the right document at the *wrong*
+//! range still passes reachability.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -207,12 +214,15 @@ pub fn triage<'a>(
     (known, unknown)
 }
 
-/// The upstream request this check is waiting on.
+/// The upstream request this check was waiting on — **granted** at pin
+/// `70bdd35`, and kept here as the record of what to build next.
 pub const SECONDARY_FILE_TABLE_REQUEST: &str = "\
-wolf-lang: `diag_schema` v1 identifies a span's file by integer index with no \
-index→path table in the output, so a consumer cannot resolve a secondary span \
-in a file other than the entry. Request: add a `files` member (index → path) to \
-the conform-run record, or a `path` member to each span.";
+wolf-lang: `diag_schema` v1 identified a span's file by integer index with no \
+index→path table in the output, so a consumer could not resolve a span in a \
+file other than the entry. Requested: a `files` member (index → path) on the \
+conform-run record. GRANTED in `7117882` (additive within schema 1, so older \
+consumers are unaffected). Owed here: teach the reachability comparison to use \
+it, which makes sibling-primary diagnostics positional like entry ones.";
 
 /// One diagnostic, reduced to what both surfaces can be asked about.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]

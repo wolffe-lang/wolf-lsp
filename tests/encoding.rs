@@ -407,3 +407,112 @@ fn a_very_long_line_converts_correctly_at_its_far_end() {
         fx.finish();
     }
 }
+
+/// D22, on the wire: `wolf lsp` must emit **raw UTF-8** in JSON strings, never
+/// `\uXXXX` escapes.
+///
+/// serde_json does this by default, which is exactly why it needs a test.
+/// A habit is not a guarantee: a future switch to a different serializer, or
+/// an `escape_non_ascii` writer chosen for "safety", would break facsimile
+/// silently and completely — its hand-rolled JSON scanner does not decode
+/// `\uXXXX` in either direction, so an escaped sequence arrives at the user as
+/// the literal six characters `é`. facsimile is the client that proves
+/// this constraint, but nothing about the fix is facsimile-specific.
+///
+/// This is the one test that reads the **raw frame bytes** rather than parsed
+/// JSON, because parsing is precisely what would hide the bug: `serde_json`
+/// decodes `é` and `é` to the same string.
+#[test]
+fn the_server_emits_raw_utf8_and_never_backslash_u_escapes() {
+    use lsp_harness::framing::{FrameReader, write_frame};
+    use std::io::BufReader;
+    use std::process::{Command, Stdio};
+
+    let Some(server) = support::server() else {
+        return;
+    };
+    let workspace = server.fixtures();
+    let path = workspace.join("astral.lu");
+    let bytes = support::read(&workspace, "astral.lu");
+    let uri = lsp_harness::session::file_uri(&path);
+
+    let mut child = Command::new(&server.bin)
+        .arg("lsp")
+        .current_dir(&workspace)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("spawn wolf lsp");
+    let mut stdin = child.stdin.take().expect("stdin");
+    let mut out = FrameReader::new(BufReader::new(child.stdout.take().expect("stdout")));
+
+    let send = |w: &mut std::process::ChildStdin, v: &Value| {
+        write_frame(w, v.to_string().as_bytes()).expect("write frame");
+    };
+
+    send(
+        &mut stdin,
+        &json!({"jsonrpc": "2.0", "id": 1, "method": "initialize",
+                "params": {"processId": null, "rootUri": Value::Null, "capabilities": {}}}),
+    );
+    send(
+        &mut stdin,
+        &json!({"jsonrpc": "2.0", "method": "initialized", "params": {}}),
+    );
+    // The astral fixture is the subject because it makes every interesting
+    // class of character present at once: BMP multi-byte (é, 中), astral
+    // (🐺), a combining mark, and a ZWJ sequence.
+    send(
+        &mut stdin,
+        &json!({"jsonrpc": "2.0", "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "languageId": "wolf", "version": 1,
+                                            "text": String::from_utf8_lossy(&bytes)}}}),
+    );
+    // Mangle the buffer so formatting has to answer with a real edit whose
+    // `newText` is the whole document — the biggest lump of non-ASCII the
+    // server will ever hand back.
+    let mangled = String::from_utf8_lossy(&bytes).replace("let bmp", "let   bmp");
+    send(
+        &mut stdin,
+        &json!({"jsonrpc": "2.0", "method": "textDocument/didChange",
+                "params": {"textDocument": {"uri": uri, "version": 2},
+                           "contentChanges": [{"text": mangled}]}}),
+    );
+    send(
+        &mut stdin,
+        &json!({"jsonrpc": "2.0", "id": 2, "method": "textDocument/formatting",
+                "params": {"textDocument": {"uri": uri},
+                           "options": {"tabSize": 4, "insertSpaces": true}}}),
+    );
+
+    // Read raw frames until the formatting response, keeping every byte.
+    let mut saw_non_ascii = false;
+    let mut answered = false;
+    for _ in 0..64 {
+        let Some(body) = out.read_frame().expect("read frame") else {
+            break;
+        };
+        assert!(
+            !body.windows(2).any(|w| w == br"\u"),
+            "a server→client frame carried a \\u escape: {}",
+            String::from_utf8_lossy(&body)
+        );
+        if body.iter().any(|b| *b >= 0x80) {
+            saw_non_ascii = true;
+        }
+        let v: Value = serde_json::from_slice(&body).expect("frame is JSON");
+        if v.get("id").and_then(Value::as_i64) == Some(2) {
+            answered = true;
+            break;
+        }
+    }
+    assert!(answered, "the formatting request was never answered");
+    assert!(
+        saw_non_ascii,
+        "no frame carried a non-ASCII byte, so the escape assertion proved nothing"
+    );
+
+    let _ = child.kill();
+    let _ = child.wait();
+}

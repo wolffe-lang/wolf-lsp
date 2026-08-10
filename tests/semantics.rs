@@ -489,25 +489,24 @@ fn a_client_that_vanishes_leaves_no_orphan() {
         .wait_exit(Duration::from_secs(10))
         .unwrap_or_else(|e| panic!("the server outlived its client (pid {pid}): {e}"));
     // The exit *code* is a separate question from whether it left; see
-    // `exit_without_shutdown_should_be_nonzero`.
+    // `exit_without_shutdown_exits_one`.
     let _ = code;
 }
 
-/// A finding, filed rather than asserted.
-///
 /// The specification says a server receiving `exit` **without** a preceding
-/// `shutdown` should exit with code 1. `wolf lsp` v0 exits 0 in both cases —
-/// its main loop returns `Ok(())` on `exit` regardless of whether `shutdown`
-/// was seen. Nothing an editor does depends on it (no mainstream client reads
-/// the code), which is why this is recorded rather than gated: turning the
-/// suite red for it would block the whole editor layer on a cosmetic protocol
-/// detail.
+/// `shutdown` must exit with code 1, and at pin `70bdd35` it does.
 ///
-/// The test asserts the CURRENT behavior so that a fix upstream shows up here
-/// as a deliberate, reviewable failure rather than going unnoticed. Filed
-/// upstream as part of ls01's closeout.
+/// This test was born inverted: through pin `67c977f` it asserted the *wrong*
+/// answer (`Some(0)`) with a message saying so, precisely so the fix would
+/// arrive as a deliberate, reviewable failure rather than as silence. It did —
+/// wolf-lang `7117882` ("bare exit without shutdown exits 1") turned this red
+/// on the ls03 pin bump, which is the whole reason the pinned form existed.
+///
+/// It now asserts the correct behavior, and a regression to 0 fails the suite.
+/// Nothing an editor does depends on the code (no mainstream client reads it),
+/// so this is the cheapest possible place to keep the protocol honest.
 #[test]
-fn exit_without_shutdown_exits_zero_which_the_spec_says_should_be_one() {
+fn exit_without_shutdown_exits_one() {
     let Some(server) = support::server() else {
         return;
     };
@@ -522,9 +521,9 @@ fn exit_without_shutdown_exits_zero_which_the_spec_says_should_be_one() {
         .expect("the server must still leave");
     assert_eq!(
         code,
-        Some(0),
-        "wolf lsp v0 exits 0 on a bare `exit`. If this now reports 1, the upstream fix \
-         landed and this test should be inverted — it is pinned so the change is visible."
+        Some(1),
+        "a bare `exit` with no preceding `shutdown` must exit 1 (LSP lifecycle). \
+         A regression to 0 means the upstream fix in `7117882` came undone."
     );
 }
 

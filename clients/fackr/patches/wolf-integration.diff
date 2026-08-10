@@ -1,0 +1,1407 @@
+diff --git a/src/lsp/client.rs b/src/lsp/client.rs
+index 4e9c9b2..6f8d0f9 100644
+--- a/src/lsp/client.rs
++++ b/src/lsp/client.rs
+@@ -6,7 +6,7 @@
+ #![allow(dead_code)]
+ 
+ use anyhow::Result;
+-use std::collections::HashMap;
++use std::collections::{HashMap, VecDeque};
+ use std::sync::mpsc::{self, Receiver, Sender};
+ use std::sync::{Arc, Mutex};
+ 
+@@ -14,9 +14,13 @@ use super::manager::LspManager;
+ use super::protocol;
+ use super::types::{
+     detect_language, path_to_uri, CompletionItem, Diagnostic, DocumentSymbol, HoverInfo, Location,
+-    Position, Range, TextEdit, WorkspaceEdit,
++    Position, PositionEncoding, Range, TextEdit, WorkspaceEdit,
+ };
+ 
++/// How many server messages to keep. Enough to hold a failed startup;
++/// bounded so a chatty server cannot grow the editor's memory without limit.
++const SERVER_LOG_LINES: usize = 128;
++
+ /// Document state tracked by the LSP client
+ #[derive(Debug)]
+ struct DocumentInfo {
+@@ -35,6 +39,8 @@ pub struct LspClient {
+     response_tx: Sender<LspResponse>,
+     /// Pending diagnostics by URI
+     diagnostics: Arc<Mutex<HashMap<String, Vec<Diagnostic>>>>,
++    /// Recent `window/logMessage` / `window/showMessage` text, newest last
++    server_log: Arc<Mutex<VecDeque<(u8, String)>>>,
+ }
+ 
+ /// Response types that can be received asynchronously
+@@ -76,12 +82,27 @@ impl LspClient {
+             }
+         });
+ 
++        // Keep what the server says about itself. Discarding it made a server
++        // that failed to start indistinguishable from one that had nothing
++        // to report.
++        let server_log = Arc::new(Mutex::new(VecDeque::with_capacity(SERVER_LOG_LINES)));
++        let log_clone = Arc::clone(&server_log);
++        manager.set_log_callback(move |level, text| {
++            if let Ok(mut log) = log_clone.lock() {
++                if log.len() == SERVER_LOG_LINES {
++                    log.pop_front();
++                }
++                log.push_back((level, text));
++            }
++        });
++
+         Self {
+             manager,
+             documents: HashMap::new(),
+             response_rx: rx,
+             response_tx: tx,
+             diagnostics,
++            server_log,
+         }
+     }
+ 
+@@ -457,6 +478,23 @@ impl LspClient {
+         self.manager.process_messages();
+     }
+ 
++    /// Recent server messages, oldest first: `(MessageType, text)`.
++    pub fn server_log(&self) -> Vec<(u8, String)> {
++        self.server_log
++            .lock()
++            .map(|log| log.iter().cloned().collect())
++            .unwrap_or_default()
++    }
++
++    /// The position encoding negotiated with the server for a language.
++    ///
++    /// `None` when no server is running. Anything but
++    /// [`PositionEncoding::Utf32`] means this client's char columns are not
++    /// the wire's `character` units.
++    pub fn position_encoding(&self, language: &str) -> Option<PositionEncoding> {
++        self.manager.position_encoding(language)
++    }
++
+     /// Check if LSP is available for a language
+     pub fn has_server(&self, language: &str) -> bool {
+         self.manager.has_server(language)
+diff --git a/src/lsp/manager.rs b/src/lsp/manager.rs
+index 1be9afe..99c4709 100644
+--- a/src/lsp/manager.rs
++++ b/src/lsp/manager.rs
+@@ -11,10 +11,10 @@ use serde_json::Value;
+ use std::collections::HashMap;
+ use std::sync::{Arc, Mutex};
+ 
+-use super::message::{DiagnosticsCallback, MessageHandler, ResponseCallback};
++use super::message::{DiagnosticsCallback, LogCallback, MessageHandler, ResponseCallback};
+ use super::process::ServerProcess;
+ use super::protocol::{self, LspMessage};
+-use super::types::{Capabilities, ServerConfig};
++use super::types::{Capabilities, PositionEncoding, ServerConfig};
+ 
+ /// State of a language server
+ #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+@@ -32,6 +32,13 @@ pub struct ManagedServer {
+     pub process: ServerProcess,
+     pub state: ServerState,
+     pub capabilities: Capabilities,
++    /// The encoding negotiated at `initialize`, fixed for the session.
++    ///
++    /// fackr sends char columns, so anything but
++    /// [`PositionEncoding::Utf32`] means positions past a non-BMP (or, under
++    /// utf-8, any multi-byte) character are off. Until UTF-16 conversion
++    /// exists this is recorded and reported, not corrected.
++    pub position_encoding: PositionEncoding,
+     pub handler: MessageHandler,
+     /// Queued didOpen notifications (for files opened before initialization)
+     pending_opens: Vec<LspMessage>,
+@@ -44,6 +51,7 @@ impl ManagedServer {
+             process,
+             state: ServerState::Starting,
+             capabilities: Capabilities::default(),
++            position_encoding: PositionEncoding::default(),
+             handler: MessageHandler::new(),
+             pending_opens: Vec::new(),
+         }
+@@ -60,6 +68,8 @@ pub struct LspManager {
+     servers: HashMap<String, Vec<ManagedServer>>,
+     /// Global diagnostics callback
+     diagnostics_callback: Option<Arc<Mutex<DiagnosticsCallback>>>,
++    /// Global server-message callback (`window/logMessage` and friends)
++    log_callback: Option<Arc<Mutex<LogCallback>>>,
+ }
+ 
+ impl LspManager {
+@@ -70,6 +80,7 @@ impl LspManager {
+             configs: HashMap::new(),
+             servers: HashMap::new(),
+             diagnostics_callback: None,
++            log_callback: None,
+         };
+         manager.register_default_configs();
+         manager
+@@ -83,6 +94,14 @@ impl LspManager {
+         self.diagnostics_callback = Some(Arc::new(Mutex::new(Box::new(callback))));
+     }
+ 
++    /// Set the global server-message callback
++    pub fn set_log_callback<F>(&mut self, callback: F)
++    where
++        F: Fn(u8, String) + Send + 'static,
++    {
++        self.log_callback = Some(Arc::new(Mutex::new(Box::new(callback))));
++    }
++
+     /// Register default server configurations
+     fn register_default_configs(&mut self) {
+         // Rust - rust-analyzer
+@@ -178,6 +197,11 @@ impl LspManager {
+         // Zig - zls
+         self.register_config(ServerConfig::new("zls", "zig", vec!["zls"]));
+ 
++        // Wolf - the compiler is the language server; there is no separate
++        // binary to install. Spawned by bare PATH lookup, like every other
++        // entry here: no version check and no path override.
++        self.register_config(ServerConfig::new("wolf", "wolf", vec!["wolf", "lsp"]));
++
+         // Haskell - haskell-language-server
+         self.register_config(ServerConfig::new(
+             "hls",
+@@ -460,6 +484,16 @@ impl LspManager {
+             ));
+         }
+ 
++        // Set up the server-message callback if configured
++        if let Some(ref callback) = self.log_callback {
++            let cb = Arc::clone(callback);
++            server.handler.set_log_callback(Box::new(move |level, text| {
++                if let Ok(cb) = cb.lock() {
++                    cb(level, text);
++                }
++            }));
++        }
++
+         // Send initialize request
+         let id = protocol::next_request_id();
+         let init_msg = protocol::create_initialize_request(id, &self.workspace_root, "fackr");
+@@ -520,8 +554,28 @@ impl LspManager {
+                             if let Some(result) = result {
+                                 // Parse capabilities
+                                 server.capabilities = protocol::parse_capabilities(result);
++                                server.position_encoding =
++                                    protocol::parse_position_encoding(result);
+                                 server.state = ServerState::Ready;
+ 
++                                // fackr's columns are code points. A server
++                                // that did not take utf-32 leaves them right
++                                // only up to the first astral character, and
++                                // that is worth saying out loud rather than
++                                // discovering as a corrupted buffer.
++                                if !server.position_encoding.matches_char_columns() {
++                                    server.handler.note_server_message(
++                                        2,
++                                        format!(
++                                            "{}: negotiated positionEncoding {} — columns past \
++                                             a non-BMP character may be off (fackr sends code \
++                                             points)",
++                                            server.config.name,
++                                            server.position_encoding.as_wire()
++                                        ),
++                                    );
++                                }
++
+                                 // Send initialized notification
+                                 let init_notif = protocol::create_initialized_notification();
+                                 let _ = server.process.send(&init_notif.to_string());
+@@ -635,6 +689,14 @@ impl LspManager {
+             .map_or(false, |s| !s.is_empty() && s.iter().any(|s| s.state == ServerState::Ready))
+     }
+ 
++    /// The encoding negotiated with the running server for a language
++    pub fn position_encoding(&self, language: &str) -> Option<PositionEncoding> {
++        self.servers
++            .get(language)
++            .and_then(|servers| servers.first())
++            .map(|server| server.position_encoding)
++    }
++
+     /// Get the workspace root
+     pub fn workspace_root(&self) -> &str {
+         &self.workspace_root
+diff --git a/src/lsp/message.rs b/src/lsp/message.rs
+index 3e5ed78..8fb2f34 100644
+--- a/src/lsp/message.rs
++++ b/src/lsp/message.rs
+@@ -22,12 +22,18 @@ pub type ResponseCallback = Box<dyn FnOnce(i64, LspResult<Value>) + Send>;
+ /// Callback for diagnostics notifications
+ pub type DiagnosticsCallback = Box<dyn Fn(String, Vec<Diagnostic>) + Send>;
+ 
++/// Callback for `window/logMessage` and `window/showMessage`, carrying the
++/// LSP `MessageType` (1 = error … 4 = log) and the text.
++pub type LogCallback = Box<dyn Fn(u8, String) + Send>;
++
+ /// Tracks pending requests and their callbacks
+ pub struct MessageHandler {
+     /// Pending request callbacks indexed by request ID
+     pending: HashMap<i64, ResponseCallback>,
+     /// Callback for diagnostics notifications
+     diagnostics_callback: Option<DiagnosticsCallback>,
++    /// Callback for `window/logMessage` / `window/showMessage`
++    log_callback: Option<LogCallback>,
+ }
+ 
+ impl MessageHandler {
+@@ -35,6 +41,7 @@ impl MessageHandler {
+         Self {
+             pending: HashMap::new(),
+             diagnostics_callback: None,
++            log_callback: None,
+         }
+     }
+ 
+@@ -48,6 +55,19 @@ impl MessageHandler {
+         self.diagnostics_callback = Some(callback);
+     }
+ 
++    /// Set the server-message callback
++    pub fn set_log_callback(&mut self, callback: LogCallback) {
++        self.log_callback = Some(callback);
++    }
++
++    /// Push a client-originated note down the same channel the server's own
++    /// messages take, so one place holds everything about this server.
++    pub fn note_server_message(&self, level: u8, text: String) {
++        if let Some(callback) = &self.log_callback {
++            callback(level, text);
++        }
++    }
++
+     /// Handle an incoming message
+     pub fn handle_message(&mut self, message: LspMessage) -> Option<LspMessage> {
+         match message {
+@@ -88,9 +108,22 @@ impl MessageHandler {
+                 }
+             }
+             "window/logMessage" | "window/showMessage" => {
+-                // Silently ignore server log messages
+-                // These could be surfaced to the status bar via a callback if needed
+-                let _ = params;
++                // A server that fails to start says so here and nowhere else,
++                // so these are kept rather than dropped. `type` is the LSP
++                // MessageType: 1 error, 2 warning, 3 info, 4 log.
++                if let (Some(params), Some(callback)) = (params, &self.log_callback) {
++                    let level = params
++                        .get("type")
++                        .and_then(|v| v.as_u64())
++                        .unwrap_or(4)
++                        .min(u8::MAX as u64) as u8;
++                    let text = params
++                        .get("message")
++                        .and_then(|v| v.as_str())
++                        .unwrap_or_default()
++                        .to_string();
++                    callback(level, text);
++                }
+             }
+             _ => {
+                 // Ignore other notifications
+diff --git a/src/lsp/mod.rs b/src/lsp/mod.rs
+index 94de34c..783fb6a 100644
+--- a/src/lsp/mod.rs
++++ b/src/lsp/mod.rs
+@@ -17,6 +17,8 @@ mod message;
+ mod process;
+ mod protocol;
+ pub mod server_manager;
++#[cfg(test)]
++mod smoke_wolf;
+ mod types;
+ 
+ pub use client::{LspClient, LspResponse};
+diff --git a/src/lsp/process.rs b/src/lsp/process.rs
+index bc4e89f..bf542b7 100644
+--- a/src/lsp/process.rs
++++ b/src/lsp/process.rs
+@@ -6,18 +6,95 @@
+ #![allow(dead_code)]
+ 
+ use anyhow::{anyhow, Result};
+-use std::io::{Read, Write};
+-use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
++use std::collections::VecDeque;
++use std::io::{BufRead, BufReader, Read, Write};
++use std::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command, Stdio};
+ use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
++use std::sync::{Arc, Mutex};
+ use std::thread;
+ 
++/// How many stderr lines to keep for diagnosis. The pipe is drained
++/// unconditionally (see `spawn_stderr_thread`); this ring only decides how
++/// much of it survives long enough to be looked at.
++const STDERR_TAIL_LINES: usize = 64;
++
++/// Framing for LSP's `Content-Length` messages.
++///
++/// **Bytes, not chars.** `Content-Length` counts bytes, and a read from the
++/// server's stdout can split a multi-byte character across two reads. Decoding
++/// each read on its own therefore both corrupts the message and desynchronizes
++/// the framing, so accumulation and framing happen on `Vec<u8>` and only whole
++/// messages are decoded.
++#[derive(Debug, Default)]
++pub struct FrameBuffer {
++    buf: Vec<u8>,
++}
++
++impl FrameBuffer {
++    pub fn new() -> Self {
++        Self { buf: Vec::new() }
++    }
++
++    /// Append raw bytes as they arrive from the transport.
++    pub fn push(&mut self, bytes: &[u8]) {
++        self.buf.extend_from_slice(bytes);
++    }
++
++    pub fn is_empty(&self) -> bool {
++        self.buf.is_empty()
++    }
++
++    /// Pop the next complete message, or `None` if one has not fully arrived.
++    ///
++    /// A frame whose body is not valid UTF-8 is still consumed — it is decoded
++    /// lossily and handed on, because dropping it would leave the remaining
++    /// bytes of a message the sender already framed correctly at the head of
++    /// the buffer and desynchronize every message after it.
++    pub fn next_message(&mut self) -> Option<String> {
++        let header_end = find(&self.buf, b"\r\n\r\n")?;
++        // Headers are ASCII by protocol; lossy keeps a malformed one from
++        // wedging the stream.
++        let header = String::from_utf8_lossy(&self.buf[..header_end]);
++
++        let content_length: usize = header
++            .lines()
++            .find(|line| line.to_lowercase().starts_with("content-length:"))
++            .and_then(|line| line.split(':').nth(1))
++            .and_then(|len| len.trim().parse().ok())?;
++
++        let message_start = header_end + 4;
++        let message_end = message_start + content_length;
++
++        if self.buf.len() < message_end {
++            return None;
++        }
++
++        let message = String::from_utf8_lossy(&self.buf[message_start..message_end]).into_owned();
++        self.buf.drain(..message_end);
++
++        Some(message)
++    }
++}
++
++/// Index of the first occurrence of `needle` in `haystack`.
++fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
++    if needle.is_empty() || haystack.len() < needle.len() {
++        return None;
++    }
++    haystack
++        .windows(needle.len())
++        .position(|window| window == needle)
++}
++
+ /// A running language server process
+ pub struct ServerProcess {
+     child: Child,
+     stdin: ChildStdin,
+-    message_rx: Receiver<String>,
++    message_rx: Receiver<Vec<u8>>,
+     /// Buffer for incomplete messages
+-    read_buffer: String,
++    frames: FrameBuffer,
++    /// Last few stderr lines, for diagnosing a server that failed to start
++    stderr_tail: Arc<Mutex<VecDeque<String>>>,
+ }
+ 
+ impl ServerProcess {
+@@ -41,16 +118,23 @@ impl ServerProcess {
+ 
+         let stdin = child.stdin.take().ok_or_else(|| anyhow!("No stdin"))?;
+         let stdout = child.stdout.take().ok_or_else(|| anyhow!("No stdout"))?;
++        let stderr = child.stderr.take().ok_or_else(|| anyhow!("No stderr"))?;
+ 
+         // Spawn a thread to read from stdout asynchronously
+         let (tx, rx) = mpsc::channel();
+         spawn_reader_thread(stdout, tx);
+ 
++        // stderr is piped, so it must also be *read*: a chatty server fills the
++        // pipe buffer (~64 KiB) and then blocks forever on its next write.
++        let stderr_tail = Arc::new(Mutex::new(VecDeque::with_capacity(STDERR_TAIL_LINES)));
++        spawn_stderr_thread(stderr, Arc::clone(&stderr_tail));
++
+         Ok(Self {
+             child,
+             stdin,
+             message_rx: rx,
+-            read_buffer: String::new(),
++            frames: FrameBuffer::new(),
++            stderr_tail,
+         })
+     }
+ 
+@@ -66,14 +150,14 @@ impl ServerProcess {
+         // Drain all available data from the channel into our buffer
+         loop {
+             match self.message_rx.try_recv() {
+-                Ok(data) => self.read_buffer.push_str(&data),
++                Ok(data) => self.frames.push(&data),
+                 Err(TryRecvError::Empty) => break,
+                 Err(TryRecvError::Disconnected) => break,
+             }
+         }
+ 
+         // Try to parse a complete message from the buffer
+-        self.parse_message()
++        self.frames.next_message()
+     }
+ 
+     /// Block until a message is received (with timeout in ms)
+@@ -83,7 +167,7 @@ impl ServerProcess {
+ 
+         loop {
+             // First check if we have a complete message buffered
+-            if let Some(msg) = self.parse_message() {
++            if let Some(msg) = self.frames.next_message() {
+                 return Some(msg);
+             }
+ 
+@@ -94,40 +178,20 @@ impl ServerProcess {
+             }
+ 
+             match self.message_rx.recv_timeout(remaining) {
+-                Ok(data) => self.read_buffer.push_str(&data),
++                Ok(data) => self.frames.push(&data),
+                 Err(_) => return None,
+             }
+         }
+     }
+ 
+-    /// Parse a complete LSP message from the buffer
+-    fn parse_message(&mut self) -> Option<String> {
+-        // Look for Content-Length header
+-        let header_end = self.read_buffer.find("\r\n\r\n")?;
+-        let header = &self.read_buffer[..header_end];
+-
+-        // Parse Content-Length
+-        let content_length: usize = header
+-            .lines()
+-            .find(|line| line.to_lowercase().starts_with("content-length:"))
+-            .and_then(|line| line.split(':').nth(1))
+-            .and_then(|len| len.trim().parse().ok())?;
+-
+-        // Check if we have the full message
+-        let message_start = header_end + 4;
+-        let message_end = message_start + content_length;
+-
+-        if self.read_buffer.len() < message_end {
+-            return None;
+-        }
+-
+-        // Extract the message
+-        let message = self.read_buffer[message_start..message_end].to_string();
+-
+-        // Remove from buffer
+-        self.read_buffer = self.read_buffer[message_end..].to_string();
+-
+-        Some(message)
++    /// The most recent stderr lines the server produced.
++    ///
++    /// A server that dies during `initialize` says why here and nowhere else.
++    pub fn stderr_tail(&self) -> Vec<String> {
++        self.stderr_tail
++            .lock()
++            .map(|tail| tail.iter().cloned().collect())
++            .unwrap_or_default()
+     }
+ 
+     /// Check if the process is still running
+@@ -158,7 +222,7 @@ impl Drop for ServerProcess {
+ }
+ 
+ /// Spawn a thread to read from the server's stdout
+-fn spawn_reader_thread(mut stdout: ChildStdout, tx: Sender<String>) {
++fn spawn_reader_thread(mut stdout: ChildStdout, tx: Sender<Vec<u8>>) {
+     use std::io::ErrorKind;
+ 
+     thread::spawn(move || {
+@@ -167,10 +231,10 @@ fn spawn_reader_thread(mut stdout: ChildStdout, tx: Sender<String>) {
+             match stdout.read(&mut buffer) {
+                 Ok(0) => break,
+                 Ok(n) => {
+-                    if let Ok(s) = std::str::from_utf8(&buffer[..n]) {
+-                        if tx.send(s.to_string()).is_err() {
+-                            break;
+-                        }
++                    // Send bytes: a character may straddle this boundary and
++                    // only the framing layer knows where the message ends.
++                    if tx.send(buffer[..n].to_vec()).is_err() {
++                        break;
+                     }
+                 }
+                 Err(e) if e.kind() == ErrorKind::Interrupted => continue,
+@@ -179,3 +243,112 @@ fn spawn_reader_thread(mut stdout: ChildStdout, tx: Sender<String>) {
+         }
+     });
+ }
++
++/// Spawn a thread to drain the server's stderr, keeping the tail.
++fn spawn_stderr_thread(stderr: ChildStderr, tail: Arc<Mutex<VecDeque<String>>>) {
++    thread::spawn(move || {
++        let reader = BufReader::new(stderr);
++        for line in reader.lines() {
++            let Ok(line) = line else { break };
++            if let Ok(mut tail) = tail.lock() {
++                if tail.len() == STDERR_TAIL_LINES {
++                    tail.pop_front();
++                }
++                tail.push_back(line);
++            }
++        }
++    });
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    fn frame(body: &str) -> Vec<u8> {
++        let mut bytes = format!("Content-Length: {}\r\n\r\n", body.len()).into_bytes();
++        bytes.extend_from_slice(body.as_bytes());
++        bytes
++    }
++
++    #[test]
++    fn frames_a_whole_message() {
++        let mut fb = FrameBuffer::new();
++        fb.push(&frame(r#"{"jsonrpc":"2.0"}"#));
++        assert_eq!(fb.next_message().as_deref(), Some(r#"{"jsonrpc":"2.0"}"#));
++        assert!(fb.next_message().is_none());
++        assert!(fb.is_empty());
++    }
++
++    #[test]
++    fn frames_two_messages_from_one_read() {
++        let mut fb = FrameBuffer::new();
++        let mut bytes = frame(r#"{"id":1}"#);
++        bytes.extend_from_slice(&frame(r#"{"id":2}"#));
++        fb.push(&bytes);
++        assert_eq!(fb.next_message().as_deref(), Some(r#"{"id":1}"#));
++        assert_eq!(fb.next_message().as_deref(), Some(r#"{"id":2}"#));
++        assert!(fb.next_message().is_none());
++    }
++
++    #[test]
++    fn waits_for_the_rest_of_a_split_header() {
++        let mut fb = FrameBuffer::new();
++        let bytes = frame(r#"{"id":1}"#);
++        let (head, rest) = bytes.split_at(10);
++        fb.push(head);
++        assert!(fb.next_message().is_none());
++        fb.push(rest);
++        assert_eq!(fb.next_message().as_deref(), Some(r#"{"id":1}"#));
++    }
++
++    /// The regression this rewrite exists for. Diagnostics are not ASCII, so
++    /// a read boundary lands inside a multi-byte character sooner or later;
++    /// decoding per-read dropped the entire read and desynced the stream.
++    #[test]
++    fn survives_a_character_split_across_reads() {
++        let body = r#"{"message":"expected ’…’ here 🐺"}"#;
++        let bytes = frame(body);
++
++        // Split at every byte offset: each one is a plausible read boundary.
++        for cut in 1..bytes.len() {
++            let mut fb = FrameBuffer::new();
++            fb.push(&bytes[..cut]);
++            fb.push(&bytes[cut..]);
++            assert_eq!(
++                fb.next_message().as_deref(),
++                Some(body),
++                "message lost when the read boundary fell at byte {cut}"
++            );
++        }
++    }
++
++    /// `Content-Length` counts bytes; a non-ASCII body must not be truncated
++    /// or over-read because someone counted characters.
++    #[test]
++    fn content_length_is_bytes_not_chars() {
++        let body = r#"{"m":"🐺"}"#;
++        assert_ne!(body.len(), body.chars().count());
++        let mut fb = FrameBuffer::new();
++        let mut bytes = frame(body);
++        bytes.extend_from_slice(&frame(r#"{"m":"next"}"#));
++        fb.push(&bytes);
++        assert_eq!(fb.next_message().as_deref(), Some(body));
++        assert_eq!(fb.next_message().as_deref(), Some(r#"{"m":"next"}"#));
++    }
++
++    #[test]
++    fn header_name_is_case_insensitive() {
++        let mut fb = FrameBuffer::new();
++        fb.push(b"content-length: 2\r\n\r\n{}");
++        assert_eq!(fb.next_message().as_deref(), Some("{}"));
++    }
++
++    #[test]
++    fn extra_headers_are_ignored() {
++        let mut fb = FrameBuffer::new();
++        fb.push(
++            b"Content-Type: application/vscode-jsonrpc; charset=utf-8\r\nContent-Length: 2\r\n\r\n{}",
++        );
++        assert_eq!(fb.next_message().as_deref(), Some("{}"));
++    }
++}
+diff --git a/src/lsp/protocol.rs b/src/lsp/protocol.rs
+index e7ae1af..5cb6ddd 100644
+--- a/src/lsp/protocol.rs
++++ b/src/lsp/protocol.rs
+@@ -9,7 +9,27 @@ use serde::{Deserialize, Serialize};
+ use serde_json::{json, Value};
+ use std::sync::atomic::{AtomicI64, Ordering};
+ 
+-use super::types::{Capabilities, Position, Range};
++use super::types::{Capabilities, Position, PositionEncoding, Range};
++
++/// The position encodings this client declares, in preference order.
++///
++/// **UTF-32 alone, on purpose.** fackr's columns are `ropey` char offsets —
++/// code points — and it assigns an incoming `character` straight into a char
++/// column. UTF-32 is therefore the only encoding under which that arithmetic
++/// is *correct* rather than accidentally correct, and declaring it is the
++/// whole fix: no conversion code, no per-site rewrite.
++///
++/// Listing `utf-16` as a fallback would defeat it. The order in this array is
++/// a client *preference*, not a constraint, and servers are free to pick by
++/// their own order — wolf, for one, takes utf-8 if offered, else utf-16, and
++/// only reaches utf-32 when it is the sole offer. Offering utf-16 alongside
++/// would hand back the exact off-by-one this exists to remove.
++///
++/// A server that supports none of this must reply `utf-16` per the spec,
++/// which is precisely fackr's pre-existing behaviour — so the floor here is
++/// "no worse than before", and now the client can *see* which case it is in
++/// (`ManagedServer::position_encoding`).
++pub const CLIENT_POSITION_ENCODINGS: &[&str] = &["utf-32"];
+ 
+ /// Global request ID counter
+ static NEXT_REQUEST_ID: AtomicI64 = AtomicI64::new(1);
+@@ -133,6 +153,9 @@ pub fn create_initialize_request(
+     client_name: &str,
+ ) -> LspMessage {
+     let capabilities = json!({
++        "general": {
++            "positionEncodings": CLIENT_POSITION_ENCODINGS
++        },
+         "textDocument": {
+             "completion": {
+                 "completionItem": {
+@@ -472,6 +495,20 @@ pub fn parse_capabilities(result: &Value) -> Capabilities {
+     }
+ }
+ 
++/// Parse the negotiated position encoding from an initialize response.
++///
++/// Absent means UTF-16: the protocol's mandatory default, and the only legal
++/// reading of a server that says nothing. An unknown kind is treated the same
++/// way — a server naming an encoding neither side can produce is a server
++/// whose positions we must not trust to be code points.
++pub fn parse_position_encoding(result: &Value) -> PositionEncoding {
++    let caps = result.get("capabilities").unwrap_or(result);
++    caps.get("positionEncoding")
++        .and_then(|v| v.as_str())
++        .and_then(PositionEncoding::from_wire)
++        .unwrap_or(PositionEncoding::Utf16)
++}
++
+ /// Parse Position from JSON
+ pub fn parse_position(value: &Value) -> Option<super::types::Position> {
+     Some(super::types::Position {
+@@ -724,3 +761,60 @@ pub fn parse_workspace_edit(result: &Value) -> super::types::WorkspaceEdit {
+ 
+     edit
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    /// The declaration is the whole encoding fix; a regression here is silent
++    /// buffer corruption on astral text, so it is asserted literally.
++    #[test]
++    fn initialize_declares_utf32_only() {
++        let LspMessage::Request { params, .. } = create_initialize_request(1, "/tmp/w", "fackr")
++        else {
++            panic!("initialize must be a request");
++        };
++        let encodings = params.as_ref().unwrap()["capabilities"]["general"]["positionEncodings"]
++            .as_array()
++            .expect("general.positionEncodings must be declared");
++        assert_eq!(encodings, &[Value::from("utf-32")]);
++    }
++
++    #[test]
++    fn negotiated_encoding_is_read_from_the_reply() {
++        let result = json!({ "capabilities": { "positionEncoding": "utf-32" } });
++        assert_eq!(parse_position_encoding(&result), PositionEncoding::Utf32);
++        assert!(parse_position_encoding(&result).matches_char_columns());
++    }
++
++    /// A server that says nothing has said "utf-16" — and a server naming a
++    /// kind we cannot produce must not be taken at its word.
++    #[test]
++    fn absent_or_unknown_encoding_falls_back_to_utf16() {
++        let silent = json!({ "capabilities": { "hoverProvider": true } });
++        assert_eq!(parse_position_encoding(&silent), PositionEncoding::Utf16);
++
++        let odd = json!({ "capabilities": { "positionEncoding": "utf-7" } });
++        assert_eq!(parse_position_encoding(&odd), PositionEncoding::Utf16);
++        assert!(!parse_position_encoding(&odd).matches_char_columns());
++    }
++
++    /// `Content-Length` counts bytes. The write side already got this right;
++    /// the test keeps it that way now that the read side depends on it.
++    #[test]
++    fn content_length_counts_bytes() {
++        let msg = LspMessage::Notification {
++            method: "window/logMessage".to_string(),
++            params: Some(json!({ "message": "🐺" })),
++        };
++        let wire = msg.to_string();
++        let (header, body) = wire.split_once("\r\n\r\n").unwrap();
++        let declared: usize = header
++            .trim_start_matches("Content-Length: ")
++            .trim()
++            .parse()
++            .unwrap();
++        assert_eq!(declared, body.len());
++        assert_ne!(declared, body.chars().count());
++    }
++}
+diff --git a/src/lsp/server_manager.rs b/src/lsp/server_manager.rs
+index 61b33a2..ee5e85d 100644
+--- a/src/lsp/server_manager.rs
++++ b/src/lsp/server_manager.rs
+@@ -177,6 +177,16 @@ pub fn get_known_servers() -> Vec<KnownServer> {
+             "# Install via package manager or zigtools",
+             "Zig language server",
+         ),
++        // Wolf — the compiler *is* the server, so there is nothing separate to
++        // install and no one-line installer to shell out to; the leading `#`
++        // routes this row to the manual-info dialog.
++        KnownServer::new(
++            "wolf",
++            "Wolf",
++            "wolf",
++            "# Install the wolf compiler; `wolf lsp` is the server",
++            "Wolf language server (the wolf compiler itself)",
++        ),
+         // Haskell
+         KnownServer::new(
+             "haskell-language-server",
+diff --git a/src/lsp/types.rs b/src/lsp/types.rs
+index fb8a380..dfdcd37 100644
+--- a/src/lsp/types.rs
++++ b/src/lsp/types.rs
+@@ -21,6 +21,54 @@ impl Position {
+     }
+ }
+ 
++/// The position encoding a session speaks (LSP 3.17 `positionEncoding`).
++///
++/// Every `character` on the wire is an offset in *these* units. fackr counts
++/// columns in `ropey` chars — Unicode scalar values — which is exactly
++/// `Utf32`; under any other encoding a column is only accidentally right (see
++/// [`PositionEncoding::matches_char_columns`]).
++#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
++pub enum PositionEncoding {
++    /// UTF-8 code units, i.e. byte columns.
++    Utf8,
++    /// UTF-16 code units — the protocol's mandatory default, and what a
++    /// server picks when it cannot honour anything we offered.
++    #[default]
++    Utf16,
++    /// Unicode code points — what a rope counts, and what fackr sends.
++    Utf32,
++}
++
++impl PositionEncoding {
++    /// Parse a `PositionEncodingKind` string. Unknown kinds are `None`.
++    pub fn from_wire(kind: &str) -> Option<Self> {
++        match kind {
++            "utf-8" => Some(Self::Utf8),
++            "utf-16" => Some(Self::Utf16),
++            "utf-32" => Some(Self::Utf32),
++            _ => None,
++        }
++    }
++
++    pub fn as_wire(&self) -> &'static str {
++        match self {
++            Self::Utf8 => "utf-8",
++            Self::Utf16 => "utf-16",
++            Self::Utf32 => "utf-32",
++        }
++    }
++
++    /// Whether a fackr char column is literally a wire `character`.
++    ///
++    /// True only for UTF-32. Under UTF-16 a column is right for the whole BMP
++    /// and off by one per preceding astral character (an emoji in a string or
++    /// a comment); under UTF-8 it is off by one per preceding multi-byte
++    /// character, which is most non-English text.
++    pub fn matches_char_columns(&self) -> bool {
++        matches!(self, Self::Utf32)
++    }
++}
++
+ /// Range in a document
+ #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+ pub struct Range {
+@@ -419,6 +467,9 @@ pub fn detect_language(path: &str) -> Option<&'static str> {
+         "clj" | "cljs" | "cljc" => Some("clojure"),
+         "f90" | "f95" | "f03" | "f08" | "for" | "ftn" => Some("fortran"),
+         "zig" => Some("zig"),
++        // Wolf: `.lu` sources and `.wolfi` interface files share one
++        // languageId; the compiler itself serves LSP (`wolf lsp`).
++        "lu" | "wolfi" => Some("wolf"),
+         "nim" => Some("nim"),
+         "odin" => Some("odin"),
+         "v" => Some("v"),
+diff --git a/src/syntax/highlight.rs b/src/syntax/highlight.rs
+index e58c3f1..db57fac 100644
+--- a/src/syntax/highlight.rs
++++ b/src/syntax/highlight.rs
+@@ -690,4 +690,44 @@ mod tests {
+         assert_eq!(tokens.len(), 1);
+         assert_eq!(tokens[0].token_type, TokenType::Comment);
+     }
++
++    /// `.lu` is detected, and the wolf table's keywords/types/strings/numbers
++    /// all reach the tokenizer. The line is the opening of the vendored
++    /// `hello.lu` corpus sample.
++    #[test]
++    fn test_wolf_tokens() {
++        assert_eq!(Language::detect("main.lu"), Some(Language::Wolf));
++        assert_eq!(Language::detect("shapes.wolfi"), Some(Language::Wolf));
++
++        let mut hl = Highlighter::new();
++        hl.set_language(Language::Wolf);
++        let mut state = HighlightState::default();
++
++        let tokens = hl.tokenize_line("fn main() -> !int { let who = \"wolf\" }", &mut state);
++        assert!(tokens.iter().any(|t| t.token_type == TokenType::Keyword)); // fn / let
++        assert!(tokens.iter().any(|t| t.token_type == TokenType::Type)); // int
++        assert!(tokens.iter().any(|t| t.token_type == TokenType::String)); // "wolf"
++        assert!(tokens.iter().any(|t| t.token_type == TokenType::Operator)); // ->
++
++        // `//!` inner doc comments are line comments, not an unknown token.
++        let tokens = hl.tokenize_line("//! check: run(exit=0)", &mut state);
++        assert_eq!(tokens.len(), 1);
++        assert_eq!(tokens[0].token_type, TokenType::Comment);
++    }
++
++    /// Wolf has no block comments (`[gram.lex.comment]`) — a `/*` is two
++    /// operator tokens, and must not swallow the rest of the file.
++    #[test]
++    fn test_wolf_has_no_block_comments() {
++        let def = Language::Wolf.definition();
++        assert!(def.block_comment_start.is_none());
++        assert!(def.block_comment_end.is_none());
++
++        let mut hl = Highlighter::new();
++        hl.set_language(Language::Wolf);
++        let mut state = HighlightState::default();
++
++        let tokens = hl.tokenize_line("let x = 1 /* not a comment */", &mut state);
++        assert!(!tokens.iter().any(|t| t.token_type == TokenType::Comment));
++    }
+ }
+diff --git a/src/syntax/languages.rs b/src/syntax/languages.rs
+index 04942ed..4ae87e0 100644
+--- a/src/syntax/languages.rs
++++ b/src/syntax/languages.rs
+@@ -31,6 +31,7 @@ pub enum Language {
+     Clojure,
+     Fortran,
+     Zig,
++    Wolf,
+     Nim,
+     Odin,
+     V,
+@@ -131,6 +132,7 @@ impl Language {
+ 
+             // System languages
+             "zig" => Some(Language::Zig),
++            "lu" | "wolfi" => Some(Language::Wolf),
+             "nim" | "nims" => Some(Language::Nim),
+             "odin" => Some(Language::Odin),
+             "v" => Some(Language::V),
+@@ -195,6 +197,7 @@ impl Language {
+             Language::Clojure => clojure_def(),
+             Language::Fortran => fortran_def(),
+             Language::Zig => zig_def(),
++            Language::Wolf => wolf_def(),
+             Language::Nim => nim_def(),
+             Language::Odin => odin_def(),
+             Language::V => v_def(),
+@@ -249,6 +252,7 @@ impl Language {
+             Language::Clojure => "Clojure",
+             Language::Fortran => "Fortran",
+             Language::Zig => "Zig",
++            Language::Wolf => "Wolf",
+             Language::Nim => "Nim",
+             Language::Odin => "Odin",
+             Language::V => "V",
+@@ -1053,6 +1057,55 @@ fn zig_def() -> LanguageDef {
+     }
+ }
+ 
++/// Wolf (`.lu`, `.wolfi`).
++///
++/// Generated from the wolf grammar pinned in wolf-lsp
++/// (`vendor/upstream/spec/grammar.ebnf` + `spec/01-grammar.md` §3.2 at
++/// commit 67c977f) — see `clients/fackr/inventory.md` there. Do not hand-edit:
++/// a grammar change is a regenerated table, which is what makes wolf-lsp's
++/// drift check able to fail on this file.
++///
++/// Notes on what is deliberately absent:
++/// - The 50 reserved keywords are the whole closed set (`[gram.inv.kw]`).
++///   Contextual keywords (`c`, `rc`, `pool`, `from`, `timeout`, `noalias`,
++///   `pkg`, `reg`, `self`) are identifiers everywhere except one position
++///   each, and a regex tokenizer cannot see that position — highlighting them
++///   as keywords would be wrong more often than right.
++/// - No block comments: `[gram.lex.comment]` has only `//`, `///`, `//!`.
++/// - `types` holds only names the pinned spec and corpus actually contain;
++///   wolf has no fixed-width scalar inventory in the pin yet.
++fn wolf_def() -> LanguageDef {
++    LanguageDef {
++        name: "Wolf",
++        keywords: [
++            "as", "asm", "assume", "borrow", "break", "comptime", "const",
++            "continue", "copy", "defer", "distinct", "dyn", "else", "enum",
++            "errdefer", "export", "extern", "false", "fn", "for", "freeze",
++            "handle", "if", "impl", "import", "in", "let", "loop", "match",
++            "move", "mut", "proc", "pub", "region", "return", "scope",
++            "select", "shared", "spawn", "struct", "take", "trait", "true",
++            "type", "unsafe", "use", "var", "weak", "when", "while",
++        ].into_iter().collect(),
++        types: ["bool", "int", "str", "Self"].into_iter().collect(),
++        line_comment: Some("//"),
++        block_comment_start: None,
++        block_comment_end: None,
++        string_delimiters: vec!['"'],
++        multiline_strings: true,
++        operators: vec![
++            // Longest first: the scanner takes the first match.
++            "<=>", "<<=", ">>=", "..=",
++            "==", "!=", "<=", ">=", "&&", "||", "<<", ">>", "..", "->", "=>",
++            "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=",
++            "+", "-", "*", "/", "%", "&", "|", "^", "!", "<", ">", "=", "?",
++            "@",
++        ],
++        punctuation: vec!['{', '}', '(', ')', '[', ']', ',', '.', ':', ';'],
++        has_preprocessor: false,
++        case_sensitive: true,
++    }
++}
++
+ fn nim_def() -> LanguageDef {
+     LanguageDef {
+         name: "Nim",
+diff --git a/src/lsp/smoke_wolf.rs b/src/lsp/smoke_wolf.rs
+new file mode 100644
+index 0000000..f598a79
+--- /dev/null
++++ b/src/lsp/smoke_wolf.rs
+@@ -0,0 +1,380 @@
++//! Live smoke test against the wolf language server (`wolf lsp`).
++//!
++//! This drives fackr's *own* client — `LspClient` → `LspManager` →
++//! `ServerProcess` — against a real server process, because the bugs this
++//! module's patches fixed (framing on a character boundary, an undrained
++//! stderr, a position encoding nobody negotiated) are all invisible to a unit
++//! test that never speaks to anything.
++//!
++//! **It skips loudly when there is no server.** fackr spawns language servers
++//! by bare `PATH` lookup, so the test needs a binary named `wolf` on `PATH`
++//! (or `WOLF_BIN` pointing at one); with neither it prints `SKIP:` and
++//! returns. A test that silently passes for doing nothing is a test nobody
++//! notices is dark.
++//!
++//! The fixtures are inline on purpose: they are *this* test's subjects, and
++//! the position they assert is the point. Both put an emoji — one code point,
++//! two UTF-16 code units, four bytes — to the left of the thing being
++//! located, so a column that is right under UTF-32 is wrong under every other
++//! reading, and the assertions below fail rather than drift.
++
++use std::path::{Path, PathBuf};
++use std::time::{Duration, Instant};
++
++use super::client::{LspClient, LspResponse};
++use super::types::PositionEncoding;
++
++/// A file that fails to parse, with the offending token after astral text.
++///
++/// `E0002` (an empty statement) lands on the second `;` of line index 4:
++///
++/// ```text
++///     let paw = "🐺" ; ;
++/// //  0   4   8   ^12  ^18 ^20     <- code points
++/// ```
++///
++/// Column 20 in code points is column 21 in UTF-16 units and 23 in bytes, so
++/// the assertion on 20 is an assertion that the negotiation held.
++const BROKEN: &str = "\
++//! check: fail(E0002)
++//! phase: parse
++
++fn main() -> !int {
++    let paw = \"\u{1f43a}\" ; ;
++    0
++}
++";
++
++/// A file that parses, with an identifier after astral text on its own line.
++///
++/// Hovering `paw` on line index 5 is the client→server direction: the client
++/// counts 22 code points to the left of it, and only a server that agreed to
++/// count the same way resolves the identifier rather than the space before it.
++const CLEAN: &str = "\
++//! check: run(exit=0)
++//! phase: resolve
++
++fn main() -> !int {
++    let paw = \"\u{1f43a}\"
++    let tail = \"\u{1f43a}\" != paw
++    if tail { 0 } else { 1 }
++}
++";
++
++/// Line/character of `paw` in [`CLEAN`], counted in code points.
++const HOVER_AT: (u32, u32) = (5, 22);
++/// Line/character of the `E0002` token in [`BROKEN`], counted in code points.
++const DIAGNOSTIC_AT: (u32, u32) = (4, 20);
++
++/// How long to wait on a cold server. fackr blocks its UI thread for up to
++/// 5 s waiting for `Ready`, so anything slower than this is already a bug
++/// the user would feel as a frozen editor.
++const DEADLINE: Duration = Duration::from_secs(20);
++
++/// Find a directory holding a binary fackr can spawn as bare `wolf`.
++///
++/// `WOLF_BIN` wins, then `PATH`. The file has to actually be *named* `wolf`:
++/// fackr's `ServerConfig` spawns `Command::new("wolf")` with no override, and
++/// pretending otherwise here would test a path the editor never takes.
++fn wolf_bin_dir() -> Result<PathBuf, String> {
++    let exe = if cfg!(windows) { "wolf.exe" } else { "wolf" };
++
++    if let Ok(bin) = std::env::var("WOLF_BIN") {
++        let path = PathBuf::from(&bin);
++        if !path.is_file() {
++            return Err(format!("WOLF_BIN={bin} is not a file"));
++        }
++        if path.file_name().map(|n| n != exe).unwrap_or(true) {
++            return Err(format!(
++                "WOLF_BIN={bin} is not named `{exe}` — fackr spawns the bare name, \
++                 so point WOLF_BIN at a file with that name"
++            ));
++        }
++        return Ok(path.parent().unwrap_or(Path::new(".")).to_path_buf());
++    }
++
++    let path_var = std::env::var_os("PATH").ok_or_else(|| "no PATH".to_string())?;
++    for dir in std::env::split_paths(&path_var) {
++        if dir.join(exe).is_file() {
++            return Ok(dir);
++        }
++    }
++    Err(format!("no `{exe}` on PATH and no WOLF_BIN"))
++}
++
++/// A scratch workspace holding the two fixtures, removed on drop.
++struct Workspace {
++    dir: PathBuf,
++}
++
++impl Workspace {
++    fn new() -> std::io::Result<Self> {
++        let stamp = std::time::SystemTime::now()
++            .duration_since(std::time::UNIX_EPOCH)
++            .map(|d| d.as_nanos())
++            .unwrap_or(0);
++        let dir =
++            std::env::temp_dir().join(format!("fackr-wolf-smoke-{}-{stamp}", std::process::id()));
++        std::fs::create_dir_all(&dir)?;
++        std::fs::write(dir.join("broken.lu"), BROKEN)?;
++        std::fs::write(dir.join("clean.lu"), CLEAN)?;
++        Ok(Self { dir })
++    }
++
++    fn path(&self, name: &str) -> String {
++        self.dir.join(name).to_string_lossy().into_owned()
++    }
++
++    fn root(&self) -> String {
++        self.dir.to_string_lossy().into_owned()
++    }
++}
++
++impl Drop for Workspace {
++    fn drop(&mut self) {
++        let _ = std::fs::remove_dir_all(&self.dir);
++    }
++}
++
++/// Pump the client until `done` is satisfied, or give up with the server's
++/// own account of itself — which is the reason the log exists.
++fn pump<T>(
++    client: &mut LspClient,
++    what: &str,
++    mut done: impl FnMut(&mut LspClient) -> Option<T>,
++) -> T {
++    let deadline = Instant::now() + DEADLINE;
++    loop {
++        client.process_messages();
++        if let Some(value) = done(client) {
++            return value;
++        }
++        assert!(
++            Instant::now() < deadline,
++            "timed out waiting for {what}; server said: {:?}",
++            client.server_log()
++        );
++        std::thread::sleep(Duration::from_millis(20));
++    }
++}
++
++/// initialize → didOpen → diagnostics → hover, against a real `wolf lsp`.
++#[test]
++fn wolf_lsp_session() {
++    let bin_dir = match wolf_bin_dir() {
++        Ok(dir) => dir,
++        Err(why) => {
++            println!("SKIP: {why}");
++            return;
++        }
++    };
++
++    // fackr resolves servers through PATH and nothing else, so this is how a
++    // test points it at a particular build. No other test in this crate
++    // spawns a process, so the mutation is contained.
++    let path_var = std::env::var_os("PATH").unwrap_or_default();
++    let mut dirs = vec![bin_dir];
++    dirs.extend(std::env::split_paths(&path_var));
++    std::env::set_var("PATH", std::env::join_paths(dirs).expect("joinable PATH"));
++
++    let ws = Workspace::new().expect("scratch workspace");
++    let broken = ws.path("broken.lu");
++    let clean = ws.path("clean.lu");
++    let mut client = LspClient::new(&ws.root());
++
++    // Registration: `.lu` maps to a languageId with a configured server, so
++    // the didOpen below starts one instead of being dropped on the floor.
++    // (`has_server_for_file` is about a *running* server, so it only turns
++    // true after the handshake below.)
++    assert_eq!(super::types::detect_language(&broken), Some("wolf"));
++
++    client.open_document(&broken, BROKEN).expect("didOpen");
++
++    let diagnostics = pump(&mut client, "diagnostics on broken.lu", |c| {
++        let diags = c.get_diagnostics(&broken);
++        (!diags.is_empty()).then_some(diags)
++    });
++
++    // The negotiation is what makes every column below meaningful.
++    assert_eq!(
++        client.position_encoding("wolf"),
++        Some(PositionEncoding::Utf32),
++        "the server did not accept utf-32; every column in this session is then \
++         off by one per preceding astral character"
++    );
++
++    assert_eq!(diagnostics.len(), 1, "diagnostics: {diagnostics:?}");
++    let diagnostic = &diagnostics[0];
++    assert_eq!(diagnostic.code.as_deref(), Some("E0002"));
++    assert_eq!(
++        (
++            diagnostic.range.start.line,
++            diagnostic.range.start.character
++        ),
++        DIAGNOSTIC_AT,
++        "the diagnostic landed on the wrong character — 21 would mean UTF-16, \
++         23 would mean bytes"
++    );
++    // D22: the message reaches the editor as the compiler wrote it, em dash
++    // and all.
++    assert!(
++        diagnostic
++            .message
++            .starts_with("this `;` terminates nothing"),
++        "message: {:?}",
++        diagnostic.message
++    );
++
++    // The other direction: a position this client counted in code points.
++    client.open_document(&clean, CLEAN).expect("didOpen clean");
++    let id = client
++        .request_hover(&clean, HOVER_AT.0, HOVER_AT.1)
++        .expect("hover request");
++
++    let hover = pump(&mut client, "hover response", |c| match c.poll_response() {
++        Some(LspResponse::Hover(rid, hover)) if rid == id => Some(hover),
++        Some(LspResponse::Error(rid, e)) if rid == id => panic!("hover failed: {e}"),
++        _ => None,
++    })
++    .expect("hover resolved a token");
++
++    assert!(
++        hover.contents.contains("str"),
++        "hover at the identifier after the emoji resolved something else: {:?}",
++        hover.contents
++    );
++    let range = hover.range.expect("hover carries the token's range");
++    assert_eq!(
++        (range.start.line, range.start.character),
++        HOVER_AT,
++        "the server resolved a different token — one code point left is the space"
++    );
++    assert_eq!(
++        range.end.character,
++        HOVER_AT.1 + 3,
++        "`paw` is three columns wide"
++    );
++
++    // Full-text sync: fackr never sends an incremental change, and the server
++    // advertises `textDocumentSync.change: 1` (Full), so this is the only
++    // shape of edit it will ever see from this client.
++    let edited = CLEAN.replace("if tail { 0 } else { 1 }", "if tail { 0 } else { 1 } ; ;");
++    client
++        .document_changed(&clean, &edited)
++        .expect("full-text didChange");
++    let after_edit = pump(&mut client, "diagnostics after didChange", |c| {
++        let diags = c.get_diagnostics(&clean);
++        (!diags.is_empty()).then_some(diags)
++    });
++    assert_eq!(after_edit[0].code.as_deref(), Some("E0002"));
++
++    // …and back: the same document, full-text, returns to clean.
++    client
++        .document_changed(&clean, CLEAN)
++        .expect("full-text didChange back");
++    pump(&mut client, "diagnostics cleared after revert", |c| {
++        c.get_diagnostics(&clean).is_empty().then_some(())
++    });
++
++    client.shutdown();
++}
++
++/// The session wolf-lsp records as `transcripts/fackr/smoke.jsonl`.
++///
++/// It runs against the **vendored corpus** rather than the inline fixtures
++/// above, because the transcript is committed in a repo where those samples
++/// are the only legal `.lu` and a replay has to find the files this session
++/// opened. Point `FACKR_SMOKE_CORPUS` at a directory holding `hello.lu` and
++/// `grammar/semicolon.lu` (wolf-lsp's `vendor/upstream/samples`) and run the
++/// editor with a capture proxy first on `PATH`; with the variable unset this
++/// skips, because there is nothing honest to run against.
++#[test]
++fn wolf_lsp_corpus_session() {
++    let Ok(corpus) = std::env::var("FACKR_SMOKE_CORPUS") else {
++        println!("SKIP: FACKR_SMOKE_CORPUS is unset (the recorded-session subject)");
++        return;
++    };
++    let corpus = PathBuf::from(corpus);
++    let hello = corpus.join("hello.lu");
++    let broken = corpus.join("grammar").join("semicolon.lu");
++    if !hello.is_file() || !broken.is_file() {
++        println!("SKIP: {} is not a wolf corpus", corpus.display());
++        return;
++    }
++    if let Ok(dir) = wolf_bin_dir() {
++        let path_var = std::env::var_os("PATH").unwrap_or_default();
++        let mut dirs = vec![dir];
++        dirs.extend(std::env::split_paths(&path_var));
++        std::env::set_var("PATH", std::env::join_paths(dirs).expect("joinable PATH"));
++    } else {
++        println!("SKIP: no wolf binary");
++        return;
++    }
++
++    let hello_path = hello.to_string_lossy().into_owned();
++    let broken_path = broken.to_string_lossy().into_owned();
++    let hello_text = std::fs::read_to_string(&hello).expect("hello.lu");
++    let broken_text = std::fs::read_to_string(&broken).expect("semicolon.lu");
++
++    let mut client = LspClient::new(&corpus.to_string_lossy());
++
++    // A clean file first: open, diagnostics (an empty publish), hover on the
++    // `who` binding, document symbols.
++    client
++        .open_document(&hello_path, &hello_text)
++        .expect("didOpen hello.lu");
++    pump(&mut client, "publish for hello.lu", |c| {
++        c.get_all_diagnostics()
++            .contains_key(&super::types::path_to_uri(&hello_path))
++            .then_some(())
++    });
++
++    // `who` inside the interpolation on `print("hello, {who}")`.
++    let hover_id = client
++        .request_hover(&hello_path, 10, 20)
++        .expect("hover request");
++    pump(&mut client, "hover on hello.lu", |c| {
++        match c.poll_response() {
++            Some(LspResponse::Hover(id, _)) if id == hover_id => Some(()),
++            _ => None,
++        }
++    });
++
++    let symbols_id = client
++        .request_document_symbols(&hello_path)
++        .expect("documentSymbol request");
++    pump(&mut client, "documentSymbol", |c| match c.poll_response() {
++        Some(LspResponse::Symbols(id, _)) if id == symbols_id => Some(()),
++        _ => None,
++    });
++
++    let format_id = client
++        .request_formatting(&hello_path, 4, true)
++        .expect("formatting request");
++    pump(&mut client, "formatting", |c| match c.poll_response() {
++        Some(LspResponse::Formatting(id, _)) if id == format_id => Some(()),
++        _ => None,
++    });
++
++    // Then a file with a pinned diagnostic, and a full-text edit over it —
++    // the only shape of change this client ever sends.
++    client
++        .open_document(&broken_path, &broken_text)
++        .expect("didOpen semicolon.lu");
++    let diagnostics = pump(&mut client, "diagnostics on semicolon.lu", |c| {
++        let d = c.get_diagnostics(&broken_path);
++        (!d.is_empty()).then_some(d)
++    });
++    assert_eq!(diagnostics[0].code.as_deref(), Some("E0002"));
++
++    client
++        // Delete the stray `;` — the whole buffer, as always.
++        .document_changed(&broken_path, &broken_text.replacen("    ;", "     ", 1))
++        .expect("full-text didChange");
++    pump(&mut client, "diagnostics cleared by the edit", |c| {
++        c.get_diagnostics(&broken_path).is_empty().then_some(())
++    });
++
++    client.close_document(&broken_path).expect("didClose");
++    client.shutdown();
++}

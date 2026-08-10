@@ -23,17 +23,23 @@ for a client nobody checked. So the six real clients ls01 §4 names have **no
 profile yet**, and `lspconf profiles` says so on every run, naming the sprint
 that owes each:
 
-| client      | owed by |
-|-------------|---------|
-| `fackr`     | ls02    |
-| `facsimile` | ls03    |
-| `nvim`      | ls04    |
-| `vscode`    | ls05    |
-| `helix`     | ls06    |
-| `zed`       | ls06    |
+| client      | owed by | state |
+|-------------|---------|-------|
+| `fackr`     | ls02    | **derived** — read off `fackr@496c7e2` and the session it recorded |
+| `facsimile` | ls03    | owed |
+| `nvim`      | ls04    | owed |
+| `vscode`    | ls05    | owed |
+| `helix`     | ls06    | owed |
+| `zed`       | ls06    | owed |
 
 Marking one of those `synthetic` to make the list shorter does not work:
 `missing_derived` keys off the provenance, not the filename.
+
+A derived profile is not decoration. `lspconf onetruth` runs every sample under
+the three synthetic encoding documents **plus every derived one**, so a real
+client's capability set is part of the claim that `wolf build` and `wolf lsp`
+agree — and `lspconf fuzz --profile=<client>` puts a long edit session through
+that client's shape.
 
 ## `expects_encoding`
 

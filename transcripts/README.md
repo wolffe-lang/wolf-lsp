@@ -48,6 +48,21 @@ Frozen at ls00 (§2) and exercised by hand-written fixtures under
 `crates/lsp_transcript/tests/fixtures/`. Those fixtures are format exercises,
 not sessions, and they never move here.
 
-Client-recorded transcripts land in ls02–ls06, captured from the *actual*
-client rather than approximated by a script. Those arrive without a `.lsps`,
-and `verify`'s rule will need the corresponding exception when they do.
+## Client-recorded transcripts
+
+`fackr/` is the first, and they are a different kind of artifact: captured from
+the *actual* editor by `lspconf capture` — a proxy the editor spawns instead of
+the server — rather than approximated by a script. There is no `.lsps` beside
+one, and there cannot be: the whole claim of the file is that no script decided
+what the client sent.
+
+`verify` takes them on exactly that basis. The exemption is keyed on the first
+segment of the transcript's own `name` being a client in
+`lsp_harness::profiles::REAL_CLIENTS`, **not** on where the file sits — a
+transcript cannot buy its way out of the script rule by being filed in a
+flattering directory. The re-record path is "drive that editor again", written
+down per client under `clients/<client>/`.
+
+Everything else still applies: canonical form, a gapless `seq`, the pin, and a
+`profiles/<client>.json` derived from the same session. `replay` runs them
+against a live server like any other transcript.

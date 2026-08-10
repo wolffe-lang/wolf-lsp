@@ -10,7 +10,9 @@ use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
+mod compat;
 mod config;
+mod release;
 mod vscode;
 
 fn main() -> ExitCode {
@@ -47,12 +49,45 @@ fn main() -> ExitCode {
         Some("grammar-generate" | "vscode-generate") => {
             report("grammar-generate", vscode::derived(&repo_root(), true))
         }
+        // ls07 §3: the compatibility statement. `compat-check` is a gate on
+        // every push; `compat-generate` rewrites the two client artifacts and
+        // the docs/COMPAT.md table from `clients/*/compat.json`.
+        Some("compat-check") => report("compat-check", compat::check(&repo_root(), false)),
+        Some("compat-generate") => report("compat-generate", compat::check(&repo_root(), true)),
+        // ls07 §2: compute and VERIFY the wolf.nvim mirror split. Pushes
+        // nothing — the mirror repository does not exist, and creating it is a
+        // human act (docs/DISTRIBUTION.md).
+        Some("nvim-split") => {
+            let into = args
+                .iter()
+                .position(|a| a == "--into")
+                .and_then(|i| args.get(i + 1));
+            match release::nvim_split(&repo_root(), into.map(Path::new)) {
+                Ok(_) => ExitCode::SUCCESS,
+                Err(e) => {
+                    eprintln!("nvim-split: {e}");
+                    ExitCode::FAILURE
+                }
+            }
+        }
+        // ls07 §4: the nine-step release checklist, executed as far as this
+        // repository can execute it. Steps needing a marketplace, a token, a
+        // tagged wolf-lang release or a person at a clean machine report
+        // PENDING and never silently vanish.
+        Some("release-check") => {
+            if release::check(&repo_root()).render() == 0 {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            }
+        }
         _ => {
             eprintln!(
                 "usage: cargo xtask \
                  <ci|sync-pin|vendor-check|independence|fixtures-check\
                  |nvim-check|nvim-generate|grammar-drift|grammar-generate\
-                 |config-check|emacs-check|helix-health>"
+                 |config-check|emacs-check|helix-health\
+                 |compat-check|compat-generate|nvim-split|release-check>"
             );
             ExitCode::from(2)
         }
@@ -93,6 +128,10 @@ fn ci() -> ExitCode {
         ("grammar-drift", &["xtask", "grammar-drift"]),
         ("config-check", &["xtask", "config-check"]),
         ("emacs-check", &["xtask", "emacs-check"]),
+        // ls07 §3. Deliberately in the always-on gate rather than in a release
+        // lane: the moment a `compat.json` range outruns its evidence is the
+        // moment somebody edited it, not the moment somebody tagged.
+        ("compat-check", &["xtask", "compat-check"]),
     ];
     for (name, args) in steps {
         eprintln!("== xtask ci: {name}");
@@ -124,6 +163,23 @@ fn ci() -> ExitCode {
             eprintln!("xtask ci: doctor failed ({other:?})");
             return ExitCode::FAILURE;
         }
+    }
+
+    // ls07 §4: the release checklist, run on every push rather than only at a
+    // tag. A checklist first executed on release day is a checklist whose first
+    // execution is a discovery, and its PENDING rows are the standing list of
+    // what this repository still owes a human — a list that is worth reading
+    // when it grows, not when somebody is trying to ship.
+    //
+    // Last, and deliberately re-running gates the loop above already ran: the
+    // steps above exist so a failure names itself precisely, and a checklist
+    // that trusts an earlier command's exit code instead of running the command
+    // is not a checklist. Everything it re-runs is cached by then.
+    eprintln!("== xtask ci: release-check");
+    let failures = release::check(&repo_root()).render();
+    if failures > 0 {
+        eprintln!("xtask ci: release-check reported {failures} failure(s)");
+        return ExitCode::FAILURE;
     }
 
     eprintln!("xtask ci: all steps green");
@@ -689,17 +745,24 @@ pub(crate) fn quoted(line: &str) -> Vec<String> {
     out
 }
 
+/// One `key = value` out of the PIN file, comments stripped, quotes trimmed.
+///
+/// Shared rather than re-closured per caller: `compat.rs` and `release.rs` both
+/// key their whole output off `commit` and `version`, and three copies of a
+/// hand-rolled reader is how two of them end up disagreeing about quoting.
+pub(crate) fn pin_value(pin: &str, key: &str) -> String {
+    pin.lines()
+        .map(|l| l.split('#').next().unwrap_or("").trim())
+        .find_map(|l| {
+            let (k, v) = l.split_once('=')?;
+            (k.trim() == key).then(|| v.trim().trim_matches('"').to_string())
+        })
+        .unwrap_or_default()
+}
+
 /// Render `lua/wolf/pin.lua` from the PIN file's text.
 fn pin_lua(pin: &str) -> String {
-    let value = |key: &str| -> String {
-        pin.lines()
-            .map(|l| l.split('#').next().unwrap_or("").trim())
-            .find_map(|l| {
-                let (k, v) = l.split_once('=')?;
-                (k.trim() == key).then(|| v.trim().trim_matches('"').to_string())
-            })
-            .unwrap_or_default()
-    };
+    let value = |key: &str| -> String { pin_value(pin, key) };
     format!(
         r#"-- GENERATED by `cargo xtask nvim-generate` from vendor/upstream/PIN.
 -- Do not edit; `cargo xtask nvim-check` fails on a hand edit.

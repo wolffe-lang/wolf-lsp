@@ -1,0 +1,403 @@
+*wolf.txt*   Neovim support for the wolf language          *wolf.nvim* *wolf*
+
+                                                                       ~
+              wolf.nvim — the plugin configures, never implements     ~
+                                                                       ~
+
+==============================================================================
+CONTENTS                                                       *wolf-contents*
+
+  1. Introduction ................................ |wolf-introduction|
+  2. Requirements ................................ |wolf-requirements|
+  3. Installation ................................ |wolf-install|
+  4. Language server ............................. |wolf-lsp|
+  5. Without this plugin ......................... |wolf-lspconfig|
+  6. Settings .................................... |wolf-settings|
+  7. Commands .................................... |wolf-commands|
+  8. Filetypes ................................... |wolf-filetypes|
+  9. Highlighting ................................ |wolf-syntax|
+ 10. Tree-sitter ................................. |wolf-treesitter|
+ 11. Position encoding ........................... |wolf-encoding|
+ 12. Health check ................................ |wolf-health|
+ 13. Troubleshooting ............................. |wolf-troubleshooting|
+ 14. Limitations ................................. |wolf-limitations|
+
+==============================================================================
+1. INTRODUCTION                                            *wolf-introduction*
+
+wolf is a compiled systems language. Its language server is not a separate
+program: `wolf lsp` is a subcommand of the compiler binary, so the diagnostic
+in your buffer and the diagnostic from `wolf build` come out of one code path
+by construction. There is nothing to download, nothing to keep in version sync
+with the toolchain, and no proxy binary to shadow.
+
+This plugin is small on purpose. It registers four filetypes, ships a server
+config, ships a regex syntax file, wires tree-sitter for the day a grammar
+exists, and adds six commands. It implements no language feature, rewords no
+diagnostic, and reimplements no part of `wolf fmt`. Where the editor
+experience is thin, the fix is a compiler sprint — and |wolf-limitations| says
+which ones.
+
+==============================================================================
+2. REQUIREMENTS                                            *wolf-requirements*
+
+- Neovim 0.11 or newer.
+- A `wolf` binary on 'path' (or |wolf-settings| pointing at one).
+
+0.11 is a hard floor, not a preference. It is the release that added
+`lsp/<name>.lua` auto-discovery, |vim.lsp.config()| / |vim.lsp.enable()|, and
+native `positionEncoding` negotiation. This plugin is glue around those three
+things, so on 0.10 there is no config file for Neovim to find and nothing to
+back-port. Use |wolf-lspconfig| there instead.
+
+Nothing here requires a binary to LOAD. With no `wolf` installed, `.lu` files
+still get their filetype, still highlight through |wolf-syntax|, and nothing
+errors at startup; `:checkhealth wolf` says exactly what is missing.
+
+==============================================================================
+3. INSTALLATION                                                 *wolf-install*
+
+The plugin ships from the `wolf-lsp` repository under `clients/nvim/`, which
+is a plugin root (it has `lua/`, `lsp/`, `ftplugin/`, `syntax/`, `doc/`).
+Distribution as a standalone repository is a later sprint's work, and the
+install recipes differ because of that — see the note under lazy.nvim.
+
+lazy.nvim ~
+>lua
+    -- The plugin lives in a SUBDIRECTORY of wolf-lsp, and lazy.nvim has no
+    -- option to add a subdirectory of a repository to the runtimepath. Until
+    -- the plugin ships from its own repository, use a local checkout:
+    {
+      dir = '/path/to/wolf-lsp/clients/nvim',
+      ft = { 'wolf', 'wolfi' },
+    }
+<
+packer.nvim ~
+>lua
+    -- packer HAS a subdirectory option, so it can install straight from the
+    -- repository.
+    use { 'tenseleyFlow/wolf-lsp', rtp = 'clients/nvim' }
+<
+Built-in packages, no plugin manager ~
+>sh
+    git clone https://github.com/tenseleyFlow/wolf-lsp \
+      ~/.local/share/nvim/site/pack/wolf/start/wolf-lsp
+    ln -s ~/.local/share/nvim/site/pack/wolf/start/wolf-lsp/clients/nvim \
+          ~/.local/share/nvim/site/pack/wolf/start/wolf.nvim
+<
+Minimal configuration ~
+
+Two substantive lines, and this exact file is what CI runs: >lua
+    vim.opt.runtimepath:prepend('/path/to/wolf-lsp/clients/nvim')
+    vim.g.wolf = { serverPath = vim.env.WOLF_BIN or 'wolf' }
+<
+Drop the second line once `wolf` is on 'path'. There is no `setup()` call to
+write: `plugin/wolf.lua` makes it for you.
+
+==============================================================================
+4. LANGUAGE SERVER                                                  *wolf-lsp*
+
+The plugin enables the server for you on load. What it enables is the table in
+`lsp/wolf.lua`: >lua
+    {
+      cmd = { 'wolf', 'lsp' },
+      filetypes = { 'wolf' },
+      root_markers = { 'wolf.pkg', '.git' },
+    }
+<
+                                                            *wolf-root-markers*
+'root_markers' is a list IN PRIORITY ORDER: the nearest ancestor directory
+containing a `wolf.pkg` becomes the workspace root, and only if there is none
+does the nearest ancestor with a `.git` win. Writing it nested —
+`{ { 'wolf.pkg', '.git' } }` — would make the two EQUAL priority and let a
+`.git` above your package beat the package's own manifest.
+
+With neither marker present the client still starts, with no root. A scratch
+`.lu` in `/tmp` diagnoses normally. (Neovim's native config has no
+`single_file_support` field; single-file support is what you get by NOT
+setting `workspace_required`.)
+
+To disable auto-enabling and do it yourself: >lua
+    vim.g.wolf = { autoEnable = false }
+    -- ... later, whenever you like:
+    vim.lsp.enable('wolf')
+<
+==============================================================================
+5. WITHOUT THIS PLUGIN                                        *wolf-lspconfig*
+
+You do not need this plugin to get diagnostics. On Neovim 0.11+, put a file at
+`~/.config/nvim/lsp/wolf.lua` containing the table above, add the filetype,
+and enable it: >lua
+    -- ~/.config/nvim/init.lua
+    vim.filetype.add({ extension = { lu = 'wolf', wolfi = 'wolfi' } })
+    vim.lsp.enable('wolf')
+<
+`clients/nvim/lsp/wolf.lua` is copy-pasteable for that purpose and is also the
+entry intended for `neovim/nvim-lspconfig` verbatim — since lspconfig 2.0 an
+lspconfig server entry IS an `lsp/<name>.lua` returning this table, so there
+is no second shape to maintain. Opening that pull request waits on wolf-lang
+publishing an installable release; lspconfig reasonably declines entries for
+servers nobody can install yet.
+
+What you give up without the plugin: filetype detection for `.wolfi`,
+`wolf.pkg` and `wolf.sum`, the buffer options in |wolf-filetypes|, the regex
+highlighting in |wolf-syntax|, the commands in |wolf-commands|, and
+|wolf-health|.
+
+==============================================================================
+6. SETTINGS                                                    *wolf-settings*
+
+One setting, and that is deliberate. wolf's formatter takes no options, its
+diagnostics are a reviewed artifact, and its server reads no `settings` block
+— a preferences panel on top of that would reintroduce exactly the
+configuration surface the language declined.
+>lua
+    vim.g.wolf = {
+      serverPath = 'wolf',   -- binary to run; absolute path or a PATH name
+      autoEnable = true,     -- call vim.lsp.enable('wolf') on load
+    }
+<
+Equivalently, in code: >lua
+    require('wolf').setup({ serverPath = '/path/to/wolf' })
+<
+`server_path` and `auto_enable` are accepted as aliases. The camelCase names
+are canonical because they match the VS Code extension's `wolf.serverPath`,
+so one documented name works in every editor.
+
+==============================================================================
+7. COMMANDS                                                    *wolf-commands*
+
+                                                                     *:WolfFmt*
+:WolfFmt                Format the buffer. Uses `textDocument/formatting` when
+                        a wolf client is attached, and `wolf fmt -` when one is
+                        not. Both are the same formatter inside the same
+                        binary; there is no third path and nothing in this
+                        plugin knows what wolf style is.
+
+                        `gq` works too: Neovim installs |vim.lsp.formatexpr()|
+                        on attach, and 'formatprg' is the fallback when no
+                        server is attached. See |wolf-filetypes|.
+
+                                                                   *:WolfCheck*
+:WolfCheck              Run `wolf conform-run` on the current file and put its
+                        diagnostics in the |quickfix| list, with the compiler's
+                        own codes, positions and wording.
+
+                                                *:WolfBuild* *:WolfRun*
+:WolfBuild              Same renderer, over `wolf build` / `wolf run`. These
+:WolfRun                subcommands do not exist yet in the toolchain (they
+                        land at wolf-lang sprint s31); until they do, the
+                        commands report what the binary said rather than
+                        pretending. See |wolf-limitations|.
+
+                                                              *:WolfLspRestart*
+:WolfLspRestart         Stop every wolf client and let it re-attach.
+
+                                                                  *:WolfLspLog*
+:WolfLspLog             Open Neovim's LSP log in a new tab.
+
+No default keymaps are created, and no autocommands beyond what |ftplugin| and
+|vim.lsp.enable()| already install. Opinions belong in your config.
+
+==============================================================================
+8. FILETYPES                                                  *wolf-filetypes*
+
+  `*.lu`        `wolf`       programs
+  `*.wolfi`     `wolfi`      generated interface files
+  `wolf.pkg`    `wolfpkg`    package manifest
+  `wolf.sum`    `wolfsum`    lockfile
+
+Detection is by extension and filename only. No content sniffing: `.lu` is
+unclaimed by any other language Neovim knows, so there is nothing to
+disambiguate, and reading the first lines of every candidate file is how `:e`
+gets slow.
+
+The interface, manifest and lockfile get their own filetypes rather than
+sharing `wolf` for two reasons: they are not programs (a manifest highlighted
+with a program's keyword set is misleading), and `lsp/wolf.lua` lists
+`filetypes = { 'wolf' }`, so the server is never attached to a file it does
+not serve.
+
+Buffer options for `wolf` and `wolfi`, all of them read off the toolchain
+rather than chosen:
+
+  'commentstring'   `// %s`   wolf has NO block comment form
+  'comments'        `:///,://!,://`
+  'shiftwidth'      `4`       `wolf_fmt::doc::INDENT`
+  'expandtab'       on
+  'textwidth'       `100`     `wolf_fmt::doc::WIDTH`
+  'formatoptions'   `croqlj`  't' removed, so code is never hard-wrapped
+  'formatprg'       `wolf fmt -`
+  'formatexpr'      left EMPTY so |vim.lsp.formatexpr()| can claim it
+
+'foldmethod' is set only when a tree-sitter parser is available (see
+|wolf-treesitter|). Without one it is left exactly as you had it: indent
+folding on a brace language greets you with a file collapsed to its `fn`
+headers, which is worse than no folding.
+
+==============================================================================
+9. HIGHLIGHTING                                                  *wolf-syntax*
+
+`syntax/wolf.vim` is the highlighting story today, not a stopgap for one. It
+covers the closed set of 50 reserved keywords, the four string forms
+(`"…"`, `"""…"""`, `r#"…"#`, `re"…"`), `{}` interpolation inside every string
+literal, `//` `///` `//!` comments, numeric literals in all four bases, and
+`#[…]` attributes.
+
+Every token in it is DERIVED from the pinned grammar, and CI re-derives the
+keyword set on every run and fails on a difference. Nothing in it was
+remembered or extrapolated from a language that looks similar. Two things it
+deliberately does not colour:
+
+- CONTEXTUAL keywords (`from`, `timeout`, `self`, `pkg`, `pool`, …). Each is
+  an ordinary identifier everywhere except one position, and a regex
+  highlighter cannot see position. A variable named `timeout` is not exotic.
+- Fixed-width scalar type names (`i32`, `u64`, …). They appear nowhere in the
+  pinned specification, so colouring them would teach a language that does not
+  exist. The types it does know are `bool`, `int`, `str` and `Self`.
+
+Three things it CANNOT express, none of which is a reason for a workaround:
+expressions inside `{}` interpolations, the fusion in generalized literals
+like `re"…"`, and raw-string fences balanced by count beyond three `#`. All
+three are arguments for semantic tokens whenever the compiler ships them.
+
+==============================================================================
+10. TREE-SITTER                                              *wolf-treesitter*
+
+There is no tree-sitter grammar for wolf yet. `tenseleyFlow/tree-sitter-wolf`
+is scaffold-only — two licenses and a README — and the grammar is filled
+opportunistically between compiler sprints.
+
+What this plugin ships is the WIRING, which is real and inert:
+
+- the `wolf` language is registered for the `wolf` filetype, so an installed
+  parser is used with no further configuration and no plugin update;
+- `queries/wolf/{highlights,injections,folds,indents}.scm` are on the
+  runtimepath and are deliberately EMPTY. A tree-sitter query is written
+  against node names, node names come from a grammar, and a guessed pattern
+  would raise "invalid node type" for every user the day a real grammar lands.
+  `queries/README.md` records the filling order;
+- absence is detected and is not an error. `:checkhealth wolf` reports it as
+  information, because nothing is broken and nothing needs installing.
+
+Nothing here downloads or compiles a parser. A plugin that builds a C parser
+behind your back on first open is a plugin that fails on a machine with no
+compiler, at the worst possible moment, for an optional feature.
+
+==============================================================================
+11. POSITION ENCODING                                          *wolf-encoding*
+
+LSP positions are counted in code UNITS, and which unit is negotiated at
+`initialize`. Getting it wrong corrupts buffers silently — every column past a
+multi-byte character lands one place off — so it is worth knowing what
+actually happens here.
+
+Neovim declares all three: `{ 'utf-8', 'utf-16', 'utf-32' }`, utf-8 first.
+wolf prefers utf-8 when offered. So the negotiated encoding is `utf-8` and
+every position on the wire is a byte offset, with no conversion on either
+side. This is the cheapest and least error-prone of the three combinations.
+
+"Neovim is a utf-16 client" is true of its INTERNAL default and false of what
+it negotiates. `:checkhealth wolf` prints the encoding the live client
+actually settled on; do not assume it.
+
+==============================================================================
+12. HEALTH CHECK                                                 *wolf-health*
+>vim
+    :checkhealth wolf
+<
+Six sections, each with a fix line when it fails:
+
+  Neovim               version against the 0.11 floor
+  wolf binary          which path won (`serverPath` or 'path'), and
+                       `wolf --version` against the pin this plugin was
+                       verified with
+  wolf lsp             the server starts and answers `initialize` within
+                       5000 ms, the negotiated `positionEncoding`, and the
+                       capabilities it actually advertises
+  filetype detection   all four filetypes, resolved the way `:e` resolves them
+  tree-sitter          parser present or absent (absent is INFORMATION), and
+                       the compiled pattern count of each shipped query
+  wolf buffers         every open wolf buffer, the client running for it, its
+                       root directory, the negotiated encoding, and the
+                       diagnostic count
+
+The last section reports every open wolf buffer rather than "the current
+buffer", and that is not thoroughness — `:checkhealth` opens its own scratch
+buffer and runs the checks inside it, so a current-buffer version would report
+"not a wolf buffer" every single time and look correct doing it. Open your
+`.lu` files first, then run the check from anywhere.
+
+The check reports; it never repairs. No parser download, no config rewrite, no
+'path' mutation — a health check that fixes things is one you cannot trust to
+tell you what state you were in.
+
+==============================================================================
+13. TROUBLESHOOTING                                     *wolf-troubleshooting*
+
+Keyed to the |wolf-health| lines, because that is where you should start.
+
+"no `wolf` on PATH" ~
+    Install the toolchain, or point at a build: >lua
+        vim.g.wolf = { serverPath = '/path/to/wolf' }
+<    Everything except the server keeps working meanwhile.
+
+"version …, but this plugin was verified against …" ~
+    A newer wolf is normally fine; the plugin only sends standard LSP. The
+    warning exists because a stale binary producing stale diagnostics is
+    silent otherwise. A supported version RANGE lands with distribution.
+
+"`wolf lsp` did not answer `initialize`" ~
+    Reproduce outside Neovim: >sh
+        printf '' | wolf lsp
+<    If that hangs or errors, it is a toolchain problem, not an editor one.
+
+"no `wolf` client attached to this buffer" ~
+    Check the resolved config, then restart: >vim
+        :lua print(vim.inspect(vim.lsp.config.wolf))
+        :WolfLspRestart
+        :WolfLspLog
+<
+"`a.lu` → nil" in filetype detection ~
+    `ftdetect/wolf.lua` was never sourced, so the plugin is not on the
+    runtimepath: >vim
+        :lua print(vim.inspect(vim.api.nvim_get_runtime_file('ftdetect/wolf.lua', true)))
+<
+Diagnostics disagree with `wolf build` ~
+    That is a bug worth reporting, and it is the one thing this plugin
+    guarantees cannot be its fault: it never post-processes a diagnostic.
+    `:WolfCheck` renders the command-line path through the same code, so
+    comparing the two takes one keystroke.
+
+==============================================================================
+14. LIMITATIONS                                             *wolf-limitations*
+
+Stated, not worked around. Each is a compiler sprint, not an editor patch.
+
+`wolf build` and `wolf run` do not exist yet ~
+    They land at wolf-lang sprint s31. |:WolfBuild| and |:WolfRun| exist,
+    route through the same quickfix renderer as |:WolfCheck|, and surface the
+    binary's own "pre-alpha scaffold" message until then.
+
+No completion, no go-to-definition, no references, no rename ~
+    `wolf lsp` at this pin serves diagnostics, hover, `documentSymbol`,
+    formatting and code actions. The plugin advertises nothing else, because
+    enabling UI for a capability the server does not serve produces a buffer
+    that looks supported and is not.
+
+No semantic tokens, no inlay hints, no code lens ~
+    Post-v1 compiler work. Neovim has built-in consumers for all three and
+    they will need no plugin change beyond the server advertising them.
+
+No completion-engine integration ~
+    No nvim-cmp or blink adapter, no snippet library, no DAP config. The
+    plugin exposes a standard LSP client and lets your stack consume it.
+
+No `.wolfi` language server support ~
+    Interface files get a filetype and highlighting; the server does not parse
+    them at this pin, so it is not attached to them.
+
+No tree-sitter grammar ~
+    |wolf-treesitter|.
+
+vim:tw=78:ts=8:noet:ft=help:norl:

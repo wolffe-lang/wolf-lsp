@@ -29,8 +29,8 @@ use std::process::ExitCode;
 
 use lsp_harness::profiles::{self, Provenance};
 use lsp_harness::{
-    Doctor, EXIT_HARNESS_ERROR, EXIT_MISMATCH, EXIT_OK, EXIT_SKIPPED, bench, fuzz, onetruth,
-    record, replay,
+    Doctor, EXIT_HARNESS_ERROR, EXIT_MISMATCH, EXIT_OK, EXIT_SKIPPED, bench, capture, fuzz,
+    onetruth, record, replay,
 };
 use lsp_transcript::jsonl;
 
@@ -45,6 +45,9 @@ usage: lspconf [--require-server] <command> [args]
                          whether a server is available
 
   server-dependent (skip with 77 when no binary resolves at the pin):
+    capture --name C/S --profile P -- CMD…
+                         proxy a real editor's session into a transcript;
+                         run it *as* the server, from the editor's PATH
     record <script.lsps> drive a scripted session, write <script>.jsonl
     rerecord [dir]       re-record every script beside its transcript
     replay [path…]       drive recorded sessions and match per record
@@ -55,6 +58,7 @@ usage: lspconf [--require-server] <command> [args]
   options:
     --require-server     treat an unavailable server as a failure, not a skip
     --timings            `record` only: write the t_us sidecar
+    --profile P          `fuzz` only: client document to simulate (minimal)
     --seed N             `fuzz` only: PRNG seed (default 1)
     --splices N          `fuzz` only: edits per session (default 64)
     --runs N             `bench` only: paired runs (default 10, D36's floor)
@@ -79,6 +83,11 @@ fn main() -> ExitCode {
         Some("verify") => verify(&root, &positional[1..]),
         Some("profiles") => profiles_cmd(&root),
         Some("doctor") => doctor(&root, require_server),
+        // `capture` is server-dependent but resolves its own child: it runs
+        // *as* the server, found on an editor's `PATH`, with the real binary
+        // named after `--`. Sending it through the Doctor's PATH lookup would
+        // have it find this shim instead of the compiler.
+        Some("capture") => capture_cmd(&root, &args),
         Some(cmd @ ("record" | "rerecord" | "replay" | "onetruth" | "bench" | "fuzz")) => {
             server_command(&root, cmd, &positional[1..], &args, require_server)
         }
@@ -187,6 +196,86 @@ fn server_command(
         "bench" => bench_cmd(root, &bin, &pin.commit, rest, raw),
         "fuzz" => fuzz_cmd(root, &bin, rest, raw),
         _ => unreachable!("dispatched from a fixed list"),
+    }
+}
+
+/// `lspconf capture --name <client>/<scenario> --profile <p> [--workspace R]
+/// [--out PATH] -- <cmd…>` — proxy a real editor's session.
+///
+/// Everything before `--` configures the header; everything after it is the
+/// server to run. With no `--`, the Doctor resolves one — useful for a manual
+/// smoke, useless as a `PATH` shim (the shim would find itself), which is why
+/// the documented form always names the binary.
+fn capture_cmd(root: &Path, args: &[String]) -> ExitCode {
+    let (opts, command) = match args.iter().position(|a| a == "--") {
+        Some(i) => (&args[..i], args[i + 1..].to_vec()),
+        None => (args, Vec::new()),
+    };
+
+    let Some(name) = flag_value(opts, "name").map(str::to_string) else {
+        return fail("capture: --name <client>/<scenario> is required");
+    };
+    if !name.contains('/') {
+        return fail("capture: --name must be `<client>/<scenario>`");
+    }
+    let Some(profile) = flag_value(opts, "profile").map(str::to_string) else {
+        return fail(
+            "capture: --profile <stem> is required — a session recorded against no capability document cannot be replayed",
+        );
+    };
+    let workspace = flag_value(opts, "workspace")
+        .unwrap_or("vendor/upstream/samples")
+        .to_string();
+    let out = flag_value(opts, "out")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| capture::default_out(root, &name));
+
+    let pin = match lsp_harness::Pin::load(root) {
+        Ok(pin) => pin,
+        Err(e) => return fail(&format!("capture: {e}")),
+    };
+
+    let command = if command.is_empty() {
+        let doc = Doctor::run(root);
+        match &doc.availability {
+            lsp_harness::Availability::Ready { path } => {
+                vec![path.to_string_lossy().into_owned(), "lsp".to_string()]
+            }
+            other => {
+                println!(
+                    "SKIP: capture has no server — {}",
+                    other.reason(doc.pin.as_ref())
+                );
+                return ExitCode::from(EXIT_SKIPPED as u8);
+            }
+        }
+    } else {
+        command
+    };
+
+    let workspace_dir = root.join(&workspace);
+    if !workspace_dir.is_dir() {
+        return fail(&format!("capture: workspace `{workspace}` does not exist"));
+    }
+    let options = capture::Options {
+        name,
+        profile,
+        workspace,
+        workspace_dir,
+        pin_commit: pin.commit.clone(),
+        recorded: today(),
+    };
+    match capture::capture(&command, &options, &out) {
+        Ok(t) => {
+            // stdout is the protocol channel; the report goes to stderr.
+            eprintln!(
+                "captured {} — {} record(s)",
+                lsp_harness::slash_path(&out),
+                t.records.len()
+            );
+            ExitCode::from(EXIT_OK as u8)
+        }
+        Err(e) => fail(&format!("capture: {e}")),
     }
 }
 
@@ -362,11 +451,26 @@ fn onetruth_cmd(root: &Path, bin: &Path, rest: &[&str]) -> ExitCode {
     // Under every encoding: the transform is under test here as much as the
     // agreement is, and a divergence that shows up only in utf-16 is exactly
     // the bug §5 exists for.
-    let order = ["minimal", "utf8-first", "utf32-only"];
+    //
+    // Plus every **derived** profile, as its sprint lands it. A synthetic
+    // document proves the encoding path; only a real client's document proves
+    // that the editor a human actually types in sees what `wolf` sees, which
+    // is the whole claim behind "the compiler is the language server".
+    let mut order: Vec<&str> = vec!["minimal", "utf8-first", "utf32-only"];
+    order.extend(
+        profiles::REAL_CLIENTS
+            .iter()
+            .map(|(client, _)| *client)
+            .filter(|client| {
+                loaded
+                    .get(*client)
+                    .is_some_and(|p| matches!(p.provenance, Provenance::Derived { .. }))
+            }),
+    );
     let mut unknown = 0u32;
     let mut matched: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
-    for name in order {
-        let Some(profile) = loaded.get(name) else {
+    for name in &order {
+        let Some(profile) = loaded.get(*name) else {
             return fail(&format!("onetruth: no profile `{name}`"));
         };
         for sample in &samples {
@@ -422,7 +526,7 @@ fn onetruth_cmd(root: &Path, bin: &Path, rest: &[&str]) -> ExitCode {
 
     if unknown == 0 && stale.is_empty() {
         println!(
-            "onetruth: {} sample(s) x {} encoding(s); {} known divergence(s), zero unfiled",
+            "onetruth: {} sample(s) x {} profile(s); {} known divergence(s), zero unfiled",
             samples.len(),
             order.len(),
             matched.len()
@@ -499,13 +603,21 @@ fn fuzz_cmd(root: &Path, bin: &Path, rest: &[&str], raw: &[String]) -> ExitCode 
     let sample = rest.first().copied().unwrap_or("regions.lu");
     let seed: u64 = flag_num(raw, "seed", 1);
     let splices: usize = flag_num(raw, "splices", 64);
+    // The profile decides the shape of the client being simulated, so a real
+    // client's document is a legitimate thing to fuzz under: ls02's acceptance
+    // asks for a long edit session in *fackr's* shape (full-text every change,
+    // utf-32 columns), not in a synthetic one.
+    let profile_name = flag_value(raw, "profile").unwrap_or("minimal");
     let (loaded, _) = profiles::load_all(root);
-    let Some(profile) = loaded.get("minimal") else {
-        return fail("fuzz: no profile `minimal`");
+    let Some(profile) = loaded.get(profile_name) else {
+        return fail(&format!("fuzz: no profile `{profile_name}`"));
     };
     match fuzz::run(bin, &workspace, sample, profile, seed, splices) {
         Ok(outcome) if outcome.ok() => {
-            println!("ok  fuzz {sample} seed={seed} splices={splices} — three oracles held");
+            println!(
+                "ok  fuzz {sample} profile={profile_name} seed={seed} splices={splices} \
+                 — three oracles held"
+            );
             ExitCode::from(EXIT_OK as u8)
         }
         Ok(outcome) => {
@@ -627,16 +739,35 @@ fn verify(root: &Path, paths: &[&str]) -> ExitCode {
         // A transcript whose script is gone cannot be re-recorded, which makes
         // it a golden byte file by accident — the artifact this design exists
         // to not be.
+        //
+        // The one exception is a **client-recorded** transcript: a session
+        // captured from a real editor (`lspconf capture`) has no script by
+        // construction, because the whole point of it is that no script says
+        // what the client sends. Its re-record path is "drive that editor
+        // again", which is what `clients/<client>/` documents. The exemption
+        // is keyed on the client segment of the transcript's own name being a
+        // client this repo tracks — not on the path, so a transcript cannot
+        // buy the exemption by being filed in the right folder.
         let script = path.with_extension("lsps");
         if !script.is_file() {
-            eprintln!(
-                "{display}: no `{}` beside it — a transcript with no script cannot be \
-                 re-recorded, and an un-re-recordable transcript is a golden byte file",
-                script
-                    .file_name()
-                    .map_or_else(String::new, |n| n.to_string_lossy().into_owned())
+            let client = transcript.header.name.split('/').next().unwrap_or_default();
+            if !profiles::REAL_CLIENTS.iter().any(|(c, _)| *c == client) {
+                eprintln!(
+                    "{display}: no `{}` beside it — a transcript with no script cannot be \
+                     re-recorded, and an un-re-recordable transcript is a golden byte file \
+                     (only a client-recorded transcript, named `<client>/<scenario>` for a \
+                     client this repo tracks, is exempt)",
+                    script
+                        .file_name()
+                        .map_or_else(String::new, |n| n.to_string_lossy().into_owned())
+                );
+                failures += 1;
+                continue;
+            }
+            println!(
+                "ok  {display} ({} records, client-recorded — no script by design)",
+                transcript.records.len()
             );
-            failures += 1;
             continue;
         }
         println!("ok  {display} ({} records)", transcript.records.len());

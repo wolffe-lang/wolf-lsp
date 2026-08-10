@@ -77,6 +77,15 @@ jobs:
       - name: fixtures-check
         run: cargo xtask fixtures-check
 
+      # The Neovim plugin's derived artifacts still agree with the pin: the
+      # 50-keyword set in `syntax/wolf.vim` against `grammar.ebnf`'s
+      # `reserved_kw`, and the generated `lua/wolf/pin.lua` against `PIN`. This
+      # is the drift check ls04 §2 owes. It covers keywords only — the vendored
+      # EBNF elides the operator precedence climb, and the command's own
+      # documentation says so rather than implying wider coverage.
+      - name: nvim-check (derived artifacts)
+        run: cargo xtask nvim-check
+
       # Transcripts and their scripts: parseable, valid, canonical, and each
       # transcript still has the script that regenerates it.
       - name: lspconf verify (server-free)
@@ -85,6 +94,87 @@ jobs:
       # Capability profiles, plus the loud list of clients nobody has read yet.
       - name: lspconf profiles (server-free)
         run: cargo run --quiet --bin lspconf -- profiles
+
+  # The Neovim plugin, loaded by a real Neovim, on the full D35 tier-1 host set
+  # (ls04 acceptance). This lane needs NO `wolf` binary: everything it asserts —
+  # filetypes, buffer options, syntax groups, commands, config resolution,
+  # root-marker priority, tree-sitter absence, the quickfix conversion and the
+  # whole `:checkhealth wolf` report — is true of a machine with no toolchain,
+  # which is the state every runner here is in. That is what makes the plugin
+  # lane the one editor lane that is NOT dark.
+  #
+  # It is a separate job from `test` on purpose: `cargo test --workspace` there
+  # runs the same file and SKIPS it (no editor on those runners), which is
+  # correct for a developer's laptop and useless as a gate. Here the editor's
+  # presence is checked first and its absence is a hard failure.
+  nvim-plugin:
+    name: nvim plugin (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain
+
+      # Neovim from its own release assets rather than from three different
+      # package managers, so all three runners agree on a version.
+      #
+      # `stable` is a real tag in `neovim/neovim` that always points at the
+      # latest stable release; the plugin's floor is 0.11 and `:checkhealth`
+      # enforces it, so tracking stable is the honest choice — a plugin whose
+      # CI pins an old editor stops noticing the day the editor changes.
+      #
+      # These asset NAMES have churned historically (the linux tarball was
+      # `nvim-linux64.tar.gz` before 0.11). A rename therefore fails this step
+      # loudly, which is the intended behaviour: silently falling back to a
+      # system Neovim would test a different editor than the one named here.
+      - name: Install Neovim (linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL -o nvim.tar.gz \
+            https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.tar.gz
+          tar xzf nvim.tar.gz
+          echo "$PWD/nvim-linux-x86_64/bin" >> "$GITHUB_PATH"
+
+      - name: Install Neovim (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL -o nvim.tar.gz \
+            https://github.com/neovim/neovim/releases/download/stable/nvim-macos-arm64.tar.gz
+          # The macOS tarballs are notarised; extended attributes on the
+          # extracted tree make Gatekeeper refuse the binary on some runners.
+          xattr -c nvim.tar.gz || true
+          tar xzf nvim.tar.gz
+          echo "$PWD/nvim-macos-arm64/bin" >> "$GITHUB_PATH"
+
+      - name: Install Neovim (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Invoke-WebRequest -Uri `
+            'https://github.com/neovim/neovim/releases/download/stable/nvim-win64.zip' `
+            -OutFile nvim.zip
+          Expand-Archive -Path nvim.zip -DestinationPath .
+          "$PWD\nvim-win64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      # Presence is the gate. `cargo test --test nvim_plugin` skips politely
+      # when there is no editor, and a job whose whole purpose is the editor
+      # must not be allowed to take that exit.
+      - name: Neovim version (the floor is 0.11)
+        shell: bash
+        run: nvim --version
+
+      - name: The plugin lane
+        shell: bash
+        run: cargo test --test nvim_plugin -- --nocapture
 
   # Does a server exist at the pin? Report it, on every platform, and never
   # fail the build for its absence — but never pass silently either.

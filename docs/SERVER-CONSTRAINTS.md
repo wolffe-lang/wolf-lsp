@@ -158,3 +158,40 @@ array yields zero items — and definitions must be `Location`/`Location[]`,
 because `LocationLink[]` is not parsed **despite `linkSupport: true` being
 advertised**. *Not yet applicable; recorded so the sprint that adds them does
 not have to rediscover it.*
+
+## From Neovim (ls04, `v0.12.4`)
+
+Neovim is the first *well-behaved* client on this list — it answers
+server→client requests, cancels properly, closes documents, and shuts down
+cleanly — so it constrains the server in a different way than fackr and
+facsimile do. What it pins is the **preference order**, not a workaround.
+
+**The encoding preference order is user-visible, and Neovim is where a change
+to it lands hardest.** Neovim declares
+`general.positionEncodings: ["utf-8", "utf-16", "utf-32"]` — all three, utf-8
+first — so wolf's own preference is the only thing deciding the wire format,
+and today it decides `utf-8`. Reordering the server's preference (or dropping
+utf-8) would silently change every Neovim user's positions with no client-side
+signal at all: unlike fackr, Neovim converts correctly to whatever is
+negotiated, so a *wrong* choice here is invisible rather than broken. That is
+worse. *Holds today; asserted by `profiles/nvim.json`'s `expects_encoding` and
+by a live assertion on `client.offset_encoding` in the recorded session.*
+
+**Start, and diagnose, with no `rootUri`.** Neovim's native config has no
+`single_file_support` field; a client whose `root_markers` match nothing gets a
+nil root and starts anyway (`workspace_required` is unset). So a scratch `.lu`
+in a directory with no `wolf.pkg` and no `.git` still expects diagnostics.
+*Holds today.*
+
+**Do not require `workspace/configuration`, and do not wait for settings.**
+Neovim would answer, so this is not the hang facsimile would suffer — but the
+plugin sends no `settings` block by design, and a server that treated absent
+settings as "not ready" would stall a client that is behaving perfectly.
+*Holds today — `wolf lsp` reads no settings.*
+
+**Keep `textDocument/formatting` byte-stable on canonical input.** Neovim's
+`gq` and `:WolfFmt` both route through `textDocument/formatting`, and the
+recorded session asserts that formatting a corpus sample returns an **empty**
+edit list. A response that returned a no-op edit instead of no edits would mark
+every formatted buffer modified and burn an undo state per format. *Holds
+today; asserted in `clients/nvim/tests/smoke.lua`.*

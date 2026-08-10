@@ -55,18 +55,22 @@ not sessions, and they never move here.
 
 ## Client-recorded transcripts
 
-`fackr/` and `facsimile/` are these, and they are a different kind of artifact:
-captured from the *actual* editor by `lspconf capture` — a proxy the editor
-spawns instead of the server — rather than approximated by a script. There is
-no `.lsps` beside one, and there cannot be: the whole claim of the file is that
-no script decided what the client sent.
+`fackr/`, `facsimile/` and `nvim/` are these, and they are a different kind of
+artifact: captured from the *actual* editor by `lspconf capture` — a proxy the
+editor spawns instead of the server — rather than approximated by a script.
+There is no `.lsps` beside one, and there cannot be: the whole claim of the
+file is that no script decided what the client sent.
 
-Neither editor needed an instrumented build. Both spawn their server by bare
-name (fackr via `Command::new("wolf")`, facsimile via `/bin/sh -c`), so a proxy
-named `wolf` earlier on `PATH` sees everything. facsimile is additionally
-driven through a pty with `pexpect` + `pyte` — the way its own integration
-suites drive it — so `facsimile/smoke.jsonl` records real keystrokes reaching a
-real editor, 0.5 s debounce and all.
+No editor needed an instrumented build. All three spawn their server by bare
+name (fackr via `Command::new("wolf")`, facsimile via `/bin/sh -c`, Neovim via
+`cmd = { 'wolf', 'lsp' }`), so a proxy named `wolf` earlier on `PATH` sees
+everything. facsimile is additionally driven through a pty with `pexpect` +
+`pyte` — the way its own integration suites drive it — so
+`facsimile/smoke.jsonl` records real keystrokes reaching a real editor, 0.5 s
+debounce and all. Neovim is driven by a Lua script through `nvim --headless
+-l`, its own supported scripting entry point rather than a terminal puppet, and
+every assertion in that script runs *while the session is being recorded* — a
+transcript of a broken session would replay green forever.
 
 `verify` takes them on exactly that basis. The exemption is keyed on the first
 segment of the transcript's own `name` being a client in

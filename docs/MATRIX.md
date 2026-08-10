@@ -12,7 +12,8 @@ carry claims.
 | editor | tier | status | transcripts | last verified |
 |---|---|---|---|---|
 | [fackr](../clients/fackr/README.md) | 0 | registered, patched, recorded — the patch series is open upstream, not merged | `fackr/smoke` (client-recorded) | 2026-08-10, pin `67c977f` |
-| _(ls03–ls06 fill the rest)_ | | | | |
+| [nvim](../clients/nvim/README.md) | 1 | plugin shipped from `clients/nvim/`; the config is upstreamable to nvim-lspconfig verbatim, and that PR is ls07's | `nvim/smoke` (client-recorded) | 2026-08-10, pin `70bdd35`, NVIM v0.12.4 |
+| _(ls03, ls05, ls06 fill the rest)_ | | | | |
 
 Tiers (report 09 §client tier matrix):
 

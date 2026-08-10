@@ -27,13 +27,23 @@ that owes each:
 |-------------|---------|-------|
 | `fackr`     | ls02    | **derived** — read off `fackr@496c7e2` and the session it recorded |
 | `facsimile` | ls03    | **derived** — read off `facsimile@1242ffa` and the session it recorded |
-| `nvim`      | ls04    | owed |
+| `nvim`      | ls04    | **derived** — read off `neovim@v0.12.4` and the session it recorded |
 | `vscode`    | ls05    | owed |
 | `helix`     | ls06    | owed |
 | `zed`       | ls06    | owed |
 
 Marking one of those `synthetic` to make the list shorter does not work:
 `missing_derived` keys off the provenance, not the filename.
+
+`nvim`'s `commit` is a **release tag**, not a sha, and that is the honest
+recording rather than a shortcut: `nvim --version` publishes no build sha, and
+the machine it was read on installed a distribution package. `v0.12.4` names a
+revision unambiguously, and the `source` list carries the full version banner
+(`NVIM v0.12.4`, RelWithDebInfo, LuaJIT 2.1.1785192264) so the exact build is
+identifiable. The sprint's requirement is that the profile be stamped with the
+Neovim version it was read from — Neovim's declared client capabilities move
+between releases and a stale profile is a lie — and a tag satisfies that more
+directly than a sha would.
 
 A derived profile is not decoration. `lspconf onetruth` runs every sample under
 the three synthetic encoding documents **plus every derived one**, so a real

@@ -10,6 +10,8 @@ use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
+mod vscode;
+
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
@@ -20,10 +22,19 @@ fn main() -> ExitCode {
         Some("fixtures-check") => fixtures_check(),
         Some("nvim-check") => nvim_derived(false),
         Some("nvim-generate") => nvim_derived(true),
+        // ls05 §2 names `grammar-drift`; `vscode-check` is the alias that
+        // matches the `nvim-check`/`nvim-generate` family. Same command.
+        Some("grammar-drift" | "vscode-check") => {
+            report("grammar-drift", vscode::derived(&repo_root(), false))
+        }
+        Some("grammar-generate" | "vscode-generate") => {
+            report("grammar-generate", vscode::derived(&repo_root(), true))
+        }
         _ => {
             eprintln!(
                 "usage: cargo xtask \
-                 <ci|sync-pin|vendor-check|independence|fixtures-check|nvim-check|nvim-generate>"
+                 <ci|sync-pin|vendor-check|independence|fixtures-check\
+                 |nvim-check|nvim-generate|grammar-drift|grammar-generate>"
             );
             ExitCode::from(2)
         }
@@ -61,6 +72,7 @@ fn ci() -> ExitCode {
         ("independence", &["xtask", "independence"]),
         ("fixtures-check", &["xtask", "fixtures-check"]),
         ("nvim-check", &["xtask", "nvim-check"]),
+        ("grammar-drift", &["xtask", "grammar-drift"]),
     ];
     for (name, args) in steps {
         eprintln!("== xtask ci: {name}");

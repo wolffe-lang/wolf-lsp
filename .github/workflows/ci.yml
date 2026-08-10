@@ -511,7 +511,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          out=$(cargo run --quiet --bin xtask -- helix-health 2>&1)
+          out=$(cargo run --quiet -p xtask -- helix-health 2>&1)
           code=$?
           echo "$out"
           if [ "$code" = "77" ]; then

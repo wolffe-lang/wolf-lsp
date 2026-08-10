@@ -13,8 +13,13 @@
 //! top of it: [`session`] spawns and correlates, [`script`] is the committed
 //! session DSL, [`drive`] interprets one against the other, and [`profiles`]
 //! holds the capability documents negotiation is asserted against.
+//!
+//! ls02 added the one path that is neither: [`capture`] records a *real*
+//! editor by proxying between it and the server, because a script of what a
+//! client is believed to send is a transcript of the belief.
 
 pub mod bench;
+pub mod capture;
 pub mod doctor;
 pub mod drive;
 pub mod framing;

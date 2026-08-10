@@ -1,6 +1,6 @@
 # The wolf-lang commit this repo is keyed to. A bump is its own commit, with
 # the re-vendored data, and nothing else (vendor/README.md).
-commit = 67c977fb1d55b1a5f3f355b4c8aeffa1d66178e5
+commit = 70bdd35c9d24c5bfba2c46e6334f886d8b2fe474
 # The exact `wolf --version` string that commit produces. `lspconf doctor`
 # fails on a mismatch: a stale local `wolf` producing green transcripts is the
 # failure mode the pin exists to prevent.

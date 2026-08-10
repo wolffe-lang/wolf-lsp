@@ -13,7 +13,8 @@ carry claims.
 |---|---|---|---|---|
 | [fackr](../clients/fackr/README.md) | 0 | registered, patched, recorded — the patch series is open upstream, not merged | `fackr/smoke` (client-recorded) | 2026-08-10, pin `67c977f` |
 | [nvim](../clients/nvim/README.md) | 1 | plugin shipped from `clients/nvim/`; the config is upstreamable to nvim-lspconfig verbatim, and that PR is ls07's | `nvim/smoke` (client-recorded) | 2026-08-10, pin `70bdd35`, NVIM v0.12.4 |
-| _(ls03, ls05, ls06 fill the rest)_ | | | | |
+| [vscode](../clients/vscode/README.md) | 1 | extension shipped from `clients/vscode/`; vsix is the install path, marketplace + Open VSX are ls07's | `vscode/smoke` (client-recorded) | 2026-08-10, pin `70bdd35`, VS Code 1.132.0 + vscode-languageclient 9.0.1 |
+| _(ls03, ls06 fill the rest)_ | | | | |
 
 Tiers (report 09 §client tier matrix):
 

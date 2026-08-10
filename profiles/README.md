@@ -19,8 +19,8 @@ real clients still have none.
 
 A profile invented here rather than read off a client is a lie the suite then
 tests against, which is worse than having no profile: it produces a green lane
-for a client nobody checked. So the six real clients ls01 §4 names have **no
-profile yet**, and `lspconf profiles` says so on every run, naming the sprint
+for a client nobody checked. So the six real clients ls01 §4 names start with **no
+profile**, and `lspconf profiles` says so on every run, naming the sprint
 that owes each:
 
 | client      | owed by | state |
@@ -28,7 +28,7 @@ that owes each:
 | `fackr`     | ls02    | **derived** — read off `fackr@496c7e2` and the session it recorded |
 | `facsimile` | ls03    | **derived** — read off `facsimile@1242ffa` and the session it recorded |
 | `nvim`      | ls04    | **derived** — read off `neovim@v0.12.4` and the session it recorded |
-| `vscode`    | ls05    | owed |
+| `vscode`    | ls05    | **derived** — read off `vscode@df53daa` (1.132.0) and the session it recorded |
 | `helix`     | ls06    | owed |
 | `zed`       | ls06    | owed |
 
@@ -58,3 +58,11 @@ independent statement, not a reading of the server — asserting the server
 agrees with itself proves nothing. Writing the expectation down means a change
 to the negotiation *rule* fails the suite even when the server stays
 self-consistent, which is the only way that rule is testable at all.
+
+VS Code is where that statement earns the most. `vscode-languageclient` declares
+`["utf-16"]` and then *throws* if the server names anything else
+(`lib/common/client.js:835`), so `expects_encoding: "utf-16"` in
+`profiles/vscode.json` is not a prediction about rendering — it is the
+difference between an extension that starts and one that does not. A reordering
+of wolf's preference that still produced self-consistent utf-8 would sail past
+every server-side assertion and break this client outright.

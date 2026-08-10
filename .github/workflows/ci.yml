@@ -86,6 +86,22 @@ jobs:
       - name: nvim-check (derived artifacts)
         run: cargo xtask nvim-check
 
+      # The VS Code extension's four GENERATED files still agree with the pin:
+      # the three `.tmLanguage.json` grammars and `src/pin.ts`. Unlike
+      # `nvim-check`, which compares a keyword list inside a human-written
+      # file, this regenerates each artifact and compares BYTES — a
+      # `.tmLanguage.json` is two hundred lines of escaped regex, and a
+      # hand-edit in the middle of one is invisible to any check that only
+      # inspects the terminal lists (ls05 §2).
+      #
+      # Covers keywords AND the operator inventory, and covers neither more
+      # than it can: the vendored EBNF elides the precedence climb, so
+      # thirteen operators are absent from the derivation entirely. The
+      # command's own documentation says so, and a unit test fails the day
+      # upstream closes the gap.
+      - name: grammar-drift (VS Code derived artifacts)
+        run: cargo xtask grammar-drift
+
       # Transcripts and their scripts: parseable, valid, canonical, and each
       # transcript still has the script that regenerates it.
       - name: lspconf verify (server-free)
@@ -175,6 +191,94 @@ jobs:
       - name: The plugin lane
         shell: bash
         run: cargo test --test nvim_plugin -- --nocapture
+
+  # The VS Code extension, loaded by a real headless VS Code, on the full D35
+  # tier-1 host set (ls05 acceptance). Like the Neovim lane, this needs NO
+  # `wolf` binary for its first half: contributions, activation, language
+  # registration, the settings surface, the command set and the absence of
+  # semantic-token UI are all true of a machine with no toolchain. The server
+  # half inside the suite reports SKIP with a reason when there is none.
+  #
+  # It is a separate job from `test` on purpose, and for a sharper reason than
+  # the Neovim lane has. `cargo test --test vscode_extension` runs the GRAMMAR
+  # lane and deliberately stops there: `@vscode/test-electron` *downloads* a VS
+  # Code build on first use, and a `cargo test` that silently starts a 150 MB
+  # download is a `cargo test` people stop running. Here the download is the
+  # job's whole point, so it is explicit.
+  vscode-extension:
+    name: vscode extension (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        working-directory: clients/vscode
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: clients/vscode/package-lock.json
+
+      # `ci`, never `install`: the lock file is committed precisely so that a
+      # CI run and a laptop resolve the same tree. `npm install` is allowed to
+      # rewrite it, which makes the lock file advisory and the lane unpinned.
+      - name: Install (locked)
+        run: npm ci
+
+      - name: Toolchain versions
+        run: |
+          node --version
+          npm --version
+
+      - name: Compile
+        run: npm run compile
+
+      # No VS Code needed, no display needed. Runs first because a broken
+      # grammar should not be reported as a failure to launch an editor.
+      - name: Grammar lane (tokenizer + reviewed scope snapshots)
+        run: npm run test:grammar
+
+      # Headless VS Code. Linux needs a virtual display; macOS and windows
+      # runners have one.
+      - name: Extension lane (headless VS Code, linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm run test:extension
+
+      - name: Extension lane (headless VS Code, macOS and windows)
+        if: runner.os != 'Linux'
+        run: npm run test:extension
+
+      # The install path `clients/vscode/README.md` documents, run as CI so the
+      # instructions cannot rot (ls05 §3 acceptance: "the install commands in
+      # the README are the ones CI runs"). The size budget is a gate, not a
+      # note: the vsix is 316 KB today and the ceiling exists so that a
+      # dependency that quietly ships megabytes fails here rather than in a
+      # user's download.
+      - name: Package the vsix
+        run: npm run package
+
+      - name: The vsix is under budget
+        shell: bash
+        run: |
+          set -euo pipefail
+          bytes=$(wc -c < wolf-0.0.1.vsix)
+          echo "wolf-0.0.1.vsix: $bytes bytes"
+          if [ "$bytes" -gt 1048576 ]; then
+            echo "::error::the vsix is $bytes bytes, over the 1 MiB budget."
+            echo "::error::check .vscodeignore and the runtime dependency set."
+            exit 1
+          fi
+
+      # Installs into a THROWAWAY profile, then asks the editor to list what it
+      # has. Installing and *being installed* are different claims, and only
+      # the second one is what a user gets.
+      - name: Install the vsix into a throwaway profile
+        run: npm run install:vsix
 
   # Does a server exist at the pin? Report it, on every platform, and never
   # fail the build for its absence — but never pass silently either.

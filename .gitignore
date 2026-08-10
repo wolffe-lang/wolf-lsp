@@ -17,3 +17,11 @@ AGENTS.md
 
 # Latency-budget JSONL (D5 shape). Emitted, uploaded as an artifact, not tracked.
 /bench-results/
+
+# The VS Code extension's build output and test downloads (ls05). `out/` is
+# compiled from `src/`, `.vscode-test/` is a full VS Code build the harness
+# downloads, and the vsix is a release artifact built on demand -- none of the
+# three is a source of truth and all three are large.
+clients/vscode/out/
+clients/vscode/.vscode-test/
+clients/vscode/*.vsix

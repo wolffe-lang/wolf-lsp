@@ -5,7 +5,7 @@ cargo workspace**: a Rust workspace that swallows a node project is how the CI
 lane for each stops being separable.
 
 - [`fackr/`](fackr/README.md), [`facsimile/`](facsimile/README.md) — tier 0, the daily drivers (ls02–ls03)
-- [`nvim/`](nvim/README.md), `vscode/` — tier 1, the plugin tier (ls04–ls05)
+- [`nvim/`](nvim/README.md), [`vscode/`](vscode/README.md) — tier 1, the plugin tier (ls04–ls05)
 - `helix/`, `zed/`, `emacs/`, `jetbrains/` — tiers 2 and 3 (ls06)
 
 Every one of them configures a client to launch `wolf lsp`. None of them
@@ -21,17 +21,32 @@ rest should follow; `facsimile/` adds a `CLIENT.md`, because a client whose
 *limits* are the deliverable needs somewhere to state them that is not a
 limitations section bolted onto a setup guide.
 
-**Tier 1 breaks that rule, and has to.** `nvim/` holds real code, because the
-plugin is ours to write rather than someone else's to accept a patch into — it
-is a plugin root (`lua/`, `lsp/`, `ftplugin/`, `syntax/`, `doc/`) that ships
-from this repository until distribution is decided (ls07). Its README keeps the
-same shape and the same honesty standard as the tier-0 ones; what it adds is a
-test lane, because there is no upstream CI to split the verification with.
+**Tier 1 breaks that rule, and has to.** `nvim/` and `vscode/` hold real code,
+because the plugin is ours to write rather than someone else's to accept a patch
+into — each is a plugin root that ships from this repository until distribution
+is decided (ls07). Their READMEs keep the same shape and the same honesty
+standard as the tier-0 ones; what they add is a test lane, because there is no
+upstream CI to split the verification with.
 
-The three clients read so far are deliberately opposed, and that is most of
+The two tier-1 subtrees differ in one structural way worth knowing before
+reading either. `nvim/`'s highlighting is a **hand-written** `syntax/wolf.vim`
+with a check pointed at its keyword list; `vscode/`'s is a **generated**
+`.tmLanguage.json` whose every byte is re-derived from the pinned grammar. That
+is not a change of mind — it is a `.vim` file a human can read at a glance
+versus two hundred lines of escaped regex, where a hand-edit in the middle is
+invisible to any check that only inspects the terminal lists.
+
+The four clients read so far are deliberately opposed, and that is most of
 their value. fackr counts columns in code points and declares `["utf-32"]`;
 facsimile counts them in UTF-16 code units and declares `["utf-16"]`; Neovim
 declares all three with `utf-8` first and therefore negotiates `utf-8`. Between
 them they reach every branch of wolf's encoding preference order with a client
 someone actually types in, so a change to that order cannot pass the suite by
 agreeing with itself.
+
+VS Code lands on the same wire format as facsimile and is not redundant with it,
+because it raises the *stakes* rather than adding a branch:
+`vscode-languageclient` hardcodes `["utf-16"]` and **throws** on any other
+answer, so where every other client here would mis-render a wrong encoding, this
+one refuses to start. Same branch, different failure mode — and the harsher one
+is the one that tells you immediately.

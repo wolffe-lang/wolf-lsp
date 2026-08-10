@@ -195,3 +195,55 @@ recorded session asserts that formatting a corpus sample returns an **empty**
 edit list. A response that returned a no-op edit instead of no edits would mark
 every formatted buffer modified and burn an undo state per format. *Holds
 today; asserted in `clients/nvim/tests/smoke.lua`.*
+
+## From VS Code (ls05, `1.132.0`, vscode-languageclient 9.0.1)
+
+VS Code is, like Neovim, a well-behaved client — but it is the first one whose
+*client library* enforces a constraint the server can violate only once.
+
+**Answer `utf-16`, or the client throws.** `vscode-languageclient` declares
+`general.positionEncodings: ["utf-16"]` — hardcoded at
+`lib/common/client.js:1370`, with no extension-facing option to change it — and
+then refuses any other answer outright:
+
+```js
+if (result.capabilities.positionEncoding !== undefined &&
+    result.capabilities.positionEncoding !== PositionEncodingKind.UTF16) {
+  throw new Error(`Unsupported position encoding (…) received from server ${this.name}`);
+}
+```
+
+Every other client on this list would *mis-render* a wrong encoding. This one
+fails to start, in a `try`/`catch` that surfaces as a notification, and the user
+gets an extension that does nothing. Note that this is the same wire outcome as
+facsimile's constraint and a strictly stronger requirement: facsimile needs
+utf-16 to be *reachable*, VS Code needs it to be *the answer*. *Holds today —
+wolf's preference order is utf-8 → utf-16 → utf-32 and a sole utf-16 offer
+selects utf-16; asserted by `profiles/vscode.json`, by `lspconf onetruth` under
+that profile, and by the negotiation recorded in `transcripts/vscode/smoke.jsonl`.*
+
+**Expect `textDocument/codeAction` on every cursor move, unprompted.** The
+recorded 42-record session contains **nine** `codeAction` requests and **three**
+`documentSymbol` requests; the suite that drove it issued exactly one of each.
+The other eight and two are VS Code's own — it polls code actions to decide
+whether to draw the lightbulb, and requests document symbols for breadcrumbs and
+the outline. With their responses and the four `$/setTrace` notifications, **24
+of the 42 records are traffic nobody asked for.** This is the highest request rate of
+any client tracked so far, it scales with typing and cursor movement rather than
+with anything the user asks for, and it arrives on *clean* files where there is
+nothing to fix. A `codeAction` handler whose cost is proportional to anything
+but the diagnostics already computed will be felt here first. *Holds today —
+wolf resolves fix-its at publish time, so the response is a lookup.*
+
+**Expect `$/setTrace` at any point, including several in a row.** The client
+sends it on connection and whenever `wolf.trace.server` changes; the recorded
+session carries four. A server that treated an unknown notification as an error
+would be reacting to a setting the user changed in a different window. *Holds
+today — unknown notifications are ignored.*
+
+**`shutdown` then `exit`, and the client waits for the response.** Unlike
+facsimile (which SIGTERMs) and fackr (which SIGKILLs after 100 ms),
+`vscode-languageclient` sends `shutdown`, awaits the response, then sends
+`exit`. A server that exited on `shutdown` without responding would produce a
+five-second stall and then a forced kill on every window close. *Holds today;
+the recorded transcript ends on the `shutdown` response followed by `exit`.*

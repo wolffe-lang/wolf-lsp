@@ -697,11 +697,15 @@ mod tests {
 
     #[test]
     fn a_space_is_percent_encoded_and_survives_the_round_trip() {
-        let p = PathBuf::from("/work/my samples/a.lu");
+        // platform-shaped like the round-trip test above: the windows
+        // decode branch strips the leading slash for drive-letter form
+        let p = if cfg!(windows) {
+            PathBuf::from("C:\\work\\my samples\\a.lu")
+        } else {
+            PathBuf::from("/work/my samples/a.lu")
+        };
         let uri = file_uri(&p);
         assert!(uri.contains("%20"), "{uri}");
-        // compare in slash-normalized form — on Windows the PathBuf
-        // separator differs while the URI stays forward-slashed
         assert_eq!(
             uri_to_path(&uri).unwrap(),
             PathBuf::from(crate::slash_path(&p))

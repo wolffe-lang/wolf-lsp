@@ -1,4 +1,4 @@
-{"name":"encoding/astral-utf16","profile":"utf16-only","recorded":"2026-08-10","transcript":1,"wolf_pin":"67c977fb1d55b1a5f3f355b4c8aeffa1d66178e5","workspace":"fixtures"}
+{"name":"encoding/astral-utf16","profile":"utf16-only","recorded":"2026-08-10","transcript":1,"wolf_pin":"70bdd35c9d24c5bfba2c46e6334f886d8b2fe474","workspace":"fixtures"}
 {"dir":"c2s","id":1,"kind":"request","method":"initialize","params":{"capabilities":{"general":{"positionEncodings":["utf-16"]},"textDocument":{"publishDiagnostics":{"relatedInformation":true}}},"clientInfo":{"name":"lspconf","version":"0.0.1"},"processId":0,"rootUri":"file://$WS","workspaceFolders":[{"name":"samples","uri":"file://$WS"}]},"seq":1}
 {"dir":"s2c","id":1,"kind":"response","normalize":["serverinfo"],"result":{"capabilities":{"codeActionProvider":true,"documentFormattingProvider":true,"documentSymbolProvider":true,"hoverProvider":true,"positionEncoding":"utf-16","textDocumentSync":{"change":1,"openClose":true,"save":{"includeText":false}}}},"seq":2}
 {"dir":"c2s","kind":"notification","method":"initialized","params":{},"seq":3}

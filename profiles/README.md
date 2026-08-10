@@ -26,7 +26,7 @@ that owes each:
 | client      | owed by | state |
 |-------------|---------|-------|
 | `fackr`     | ls02    | **derived** — read off `fackr@496c7e2` and the session it recorded |
-| `facsimile` | ls03    | owed |
+| `facsimile` | ls03    | **derived** — read off `facsimile@1242ffa` and the session it recorded |
 | `nvim`      | ls04    | owed |
 | `vscode`    | ls05    | owed |
 | `helix`     | ls06    | owed |

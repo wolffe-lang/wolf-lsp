@@ -1,0 +1,263 @@
+diff --git a/src/commands/command_handler_module.f90 b/src/commands/command_handler_module.f90
+index 08fc648..4998f4b 100644
+--- a/src/commands/command_handler_module.f90
++++ b/src/commands/command_handler_module.f90
+@@ -2613,8 +2613,16 @@ contains
+                 end if
+             end block
+ 
+-        case('shift-alt-f')
+-            ! Format document
++        case('alt-shift-f', 'shift-alt-f')
++            ! Format document.
++            !
++            ! 'alt-shift-f' is the spelling the input layer actually produces:
++            ! modifier_prefix and decode_csi_u both emit alt- before shift-,
++            ! and every other chord in this file is named that way
++            ! ('alt-shift-left', 'alt-shift-j', ...). 'shift-alt-f' alone was
++            ! never reachable, so formatting could not be invoked at all.
++            ! The old spelling is kept so the binding survives whichever order
++            ! a future input path chooses.
+             block
+                 integer :: format_server
+                 format_server = get_lsp_server_for_cap(editor, CAP_FORMATTING)
+diff --git a/src/lsp/lsp_client_module.f90 b/src/lsp/lsp_client_module.f90
+index 07721e5..54d6d60 100644
+--- a/src/lsp/lsp_client_module.f90
++++ b/src/lsp/lsp_client_module.f90
+@@ -474,6 +474,8 @@ contains
+                 language_id = "shellscript"
+             case('.md', '.markdown')
+                 language_id = "markdown"
++            case('.lu', '.wolfi')
++                language_id = "wolf"
+             case default
+                 language_id = "text"
+             end select
+diff --git a/src/lsp/lsp_protocol_module.f90 b/src/lsp/lsp_protocol_module.f90
+index ca9a1af..a82419d 100644
+--- a/src/lsp/lsp_protocol_module.f90
++++ b/src/lsp/lsp_protocol_module.f90
+@@ -169,6 +169,30 @@ contains
+         end block
+         call json_add_object(capabilities, "workspace", workspace)
+ 
++        ! General capabilities.
++        !
++        ! Declare the position encoding instead of relying on the default.
++        ! Every column this client sends and receives is converted through
++        ! utf8_char_col_to_utf16 / utf16_to_utf8_char_col, so UTF-16 code
++        ! units are what our arithmetic actually means. UTF-16 is also the
++        ! protocol default, which is why this worked while we said nothing --
++        ! but "correct because nobody wrote the field down" is one server
++        ! preference away from silently mis-placing every diagnostic past a
++        ! multi-byte character. Saying it out loud costs one object and makes
++        ! the agreement explicit on the wire.
++        !
++        ! Offer UTF-16 alone. A server picks the first encoding it supports
++        ! from this list, so adding utf-8 or utf-32 as a "fallback" would
++        ! invite exactly the encoding this client cannot count in.
++        block
++            type(json_value_t) :: general, encodings
++            general = json_create_object()
++            encodings = json_create_array()
++            call json_array_add_element(encodings, json_create_string("utf-16"))
++            call json_add_array(general, "positionEncodings", encodings)
++            call json_add_object(capabilities, "general", general)
++        end block
++
+         call json_add_object(params, "capabilities", capabilities)
+ 
+         msg%params = params
+diff --git a/src/lsp/lsp_server_manager_module.f90 b/src/lsp/lsp_server_manager_module.f90
+index f9d76db..92857ad 100644
+--- a/src/lsp/lsp_server_manager_module.f90
++++ b/src/lsp/lsp_server_manager_module.f90
+@@ -334,6 +334,19 @@ contains
+         caps(CAP_CODE_ACTIONS) = .true.
+         call add_config(manager, "fortran", "fortls", "fortls", "*.f90,*.f95,*.f03,*.f08", caps)
+ 
++        ! Wolf - the compiler is the language server, so `wolf lsp` is a
++        ! subcommand of the toolchain rather than a separate download.
++        ! Only the features the server actually implements are enabled here:
++        ! these flags drive OUR request routing, not the server's advertised
++        ! capabilities, so an optimistic entry sends requests that come back
++        ! MethodNotFound and read to a user as a broken server.
++        caps = .false.
++        caps(CAP_HOVER) = .true.
++        caps(CAP_FORMATTING) = .true.
++        caps(CAP_DOCUMENT_SYMBOLS) = .true.
++        caps(CAP_CODE_ACTIONS) = .true.
++        call add_config(manager, "wolf", "wolf", "wolf lsp", "*.lu,*.wolfi", caps)
++
+         ! TODO: Load from config file
+     end subroutine load_default_configs
+ 
+@@ -942,6 +955,8 @@ contains
+             language = "ruby"
+         case('.lua')
+             language = "lua"
++        case('.lu', '.wolfi')
++            language = "wolf"
+         case default
+             language = ""
+         end select
+@@ -1189,16 +1204,12 @@ contains
+         integer, intent(in), optional :: version
+         type(lsp_message_t) :: msg
+         integer :: doc_version
+-        integer :: debug_unit
+-
+-        ! Debug logging
+-        open(newunit=debug_unit, file='/tmp/fac_didchange_debug.log', status='unknown', &
+-             position='append', action='write')
+-        write(debug_unit, '(A,I2,A)') 'notify_file_changed called for server ', server_index, ':'
+-        write(debug_unit, '(A,A)') '  URI: ', trim(filename)
+-        write(debug_unit, '(A,I8)') '  Content length: ', len(content)
+-        write(debug_unit, '(A)') '---'
+-        close(debug_unit)
++
++        ! (Removed: an unconditional append to a hardcoded /tmp path. It ran
++        ! before the guards below, so it opened, wrote four records and closed
++        ! a file on every debounced buffer flush -- for invalid and
++        ! uninitialised servers too -- on the hottest path this module has.
++        ! It also assumed a POSIX /tmp, which the Windows build does not have.)
+ 
+         if (server_index < 1 .or. server_index > manager%num_servers) return
+         if (.not. manager%servers(server_index)%initialized) return
+diff --git a/src/lsp/server_detection_module.f90 b/src/lsp/server_detection_module.f90
+index 75ec9c9..857a71a 100644
+--- a/src/lsp/server_detection_module.f90
++++ b/src/lsp/server_detection_module.f90
+@@ -21,9 +21,14 @@ module server_detection_module
+ 
+ contains
+ 
++    ! MUST equal the number of slots init_known_servers fills. The two are
++    ! maintained by hand and nothing checks them against each other: this
++    ! count sizes the array, and init_known_servers writes into it through an
++    ! assumed-shape dummy that never consults size(). Adding a server without
++    ! bumping this number is an out-of-bounds write, not a missing row.
+     function get_known_servers_count() result(count)
+         integer :: count
+-        count = 20  ! Number of servers we know about
++        count = 21  ! Number of servers we know about
+     end function get_known_servers_count
+ 
+     subroutine detect_all_servers(servers, num_servers)
+@@ -216,6 +221,17 @@ contains
+         servers(i)%install_cmd = 'pipx install fortls'
+         servers(i)%description = 'Fortran language server'
+         servers(i)%check_cmd = 'fortls'
++        i = i + 1
++
++        ! Wolf - the language server is a subcommand of the compiler, so there
++        ! is nothing separate to install and no package to name. A leading '#'
++        ! routes the panel to its manual-info dialog instead of running the
++        ! string through a shell.
++        servers(i)%name = 'wolf'
++        servers(i)%language = 'Wolf'
++        servers(i)%install_cmd = '# Install the wolf toolchain; `wolf lsp` ships with it'
++        servers(i)%description = 'Wolf compiler and language server'
++        servers(i)%check_cmd = 'wolf'
+     end subroutine init_known_servers
+ 
+     function check_server_installed(cmd_name) result(installed)
+diff --git a/src/syntax/comment_syntax_module.f90 b/src/syntax/comment_syntax_module.f90
+index cde6459..0e9b28c 100644
+--- a/src/syntax/comment_syntax_module.f90
++++ b/src/syntax/comment_syntax_module.f90
+@@ -77,6 +77,14 @@ contains
+             syn%block_start = '/*'
+             syn%block_end = '*/'
+ 
++        ! ---- Wolf: // only, no block form ----
++        ! Kept out of the C-family list above on purpose. Wolf has no block
++        ! comment at all, so a '/*' here is two operator tokens; handing the
++        ! toggle a block form it could fall back to would let it write a
++        ! comment the compiler does not recognise.
++        case('.lu', '.wolfi')
++            syn%line = '//'
++
+         ! ---- Hash-comment languages ----
+         case('.py', '.pyw', '.pyi', '.rb', '.rbw', '.gemspec', '.pl', '.pm', &
+              '.t', '.raku', '.rakumod', '.sh', '.bash', '.zsh', '.ksh', &
+diff --git a/src/syntax/syntax_highlighter_module.f90 b/src/syntax/syntax_highlighter_module.f90
+index b4af09f..b2409bd 100644
+--- a/src/syntax/syntax_highlighter_module.f90
++++ b/src/syntax/syntax_highlighter_module.f90
+@@ -133,6 +133,8 @@ contains
+                 call load_cpp_syntax(highlighter)
+             case('.rs')
+                 call load_rust_syntax(highlighter)
++            case('.lu', '.wolfi')
++                call load_wolf_syntax(highlighter)
+             case('.go')
+                 call load_go_syntax(highlighter)
+             case('.js', '.jsx', '.mjs')
+@@ -879,6 +881,65 @@ contains
+         highlighter%enabled = .true.
+     end subroutine load_rust_syntax
+ 
++    ! Wolf. The keyword list is the closed reserved set from the language's
++    ! own grammar -- all 50 of them, no more and no less. Contextual keywords
++    ! (c, rc, pool, from, timeout, noalias, pkg, reg, self) are deliberately
++    ! absent: each is an ordinary identifier everywhere except one position,
++    ! and a table that cannot see position would mis-colour them far more
++    ! often than not.
++    subroutine load_wolf_syntax(highlighter)
++        type(syntax_highlighter_t), intent(inout) :: highlighter
++
++        highlighter%current_lang%name = "wolf"
++        highlighter%current_lang%case_sensitive = .true.
++
++        ! Keywords
++        allocate(highlighter%current_lang%keywords(50))
++        highlighter%current_lang%keywords = [ &
++            "as      ", "asm     ", "assume  ", "borrow  ", "break   ", &
++            "comptime", "const   ", "continue", "copy    ", "defer   ", &
++            "distinct", "dyn     ", "else    ", "enum    ", "errdefer", &
++            "export  ", "extern  ", "false   ", "fn      ", "for     ", &
++            "freeze  ", "handle  ", "if      ", "impl    ", "import  ", &
++            "in      ", "let     ", "loop    ", "match   ", "move    ", &
++            "mut     ", "proc    ", "pub     ", "region  ", "return  ", &
++            "scope   ", "select  ", "shared  ", "spawn   ", "struct  ", &
++            "take    ", "trait   ", "true    ", "type    ", "unsafe  ", &
++            "use     ", "var     ", "weak    ", "when    ", "while   " &
++        ]
++
++        ! Types. Small on purpose: the language has no fixed-width scalar
++        ! inventory yet, so i32/u64/f64 are NOT types here. Inventing them
++        ! would teach a user a language that does not exist.
++        allocate(highlighter%current_lang%types(4))
++        highlighter%current_lang%types = [ &
++            "bool", "int ", "str ", "Self" &
++        ]
++
++        ! Line comments only -- wolf has no block comment form, so a '/*' is
++        ! two operator tokens and comment_start/comment_end stay empty.
++        highlighter%current_lang%comment_single = "//"
++
++        ! Triple quote FIRST: process_string takes the first delimiter that
++        ! matches, and only a delimiter of length >= 3 turns on multiline
++        ! mode. Listing '"' first would make the block-string form unreachable.
++        allocate(highlighter%current_lang%string_delimiters(2))
++        highlighter%current_lang%string_delimiters = ['""" ', '"   ']
++
++        allocate(highlighter%current_lang%operators(37))
++        highlighter%current_lang%operators = [ &
++            "<=> ", "<<= ", ">>= ", "..= ", "==  ", "!=  ", &
++            "<=  ", ">=  ", "&&  ", "||  ", "<<  ", ">>  ", &
++            "..  ", "->  ", "=>  ", "+=  ", "-=  ", "*=  ", &
++            "/=  ", "%=  ", "&=  ", "|=  ", "^=  ", "+   ", &
++            "-   ", "*   ", "/   ", "%   ", "&   ", "|   ", &
++            "^   ", "!   ", "<   ", ">   ", "=   ", "?   ", &
++            "@   " &
++        ]
++
++        highlighter%enabled = .true.
++    end subroutine load_wolf_syntax
++
+     ! Go language support
+     subroutine load_go_syntax(highlighter)
+         type(syntax_highlighter_t), intent(inout) :: highlighter

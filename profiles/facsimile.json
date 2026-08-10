@@ -1,0 +1,48 @@
+{
+  "profile": "facsimile",
+  "provenance": {
+    "kind": "derived",
+    "client": "facsimile",
+    "repository": "https://github.com/FortranGoingOnForty/facsimile",
+    "commit": "1242ffa24bd9c2a7e4a15045f0cb7423922d91a1",
+    "read_on": "2026-08-10",
+    "source": [
+      "src/lsp/lsp_protocol_module.f90:create_initialize_request",
+      "transcripts/facsimile/smoke.jsonl"
+    ]
+  },
+  "expects_encoding": "utf-16",
+  "capabilities": {
+    "general": {
+      "positionEncodings": ["utf-16"]
+    },
+    "textDocument": {
+      "completion": {
+        "dynamicRegistration": false,
+        "contextSupport": true
+      },
+      "hover": {
+        "dynamicRegistration": false
+      },
+      "definition": {
+        "dynamicRegistration": false,
+        "linkSupport": true
+      },
+      "references": {
+        "dynamicRegistration": false
+      },
+      "documentSymbol": {
+        "dynamicRegistration": false
+      },
+      "formatting": {
+        "dynamicRegistration": false
+      }
+    },
+    "workspace": {
+      "applyEdit": true,
+      "workspaceEdit": {
+        "documentChanges": true
+      }
+    }
+  }
+}

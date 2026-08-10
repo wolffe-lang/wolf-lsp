@@ -38,9 +38,14 @@ which is where they are.
   semantic targets sit at different `character` numbers in each, and a shim
   that treated all encodings alike would produce three identical transcripts.
 
-`diagnostics/cross-file-e0302.jsonl` records a **known bug** on purpose
-(`divergences.toml`, DIV-LSP-001). The empty diagnostics array in it is the
-evidence attached to the filing.
+`diagnostics/cross-file-e0302.jsonl` used to record a **known bug** on purpose
+(`divergences.toml`, DIV-LSP-001): the E0302 whose primary span lands in
+`twice.lu` reached no document at all, and the empty diagnostics array was the
+evidence attached to the filing. wolf-lang `7117882` fixed it — diagnostics now
+publish per primary-span file — so re-recording at pin `70bdd35` turned that
+empty array into a real `publishDiagnostics` against `twice.lu`, and the ledger
+entry was deleted. The transcript is now the *regression* test for the fix
+rather than the evidence for the bug, which is why it was worth recording.
 
 ## The format
 
@@ -50,11 +55,18 @@ not sessions, and they never move here.
 
 ## Client-recorded transcripts
 
-`fackr/` is the first, and they are a different kind of artifact: captured from
-the *actual* editor by `lspconf capture` — a proxy the editor spawns instead of
-the server — rather than approximated by a script. There is no `.lsps` beside
-one, and there cannot be: the whole claim of the file is that no script decided
-what the client sent.
+`fackr/` and `facsimile/` are these, and they are a different kind of artifact:
+captured from the *actual* editor by `lspconf capture` — a proxy the editor
+spawns instead of the server — rather than approximated by a script. There is
+no `.lsps` beside one, and there cannot be: the whole claim of the file is that
+no script decided what the client sent.
+
+Neither editor needed an instrumented build. Both spawn their server by bare
+name (fackr via `Command::new("wolf")`, facsimile via `/bin/sh -c`), so a proxy
+named `wolf` earlier on `PATH` sees everything. facsimile is additionally
+driven through a pty with `pexpect` + `pyte` — the way its own integration
+suites drive it — so `facsimile/smoke.jsonl` records real keystrokes reaching a
+real editor, 0.5 s debounce and all.
 
 `verify` takes them on exactly that basis. The exemption is keyed on the first
 segment of the transcript's own `name` being a client in

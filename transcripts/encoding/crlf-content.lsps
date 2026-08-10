@@ -1,0 +1,22 @@
+#! CRLF reaches the server the way it reaches a real one: as `didChange`
+#! CONTENT. There is no CRLF file in this repo and never will be —
+#! `.gitattributes` pins `eol=lf`, so a committed CRLF fixture would be
+#! normalized on checkout into a file that no longer tests what it claims.
+#!
+#! The claim: the server splits lines on `\n` alone, so a lone `\r` is
+#! ordinary line content and occupies a code unit. A diagnostic on the second
+#! line of a CRLF buffer must land on the same line number as the same
+#! diagnostic in the LF buffer, and its column must not be shifted by the
+#! carriage returns above it.
+name      encoding/crlf-content
+profile   utf16-only
+
+initialize
+open      hello.lu
+wait      diagnostics hello.lu
+edit      hello.lu "fn main() -> !int {\r\n    let a = 1 < 2 < 3\r\n    0\r\n}\r\n"
+wait      diagnostics hello.lu
+req       hover hello.lu 1:8
+edit      hello.lu "fn main() -> !int {\n    let a = 1 < 2 < 3\n    0\n}\n"
+wait      diagnostics hello.lu
+shutdown

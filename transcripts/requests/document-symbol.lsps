@@ -1,0 +1,14 @@
+#! `documentSymbol` nesting is behavior, not presentation: the outline is
+#! compared as a multiset at the top level (LSP fixes no order) with every
+#! element `exact`, so a struct that stops containing its fields, or a symbol
+#! whose selectionRange stops being inside its range, turns this red.
+#! `errors.lu` carries structs, functions, and `!T` error rows at three
+#! depths.
+name      requests/document-symbol
+profile   minimal
+
+initialize
+open      errors.lu
+wait      diagnostics errors.lu
+req       documentSymbol errors.lu
+shutdown

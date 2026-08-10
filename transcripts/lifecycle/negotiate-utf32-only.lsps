@@ -1,0 +1,9 @@
+#! The only route to utf-32: this server prefers utf-8 whenever it is offered
+#! and falls back to utf-16 otherwise, so a client reaches the code-point
+#! branch only by offering utf-32 alone. Report 09 recommends exactly this for
+#! fackr, whose own tokens are already char-indexed.
+name      lifecycle/negotiate-utf32-only
+profile   utf32-only
+
+initialize
+shutdown

@@ -1,0 +1,16 @@
+#! `$/cancelRequest` for an id that was already answered, and for one that
+#! never existed. Both must be dropped silently: the protocol says a cancel
+#! for an unknown id is a no-op, and clients send them routinely because the
+#! response and the cancel cross on the wire. A server that errors, or that
+#! keeps such ids forever, leaks a little on every keystroke.
+name      cancel/cancel-unknown-id
+profile   minimal
+
+initialize
+open      hello.lu
+wait      diagnostics hello.lu
+req       hover hello.lu 8:4
+cancel    2
+cancel    9999
+req       documentSymbol hello.lu
+shutdown

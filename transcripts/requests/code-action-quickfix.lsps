@@ -1,0 +1,20 @@
+#! The quickfix round-trip. `grammar/semicolon.lu`'s E0002 carries the only
+#! MACHINE-APPLICABLE suggestion in the sample set, so it is the one
+#! diagnostic that becomes a code action. Three claims are pinned here:
+#!
+#!   * an action offered at the diagnostic's own range carries a fully
+#!     resolved `edit` — facsimile cannot resolve lazily (report 09), so an
+#!     action with a `data` blob and no edit is unusable for a tier-0 client;
+#!   * the action's `diagnostics` array is the diagnostic it fixes, so a
+#!     client can attribute it;
+#!   * a range with no diagnostic in it yields an EMPTY array, not null — a
+#!     lightbulb that appears on every line is a lightbulb users turn off.
+name      requests/code-action-quickfix
+profile   maximal
+
+initialize
+open      grammar/semicolon.lu
+wait      diagnostics grammar/semicolon.lu
+req       codeAction grammar/semicolon.lu 7:4-7:5
+req       codeAction grammar/semicolon.lu 10:0-10:4
+shutdown

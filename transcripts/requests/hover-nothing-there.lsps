@@ -1,0 +1,14 @@
+#! Hover where nothing is typed: inside a header comment, past the end of a
+#! line, and past the end of the document. All three must answer `null`
+#! promptly. A server that errors here makes an editor show an error popup
+#! every time the mouse crosses whitespace.
+name      requests/hover-nothing-there
+profile   minimal
+
+initialize
+open      errors.lu
+wait      diagnostics errors.lu
+req       hover errors.lu 3:10
+req       hover errors.lu 12:400
+req       hover errors.lu 9000:0
+shutdown

@@ -1,0 +1,11 @@
+#! A lex/parse-tier diagnostic with a machine-applicable fix-it behind it.
+#! `grammar/semicolon.lu` is `fail(E0002)`; the quickfix round-trip lives in
+#! `requests/code-action-quickfix`, and this transcript pins the diagnostic
+#! the action attaches itself to.
+name      diagnostics/broken-e0002
+profile   minimal
+
+initialize
+open      grammar/semicolon.lu
+wait      diagnostics grammar/semicolon.lu
+shutdown

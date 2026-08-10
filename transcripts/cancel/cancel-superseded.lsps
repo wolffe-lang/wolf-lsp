@@ -1,0 +1,21 @@
+#! Two requests in flight, the first cancelled. BOTH must get responses and
+#! the ordering is not assumed — the server answers on worker threads, so the
+#! survivor can land before or after the cancelled one. The harness correlates
+#! by id and holds whatever arrives first, which is exactly what a client must
+#! do and what a suite asserting arrival order would get wrong.
+#!
+#! `documentSymbol` for both, for the reason `cancel-inflight` explains: it is
+#! the request that reliably reaches a cancellation checkpoint.
+name      cancel/cancel-superseded
+profile   minimal
+env       WOLF_QUERY_TEST_SLOW_MS 1500
+
+initialize
+open      hello.lu
+wait      diagnostics hello.lu
+send      documentSymbol hello.lu
+send      documentSymbol hello.lu
+cancel    2
+wait      response 2
+wait      response 3
+shutdown

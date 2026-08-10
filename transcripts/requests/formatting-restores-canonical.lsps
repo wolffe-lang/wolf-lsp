@@ -1,0 +1,18 @@
+#! The other half: given a buffer that is NOT canonical, formatting must
+#! return an edit that restores the canonical bytes exactly. The mangled
+#! buffer is produced by editing the sample rather than by committing a second
+#! copy of it — an unformatted fixture would be a fork of a corpus file, and
+#! `samples.toml` forbids that for good reason.
+#!
+#! The result is `exact`: `new_text` is the whole document, so this record IS
+#! the byte-for-byte claim about `wolf fmt`.
+name      requests/formatting-restores-canonical
+profile   minimal
+
+initialize
+open      hello.lu
+wait      diagnostics hello.lu
+edit      hello.lu "fn main() -> !int {\n    let  who   =  \"wolf\"\n        print(\"hello, {who}\")\n    0\n}\n"
+wait      diagnostics hello.lu
+req       formatting hello.lu
+shutdown

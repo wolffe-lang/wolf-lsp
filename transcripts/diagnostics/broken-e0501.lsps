@@ -1,0 +1,13 @@
+#! The one-truth subject. `traits/golden_missing_bound.lu` carries
+#! `//! check: fail(E0501)`, so the corpus itself pins the code; this asserts
+#! the editor surface reports the same one, at the same span, with both
+#! secondary sites as relatedInformation. Message prose is compared under the
+#! transcript default (not exact) — D22 owns the wording upstream, and
+#! `lspconf onetruth` is the one place it is pinned to the sentence.
+name      diagnostics/broken-e0501
+profile   minimal
+
+initialize
+open      traits/golden_missing_bound.lu
+wait      diagnostics traits/golden_missing_bound.lu
+shutdown

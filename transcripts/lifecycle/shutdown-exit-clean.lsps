@@ -1,0 +1,13 @@
+#! `shutdown` answers `null` and `exit` terminates. A second request after
+#! `shutdown` must be refused with InvalidRequest rather than served, because
+#! a server that keeps working after shutdown is a server an editor cannot
+#! close. The process exit is asserted by the driver, not by a record.
+name      lifecycle/shutdown-exit-clean
+profile   minimal
+
+initialize
+open      hello.lu
+wait      diagnostics hello.lu
+shutdown-only
+req       hover hello.lu 8:7
+exit

@@ -1,0 +1,10 @@
+#! The floor of the protocol. A client that declares nothing optional must
+#! still get a usable server: the capability set is asserted `subset`, so the
+#! server gaining a capability leaves this green and losing one turns it red.
+#! `positionEncoding` must come back utf-16 — the mandatory default for a
+#! client that offered nothing.
+name      lifecycle/initialize-minimal
+profile   minimal
+
+initialize
+shutdown

@@ -1,0 +1,13 @@
+#! The byte-stability claim. `regions.lu` is canonical `wolf fmt` output at
+#! the pin, so formatting it must produce ZERO edits — not an edit that
+#! happens to be a no-op, an empty array. An editor that applies a whole-file
+#! replacement on every save churns the undo stack and defeats every
+#! format-on-save workflow, and the result is `exact` here for that reason.
+name      requests/formatting-byte-stable
+profile   minimal
+
+initialize
+open      regions.lu
+wait      diagnostics regions.lu
+req       formatting regions.lu
+shutdown

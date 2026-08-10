@@ -1,0 +1,49 @@
+//! check: run(exit=0)
+//! phase: resolve
+//!
+//! LOCAL FIXTURE — not a corpus sample. `vendor/upstream/samples.toml`
+//! records why under `[gap.astral_plane]`: no file in the wolf-lang corpus
+//! at this pin holds a character above the BMP, and ls01 §5 cannot be
+//! written without one. The corpus request stands upstream; this file is
+//! the stopgap, and it is the ONLY `.lu` outside the vendored tree.
+//!
+//! Every line below makes byte length, UTF-16 length, code-point count and
+//! grapheme count four different numbers, so a position the server returns
+//! is wrong under three of the four if the conversion is wrong.
+//!
+//! The file is deliberately CLEAN. Hover only answers on code that reached
+//! typecheck, so a fixture that fails to parse can assert the byte→position
+//! direction and nothing else. The diagnostic direction is asserted by an
+//! overlay edit in `transcripts/encoding/astral-*.lsps`, which introduces a
+//! chained comparison after astral text on one line.
+
+fn main() -> !int {
+    // BMP multi-byte: 2 and 3 bytes, one UTF-16 unit each.
+    let bmp = "é café 中文"
+
+    // Astral plane: 4 bytes, ONE code point, TWO UTF-16 units, one grapheme.
+    let astral = "🐺"
+    let pair = "🐺🐺"
+
+    // Combining mark: `e` + U+0301 is two code points, three bytes, one
+    // grapheme — the count nothing in LSP uses.
+    let combining = "éclair"
+
+    // ZWJ sequence: five code points, eighteen bytes, eight UTF-16 units,
+    // ONE grapheme.
+    let zwj = "👨‍👩‍👧"
+
+    // A tab inside a literal, so a column is not a screen column either.
+    let tabbed = "left	right"
+
+    // A long line, well past any plausible small-buffer boundary.
+    let long = "the wolf runs and the moon watches the wolf runs and the moon watches the wolf runs and the moon watches the wolf runs and the moon watches the wolf runs and the moon watches the wolf runs and the moon watches the wolf runs and the moon watches the wolf runs and the moon watches the wolf runs and the moon watches the wolf runs and the moon watches the wolf runs and the moon watches the wolf runs and the moon watches 🐺"
+
+    // A name that sits AFTER astral, BMP, combining and ZWJ text on its own
+    // line: hovering it resolves a position the client counted in code
+    // units and the compiler counted in bytes, which is the client→offset
+    // direction §5 asks for.
+    let tail = "é中🐺👨‍👩é" != bmp
+
+    if tail && long != "" && astral != "" && pair != "" { 0 } else { 1 }
+}

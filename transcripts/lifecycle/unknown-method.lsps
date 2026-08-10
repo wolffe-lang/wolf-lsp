@@ -1,0 +1,14 @@
+#! An unimplemented method yields MethodNotFound, never a hang. v0 serves
+#! diagnostics, hover, documentSymbol, formatting and codeAction; everything
+#! else — including the four capabilities s52's successor owns — must answer
+#! -32601 and leave the session usable, which the hover afterwards proves.
+name      lifecycle/unknown-method
+profile   minimal
+
+initialize
+open      hello.lu
+wait      diagnostics hello.lu
+req       raw textDocument/definition {"textDocument":{"uri":"file://$WS/hello.lu"},"position":{"line":8,"character":3}}
+req       raw textDocument/semanticTokens/full {"textDocument":{"uri":"file://$WS/hello.lu"}}
+req       hover hello.lu 8:7
+shutdown

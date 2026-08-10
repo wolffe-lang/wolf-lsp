@@ -1,0 +1,16 @@
+#! Hover across the shapes v0 answers: a function name, a `let` binding whose
+#! type is inferred, an expression, and a literal. Ranges are `exact` (the
+#! range is behavior); the markdown prose rides the transcript default,
+#! because D22 owns hover wording upstream and this repo must not become a
+#! second review gate on it.
+name      requests/hover
+profile   minimal
+
+initialize
+open      hello.lu
+wait      diagnostics hello.lu
+req       hover hello.lu 8:4
+req       hover hello.lu 9:9
+req       hover hello.lu 10:11
+req       hover hello.lu 11:4
+shutdown

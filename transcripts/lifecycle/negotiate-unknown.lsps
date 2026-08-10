@@ -1,0 +1,9 @@
+#! A client offering an encoding that does not exist. The server must fall
+#! back to utf-16 rather than failing the handshake or echoing back a kind it
+#! cannot produce — echoing `utf-7` here would silently corrupt every position
+#! in the session, which is the failure mode this whole area exists for.
+name      lifecycle/negotiate-unknown
+profile   unknown-encoding
+
+initialize
+shutdown

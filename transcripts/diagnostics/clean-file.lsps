@@ -1,0 +1,11 @@
+#! The clean case. `hello.lu` compiles, so the server must publish an EMPTY
+#! diagnostics array rather than staying silent — a client that never hears
+#! about a file it opened cannot tell "no problems" from "not analysed yet",
+#! and both tier-0 editors render the difference identically (nothing).
+name      diagnostics/clean-file
+profile   minimal
+
+initialize
+open      hello.lu
+wait      diagnostics hello.lu
+shutdown

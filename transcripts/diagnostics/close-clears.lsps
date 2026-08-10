@@ -1,0 +1,13 @@
+#! `didClose` hands the document back to disk, and the server must publish an
+#! empty set for it. Without that the editor shows squiggles for a buffer it
+#! no longer owns — the classic stale-decoration bug, and one a user cannot
+#! clear without restarting the server.
+name      diagnostics/close-clears
+profile   minimal
+
+initialize
+open      grammar/semicolon.lu
+wait      diagnostics grammar/semicolon.lu
+close     grammar/semicolon.lu
+wait      quiet 400
+shutdown

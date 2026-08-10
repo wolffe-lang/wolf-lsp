@@ -1,0 +1,9 @@
+#! The ceiling: every optional client feature declared at once, all three
+#! encodings offered. The server prefers utf-8 when it is on offer, so this is
+#! the zero-conversion negotiation — `character` is a byte column and the
+#! shim's translation layer is the identity.
+name      lifecycle/initialize-maximal
+profile   maximal
+
+initialize
+shutdown

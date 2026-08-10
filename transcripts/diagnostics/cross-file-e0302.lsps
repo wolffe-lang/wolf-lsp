@@ -1,0 +1,26 @@
+#! **This transcript records a known bug.** It is committed because the
+#! recorded artifact IS the evidence attached to `divergences.toml`'s
+#! DIV-LSP-001, and because a re-record is how anyone will notice the day it
+#! gets fixed.
+#!
+#! `resolve/dupdef/main.lu` and its `member: true` sibling `twice.lu` are ONE
+#! module (D32), and `wolf conform-run resolve/dupdef/main.lu` reports
+#! `fail(E0302)` — `helper` is defined in both. Opening `main.lu` in an editor
+#! publishes an EMPTY diagnostics array, which is what the record below shows:
+#! the server publishes only diagnostics whose PRIMARY span lies in the
+#! document being published, and this one's primary is in `twice.lu`.
+#!
+#! So the user sees a clean file for code that does not build. `lspconf
+#! onetruth` detects this rather than mirroring the server's filter — see
+#! `crates/lsp_harness/src/onetruth.rs`, the reachability comparison — and
+#! reports it as KNOWN against the ledger.
+#!
+#! When the fix lands upstream, this transcript turns red on re-record, the
+#! ledger entry goes stale and fails, and both are deliberate.
+name      diagnostics/cross-file-e0302
+profile   minimal
+
+initialize
+open      resolve/dupdef/main.lu
+wait      diagnostics resolve/dupdef/main.lu
+shutdown

@@ -1,0 +1,43 @@
+#! Position encoding, asserted under utf-32. Three of these files exist and they
+#! are NOT copies: the same semantic targets sit at different `character`
+#! numbers in each, and a shim that treated all encodings alike would produce
+#! three identical transcripts.
+#!
+#! Under utf-32 `character` counts CODE POINTS — what a rope-backed editor
+#! natively holds, and what report 09 recommends fackr negotiate so its
+#! existing char arithmetic becomes correct with no other change. The emoji is
+#! ONE column, so there is no addressable interior of a character at all:
+#! 19 is already the closing quote. That property is why utf-32 is the
+#! safe choice for a client that counts characters.
+#!
+#! Both directions are asserted, which is the point of §5:
+#!
+#!   client position -> offset   the four hover probes on line 24
+#!                               (`    let astral = "🐺"`), plus the one on
+#!                               line 45 where the target sits AFTER astral,
+#!                               BMP, combining and ZWJ text on its own line;
+#!   byte span -> client range   the E0003 introduced by the overlay edit,
+#!                               whose span the compiler reports in bytes and
+#!                               the server must publish at column 29-ish
+#!                               in this encoding and elsewhere in the others.
+#!
+#! The fixture is clean on disk so hover has typechecked code to answer from;
+#! the diagnostic is introduced as an UNSAVED edit, which is also how a user
+#! meets it.
+name      encoding/astral-utf32
+profile   utf32-only
+workspace fixtures
+
+initialize
+open      astral.lu
+wait      diagnostics astral.lu
+req       hover astral.lu 24:8
+req       hover astral.lu 24:18
+req       hover astral.lu 24:19
+req       hover astral.lu 24:19
+req       hover astral.lu 45:29
+req       documentSymbol astral.lu
+splice    astral.lu 2444 2447 "1 < 2 < 3"
+wait      diagnostics astral.lu
+req       documentSymbol astral.lu
+shutdown

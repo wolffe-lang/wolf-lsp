@@ -1,0 +1,17 @@
+#! Unsaved-buffer diagnostics: the whole reason an editor needs a language
+#! server rather than a build watcher. `hello.lu` on disk is clean; the buffer
+#! is edited to something broken and never saved, and the server must
+#! diagnose the BUFFER. Then the edit is undone and the diagnostics must go
+#! away again — a server that only ever adds diagnostics looks correct on the
+#! first edit and is useless on the second.
+name      diagnostics/overlay-unsaved
+profile   minimal
+
+initialize
+open      hello.lu
+wait      diagnostics hello.lu
+edit      hello.lu "fn main() -> !int {\n    let a = 1 < 2 < 3\n    0\n}\n"
+wait      diagnostics hello.lu
+edit-from hello.lu hello.lu
+wait      diagnostics hello.lu
+shutdown

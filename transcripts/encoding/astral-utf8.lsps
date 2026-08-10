@@ -1,0 +1,42 @@
+#! Position encoding, asserted under utf-8. Three of these files exist and they
+#! are NOT copies: the same semantic targets sit at different `character`
+#! numbers in each, and a shim that treated all encodings alike would produce
+#! three identical transcripts.
+#!
+#! Under utf-8 `character` is a BYTE column and the shim's conversion is the
+#! identity, so a divergence here is a divergence in the compiler's spans
+#! rather than in the encoding module. The emoji occupies FOUR columns, so
+#! both 19 and the two after it are interior positions with no
+#! addressable meaning — the widest version of the clamping case.
+#!
+#! Both directions are asserted, which is the point of §5:
+#!
+#!   client position -> offset   the four hover probes on line 24
+#!                               (`    let astral = "🐺"`), plus the one on
+#!                               line 45 where the target sits AFTER astral,
+#!                               BMP, combining and ZWJ text on its own line;
+#!   byte span -> client range   the E0003 introduced by the overlay edit,
+#!                               whose span the compiler reports in bytes and
+#!                               the server must publish at column 44-ish
+#!                               in this encoding and elsewhere in the others.
+#!
+#! The fixture is clean on disk so hover has typechecked code to answer from;
+#! the diagnostic is introduced as an UNSAVED edit, which is also how a user
+#! meets it.
+name      encoding/astral-utf8
+profile   utf8-first
+workspace fixtures
+
+initialize
+open      astral.lu
+wait      diagnostics astral.lu
+req       hover astral.lu 24:8
+req       hover astral.lu 24:18
+req       hover astral.lu 24:19
+req       hover astral.lu 24:22
+req       hover astral.lu 45:44
+req       documentSymbol astral.lu
+splice    astral.lu 2444 2447 "1 < 2 < 3"
+wait      diagnostics astral.lu
+req       documentSymbol astral.lu
+shutdown

@@ -1,0 +1,26 @@
+#! `$/cancelRequest` reaches the QUERY, not just the transport — the tower-lsp
+#! failure report 09 names. Two things make this deterministic rather than a
+#! coin flip that passes on slow machines and fails on fast ones:
+#!
+#!   * the compiler's own injected-slow-query knob, so the query is still
+#!     running when the cancel lands;
+#!   * `documentSymbol` rather than `hover` as the victim. `hover` goes through
+#!     the package-analysis cache, which the `didOpen` publish has already
+#!     filled, so it can answer without ever reaching a checkpoint;
+#!     `documentSymbol` parses from the snapshot every time and always does.
+#!
+#! The claims: the cancelled request answers -32800 RequestCancelled — an
+#! ANSWER, not silence, because every cancelled request still gets a response —
+#! and the session is not poisoned, which the hover afterwards proves.
+name      cancel/cancel-inflight
+profile   minimal
+env       WOLF_QUERY_TEST_SLOW_MS 1500
+
+initialize
+open      hello.lu
+wait      diagnostics hello.lu
+send      documentSymbol hello.lu
+cancel    2
+wait      response 2
+req       hover hello.lu 8:4
+shutdown

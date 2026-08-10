@@ -1,0 +1,9 @@
+#! Offering only the mandatory encoding. Distinguishes "negotiated utf-16
+#! because it was asked for" from "defaulted to utf-16 because nothing was
+#! asked for" — the two produce the same wire answer and must both be pinned,
+#! or a server that ignored the field entirely would pass one of them.
+name      lifecycle/negotiate-utf16-only
+profile   utf16-only
+
+initialize
+shutdown

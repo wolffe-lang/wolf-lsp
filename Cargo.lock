@@ -142,6 +142,7 @@ version = "0.0.1"
 dependencies = [
  "insta",
  "lsp_transcript",
+ "serde",
  "serde_json",
 ]
 

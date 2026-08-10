@@ -1,0 +1,61 @@
+{
+  "profile": "maximal",
+  "provenance": {
+    "kind": "synthetic",
+    "purpose": "The ceiling: every optional client feature the v0 capability set could possibly key off, declared at once, with all three position encodings offered in the order the protocol says means preference. Pairs with `minimal` to bracket every real client between two documents that exist today."
+  },
+  "expects_encoding": "utf-8",
+  "capabilities": {
+    "general": {
+      "positionEncodings": ["utf-8", "utf-16", "utf-32"],
+      "markdown": { "parser": "lspconf", "version": "0" },
+      "staleRequestSupport": { "cancel": true, "retryOnContentModified": [] }
+    },
+    "textDocument": {
+      "synchronization": {
+        "dynamicRegistration": true,
+        "willSave": true,
+        "willSaveWaitUntil": true,
+        "didSave": true
+      },
+      "publishDiagnostics": {
+        "relatedInformation": true,
+        "versionSupport": true,
+        "codeDescriptionSupport": true,
+        "dataSupport": true,
+        "tagSupport": { "valueSet": [1, 2] }
+      },
+      "hover": {
+        "dynamicRegistration": true,
+        "contentFormat": ["markdown", "plaintext"]
+      },
+      "documentSymbol": {
+        "dynamicRegistration": true,
+        "hierarchicalDocumentSymbolSupport": true,
+        "labelSupport": true,
+        "symbolKind": {
+          "valueSet": [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26]
+        }
+      },
+      "formatting": { "dynamicRegistration": true },
+      "codeAction": {
+        "dynamicRegistration": true,
+        "isPreferredSupport": true,
+        "dataSupport": true,
+        "resolveSupport": { "properties": ["edit"] },
+        "codeActionLiteralSupport": {
+          "codeActionKind": {
+            "valueSet": ["", "quickfix", "refactor", "source"]
+          }
+        }
+      }
+    },
+    "workspace": {
+      "workspaceEdit": { "documentChanges": true },
+      "configuration": true,
+      "workspaceFolders": true,
+      "didChangeWatchedFiles": { "dynamicRegistration": true }
+    },
+    "window": { "workDoneProgress": true, "showMessage": {}, "showDocument": { "support": true } }
+  }
+}

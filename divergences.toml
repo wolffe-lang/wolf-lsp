@@ -1,0 +1,47 @@
+# Known divergences between `wolf build` and `wolf lsp` — the ledger.
+#
+# ls01 §9: a one-truth mismatch is a **wolf-lang bug, filed upstream with both
+# records attached — never normalized away, never patched around here**. The
+# editor layer detects divergence; it does not hide it.
+#
+# That rule needs somewhere for a *filed* divergence to live, or the only way to
+# keep CI green is to stop checking. This file is that place, and it is
+# deliberately uncomfortable to use:
+#
+#   * an entry must name the upstream filing. `filed = "pending"` is allowed for
+#     exactly as long as it takes to open the issue, and it is the first thing a
+#     reviewer should ask about.
+#   * an entry that no longer matches a live divergence FAILS the check. A
+#     ledger that outlives its bug is how a fixed bug gets re-introduced
+#     unnoticed.
+#   * a divergence with no entry FAILS the check. That is the default, and the
+#     reason this file is short.
+#
+# `lspconf onetruth` reports known divergences as KNOWN, loudly, and exits 0;
+# anything else exits 1.
+
+[[divergence]]
+id = "DIV-LSP-001"
+sample = "resolve/dupdef/main.lu"
+code = "E0302"
+kind = "unreachable"
+filed = "pending"
+summary = """
+`wolf conform-run resolve/dupdef/main.lu` reports fail(E0302) — `helper` is \
+defined in both `main.lu` and its `member: true` sibling `twice.lu`, and D32 \
+makes them one module. No LSP document ever receives that diagnostic.
+
+Why: `wolf_lsp::convert::diagnostics_for_file` publishes only diagnostics whose \
+PRIMARY span lies in the document being published, and the primary span of this \
+E0302 is in `twice.lu`. Opening `twice.lu` does not surface it either — as an \
+entry it is analysed as its own package view and reports nothing.
+
+Effect: a user editing this package sees two clean files for code that does not \
+build. Every cross-file diagnostic whose primary lands in a sibling has this \
+shape, which makes it a class of bug rather than one file.
+
+Two candidate fixes, both upstream: publish a package's diagnostics to every \
+open document of that package (keyed by the diagnostic's own file), or publish \
+sibling-primary diagnostics against the entry with the sibling as related \
+information. The first matches what `wolf build` says.
+"""

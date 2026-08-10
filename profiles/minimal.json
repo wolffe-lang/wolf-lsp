@@ -1,0 +1,9 @@
+{
+  "profile": "minimal",
+  "provenance": {
+    "kind": "synthetic",
+    "purpose": "A client that declares nothing optional. The floor of the protocol: no positionEncodings, no dynamic registration, no markdown, no related information. Everything the server still delivers to this profile is something it delivers unconditionally — which is why ls01 §4 asserts `minimal` still gets diagnostics."
+  },
+  "expects_encoding": "utf-16",
+  "capabilities": {}
+}

@@ -17,8 +17,9 @@ fn main() -> ExitCode {
         Some("sync-pin") => sync_pin(),
         Some("vendor-check") => vendor_check(),
         Some("independence") => independence(),
+        Some("fixtures-check") => fixtures_check(),
         _ => {
-            eprintln!("usage: cargo xtask <ci|sync-pin|vendor-check|independence>");
+            eprintln!("usage: cargo xtask <ci|sync-pin|vendor-check|independence|fixtures-check>");
             ExitCode::from(2)
         }
     }
@@ -53,6 +54,7 @@ fn ci() -> ExitCode {
         ("test", &["test", "--workspace"]),
         ("sync-pin", &["xtask", "sync-pin"]),
         ("independence", &["xtask", "independence"]),
+        ("fixtures-check", &["xtask", "fixtures-check"]),
     ];
     for (name, args) in steps {
         eprintln!("== xtask ci: {name}");
@@ -341,6 +343,103 @@ fn slash(path: &Path) -> String {
         out.push_str(&text);
     }
     out
+}
+
+// ------------------------------------------------------ fixtures-check --
+
+/// **A local `.lu` exists only where a recorded gap says it may.**
+///
+/// ls00 §5's rule is that fixtures are requested upstream, never forked
+/// locally: a file authored here is not canonical `wolf fmt` output, does not
+/// participate in the compiler's own corpus runs, and drifts silently from the
+/// language it claims to be written in. ls01 §5 forced one exception —
+/// astral-plane text, which no corpus file at the pin contains — and an
+/// exception with no fence around it is just the rule being abandoned.
+///
+/// So: every `.lu` under `fixtures/` must be claimed by a `local_stopgap` in a
+/// `[gap.*]` table of `samples.toml`, every `local_stopgap` must exist, and
+/// each fixture must name its gap in its own text so the file explains itself
+/// to whoever finds it in three sprints. A second fixture appearing without a
+/// gap entry fails this check, which is the whole point: the next person who
+/// wants to skip the upstream request has to write down why.
+fn fixtures_check() -> ExitCode {
+    let root = repo_root();
+    let mut errors = Vec::new();
+    let fixtures = root.join("fixtures");
+    let manifest = root.join("vendor").join("upstream").join("samples.toml");
+
+    let text = match std::fs::read_to_string(&manifest) {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("fixtures-check: {}: {e}", slash(&manifest));
+            return ExitCode::FAILURE;
+        }
+    };
+    // `local_stopgap = "fixtures/x.lu"` inside a `[gap.*]` table, plus the gap
+    // name it belongs to. Same hand-rolled reader as `sample_paths`, and the
+    // same reason: a four-key manifest does not justify a TOML dependency.
+    let mut claimed: BTreeSet<String> = BTreeSet::new();
+    let mut gap = String::new();
+    let mut gaps: Vec<(String, String)> = Vec::new();
+    for raw in text.lines() {
+        let line = raw.trim();
+        if let Some(rest) = line.strip_prefix("[gap.") {
+            gap = rest.trim_end_matches(']').to_string();
+            continue;
+        }
+        if line.starts_with('[') {
+            gap.clear();
+            continue;
+        }
+        if gap.is_empty() {
+            continue;
+        }
+        if let Some(rest) = line.strip_prefix("local_stopgap")
+            && let Some((_, value)) = rest.split_once('=')
+        {
+            let path = value.trim().trim_matches('"').to_string();
+            gaps.push((gap.clone(), path.clone()));
+            claimed.insert(path);
+        }
+    }
+
+    for (gap, path) in &gaps {
+        let full = root.join(path);
+        if !full.is_file() {
+            errors.push(format!(
+                "[gap.{gap}] names `{path}` as its local_stopgap, but no such file exists \
+                 — a gap whose workaround is gone should be closed or re-opened, not left \
+                 pointing at nothing"
+            ));
+            continue;
+        }
+        let body = std::fs::read_to_string(&full).unwrap_or_default();
+        if !body.contains(&format!("gap.{gap}")) {
+            errors.push(format!(
+                "{path} does not name `[gap.{gap}]` in its own text — a fixture that does \
+                 not explain why it is allowed to exist is a fork with a comment"
+            ));
+        }
+    }
+
+    let mut present: Vec<PathBuf> = Vec::new();
+    walk(&fixtures, &mut present);
+    for path in present
+        .iter()
+        .filter(|p| p.extension().is_some_and(|e| e == "lu"))
+    {
+        let rel = slash(path.strip_prefix(&root).unwrap_or(path));
+        if !claimed.contains(&rel) {
+            errors.push(format!(
+                "{rel} is a locally-authored `.lu` that no `[gap.*]` entry claims. \
+                 Fixtures are requested upstream, never forked locally (ls00 §5); the ONE \
+                 exception is recorded in samples.toml with a `local_stopgap` and a \
+                 `retire_when`. Add the gap entry, or use a corpus sample."
+            ));
+        }
+    }
+
+    report("fixtures-check", errors)
 }
 
 // -------------------------------------------------------- independence --

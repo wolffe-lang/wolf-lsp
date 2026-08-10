@@ -1,13 +1,10 @@
-# Nightly (ls00 §6): attempt the LATEST wolf-lang artifact rather than the
-# pinned one, and **report — never gate**.
+# Nightly (ls00 §6, extended by ls01 §7–§8): the long sweeps that would make a
+# PR gate slow, plus early warning for capability drift ahead of a pin bump.
 #
-# The point is early warning for capability drift ahead of a pin bump: if the
-# server upstream has started advertising something new, or has stopped
-# advertising something a transcript relies on, this job says so days before
-# someone bumps the pin and has to work out which of forty transcripts moved.
-#
-# It is report-only by construction. A nightly that can turn trunk red on
-# somebody else's commit is a nightly people learn to ignore.
+# **Report-only by construction.** A nightly that can turn trunk red on somebody
+# else's commit is a nightly people learn to ignore. The latency budgets are
+# report-only for a second, independent reason (ls01 §8): the gate flip is a
+# flag in wolf-lang's CI at s57/M3, not work here.
 name: nightly
 
 on:
@@ -33,6 +30,142 @@ jobs:
         run: rustup show active-toolchain
       - run: cargo test --workspace
 
+  # Does a server exist to sweep against? One place answers, and everything
+  # below keys off it — so a dark night says so once, loudly, instead of six
+  # times quietly.
+  server:
+    name: server availability
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.doctor.outputs.available }}
+      pin: ${{ steps.doctor.outputs.pin }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain
+      - name: lspconf doctor
+        id: doctor
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e   # shell: bash wraps with -e; exit 77 is data here, not death
+          pin=$(grep '^commit' vendor/upstream/PIN | cut -d= -f2 | tr -d ' "')
+          echo "pin=$pin" >> "$GITHUB_OUTPUT"
+          out=$(cargo run --quiet --bin lspconf -- doctor 2>&1)
+          rc=$?
+          printf '%s\n' "$out"
+          printf '%s\n' "$out" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$rc" -eq 0 ]; then
+            echo "available=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=no" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ls01 §7: the 15-minute seeded sweep. Seeds rotate by day so the corpus of
+  # explored sessions grows, and each one is printed so a failure is
+  # reproducible with a single command on a laptop.
+  fuzz-sweep:
+    name: fuzzed partial-edit sweep (15 min)
+    needs: server
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain
+
+      - name: SKIP — no server at the pin
+        if: needs.server.outputs.available != 'yes'
+        shell: bash
+        run: |
+          {
+            echo "### Fuzz sweep: SKIPPED"
+            echo "No \`wolf\` binary at pin \`${{ needs.server.outputs.pin }}\`."
+            echo "\`wolf lsp\` exists (wolf-lang s52); what is missing is a downloadable"
+            echo "artifact. This lane runs green locally — \`lspconf fuzz\`."
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Sweep
+        if: needs.server.outputs.available == 'yes'
+        shell: bash
+        run: |
+          set -uo pipefail
+          deadline=$(( $(date +%s) + 900 ))
+          base=$(date +%j)
+          i=0
+          fail=0
+          while [ "$(date +%s)" -lt "$deadline" ]; do
+            seed=$(( base * 1000 + i ))
+            for sample in regions.lu errors.lu strings.lu traits/golden_missing_bound.lu; do
+              if ! cargo run --quiet --bin lspconf -- --require-server \
+                    fuzz "$sample" --seed "$seed" --splices 256; then
+                echo "::error::fuzz failed: --seed $seed --splices 256 $sample"
+                fail=1
+              fi
+            done
+            i=$(( i + 1 ))
+          done
+          echo "swept $i seed batch(es) from $base" >> "$GITHUB_STEP_SUMMARY"
+          exit "$fail"
+
+  # ls01 §8: latency budgets in the D5 JSONL shape. REPORT-ONLY — the numbers
+  # exist, in the right shape, from the first server that answers a request, so
+  # that s57's residency work has a baseline to have beaten.
+  latency:
+    name: latency budgets (D5 JSONL, report-only)
+    needs: server
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain
+
+      - name: SKIP — no server at the pin
+        if: needs.server.outputs.available != 'yes'
+        shell: bash
+        run: |
+          {
+            echo "### Latency budgets: SKIPPED"
+            echo "No \`wolf\` binary at pin \`${{ needs.server.outputs.pin }}\`, so there is"
+            echo "nothing to time. The shape is fixed and tested regardless"
+            echo "(\`lsp_harness::bench\`); only the numbers are missing."
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # D36 discipline from day one even while report-only: N >= 10 paired runs,
+      # median and MAD, wall time reported as noisy. Two runs at the same commit
+      # must not show a significant delta — that is the variance gate, and it is
+      # checked here rather than assumed.
+      - name: Measure
+        if: needs.server.outputs.available == 'yes'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p bench-results
+          for sample in hello.lu regions.lu errors.lu; do
+            slug=${sample%.lu}
+            cargo run --quiet --bin lspconf -- --require-server \
+              bench "$sample" --runs 15 --out "bench-results/lsp-$slug.jsonl"
+          done
+          {
+            echo "### Latency budgets (report-only)"
+            echo ""
+            echo '```'
+            cat bench-results/lsp-*.jsonl
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the numbers
+        if: needs.server.outputs.available == 'yes'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lsp-latency-jsonl
+          path: bench-results/
+
+  # Early warning for capability drift ahead of a pin bump: if the server
+  # upstream has started advertising something new, or has stopped advertising
+  # something a transcript relies on, this says so days before someone bumps the
+  # pin and has to work out which of forty transcripts moved.
   drift:
     name: capability drift vs wolf-lang HEAD (report-only)
     runs-on: ubuntu-latest
@@ -49,10 +182,11 @@ jobs:
         run: |
           set -uo pipefail
           mkdir -p .wolf-bin
-          # Capture, then inspect — never pipe into `grep -q` (SIGPIPE/EPIPE).
-          out=$(gh release list --repo tenseleyFlow/wolf-lang --limit 1 2>&1 || true)
-          printf '%s\n' "$out"
-          if printf '%s' "$out" | grep -q "wolf-"; then
+          # Structured count, not a prose grep: the empty-result message
+          # contains the repo name and fooled a loose match once already.
+          n_rel=$(gh release list --repo tenseleyFlow/wolf-lang --limit 1 \
+            --json tagName --jq 'length' 2>/dev/null || echo 0)
+          if [ "$n_rel" -gt 0 ]; then
             echo "server=maybe" >> "$GITHUB_OUTPUT"
           else
             echo "server=none" >> "$GITHUB_OUTPUT"
@@ -70,7 +204,9 @@ jobs:
               echo "Pinned at \`$pin\`. Nothing to compare against yet;"
               echo "this lane lights up with wolf-lang's first tagged dist build."
             else
-              echo "An artifact exists — capability comparison lands with ls01,"
-              echo "which owns the negotiated-\`ServerCapabilities\` snapshot."
+              echo "An artifact exists. Replay the committed transcripts against it:"
+              echo "a \`subset\` mismatch on \`initialize\` means a capability was LOST,"
+              echo "which is the case worth waking up for; a capability gained leaves"
+              echo "the suite green by design and shows up in the re-record diff."
             fi
           } | tee -a "$GITHUB_STEP_SUMMARY"

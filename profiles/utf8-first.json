@@ -1,0 +1,12 @@
+{
+  "profile": "utf8-first",
+  "provenance": {
+    "kind": "synthetic",
+    "purpose": "Offers utf-8 ahead of utf-16. The zero-conversion path: `character` becomes a byte column and the shim's translation layer is the identity, so a divergence under this profile is a divergence in the compiler's spans rather than in the encoding module."
+  },
+  "expects_encoding": "utf-8",
+  "capabilities": {
+    "general": { "positionEncodings": ["utf-8", "utf-16"] },
+    "textDocument": { "publishDiagnostics": { "relatedInformation": true } }
+  }
+}

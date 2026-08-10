@@ -1,0 +1,11 @@
+{
+  "profile": "unknown-encoding",
+  "provenance": {
+    "kind": "synthetic",
+    "purpose": "Offers an encoding that does not exist. The protocol's answer is that the server falls back to utf-16 rather than failing the handshake or echoing back a kind it cannot produce; a server that echoed `utf-7` here would silently corrupt every position in the session. `expects_encoding` is utf-16 because that is the only spec-legal reply."
+  },
+  "expects_encoding": "utf-16",
+  "capabilities": {
+    "general": { "positionEncodings": ["utf-7"] }
+  }
+}

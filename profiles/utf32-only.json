@@ -1,0 +1,12 @@
+{
+  "profile": "utf32-only",
+  "provenance": {
+    "kind": "synthetic",
+    "purpose": "Offers only code-point positions — what a rope-backed editor natively counts, and what report 09 recommends fackr adopt so its existing char arithmetic becomes correct with no other change. The only way to reach the utf-32 branch: this server prefers utf-8 whenever it is offered, so a client that also offers utf-8 or utf-16 never sees utf-32."
+  },
+  "expects_encoding": "utf-32",
+  "capabilities": {
+    "general": { "positionEncodings": ["utf-32"] },
+    "textDocument": { "publishDiagnostics": { "relatedInformation": true } }
+  }
+}

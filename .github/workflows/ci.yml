@@ -73,9 +73,18 @@ jobs:
       - name: sync-pin
         run: cargo xtask sync-pin
 
-      # Transcripts and capability profiles: parseable, valid, canonical.
+      # The one local `.lu` exists only because a recorded gap says it may.
+      - name: fixtures-check
+        run: cargo xtask fixtures-check
+
+      # Transcripts and their scripts: parseable, valid, canonical, and each
+      # transcript still has the script that regenerates it.
       - name: lspconf verify (server-free)
         run: cargo run --quiet --bin lspconf -- verify
+
+      # Capability profiles, plus the loud list of clients nobody has read yet.
+      - name: lspconf profiles (server-free)
+        run: cargo run --quiet --bin lspconf -- profiles
 
   # Does a server exist at the pin? Report it, on every platform, and never
   # fail the build for its absence — but never pass silently either.
@@ -93,14 +102,21 @@ jobs:
 
       # ACQUISITION. The design (ls00 §3) is: download the tier-1 artifact
       # wolf-lang's `xtask dist` publishes, keyed by the sha in PIN, into
-      # `.wolf-bin/`. That artifact does not exist yet — wolf-lang has no tags
+      # `.wolf-bin/`. That artifact still does not exist — wolf-lang has no tags
       # and no releases — so this step honestly reports SERVER UNAVAILABLE
       # instead of pretending.
+      #
+      # NOTE ON WHAT CHANGED AT ls01. `wolf lsp` now EXISTS (wolf-lang s52), and
+      # `serves_lsp = true` in PIN. Every server-dependent target in this repo
+      # is live and green *locally*. What is still missing is the acquisition
+      # path, not the server — so this lane is dark for a narrower reason than
+      # before, and the skip text says which.
       #
       # What this step must NEVER become: a `cargo build` of the compiler. The
       # interpreter track paid for that lesson (private submodule, no deploy
       # keys), and a multi-minute compiler build per job to produce a binary we
-      # are supposed to download is the wrong shape regardless.
+      # are supposed to download is the wrong shape regardless. The local
+      # instructions live in the README, where a human can follow them once.
       - name: Acquire the wolf binary at the pin
         id: acquire
         shell: bash
@@ -123,7 +139,8 @@ jobs:
             echo "server=maybe" >> "$GITHUB_OUTPUT"
           else
             echo "SERVER UNAVAILABLE: wolf-lang publishes no artifact for pin $pin"
-            echo '  (no releases, no tags; the `wolf lsp` subcommand lands with wolf-lang s52)'
+            echo '  `wolf lsp` exists at this pin (s52) — what is missing is a DOWNLOAD,'
+            echo '  and this repo never builds the compiler in CI (vendor/README.md).'
             echo "server=none" >> "$GITHUB_OUTPUT"
           fi
         env:
@@ -148,22 +165,58 @@ jobs:
             *)  echo "::error::doctor failed with $rc"; exit "$rc" ;;
           esac
 
+      # THE SERVER LANE PROPER. Every one of these is live and green against a
+      # locally-built binary today; each will start running here the day the
+      # acquisition step above finds an artifact. `--require-server` turns the
+      # skip into a failure, which is how a job that believes it has a binary
+      # proves it had one.
       - name: Conformance replay (server-dependent)
         if: steps.acquire.outputs.server != 'none'
         shell: bash
         run: cargo run --quiet --bin lspconf -- --require-server replay
+
+      - name: One truth — publishDiagnostics == conform-run (D34)
+        if: steps.acquire.outputs.server != 'none'
+        shell: bash
+        run: cargo run --quiet --bin lspconf -- --require-server onetruth
+
+      # The server-gated suites. They are part of `cargo test --workspace` in
+      # the job above too, where they skip; naming them here is what makes the
+      # difference between "skipped" and "ran" visible in the log.
+      - name: Encoding, negotiation, semantics, oracle and stability suites
+        if: steps.acquire.outputs.server != 'none'
+        shell: bash
+        run: |
+          cargo test --test negotiation --test encoding --test semantics \
+                     --test fuzz_oracles --test stability --test one_truth
+
+      # 60 s of seeded fuzzing on a PR; the 15-minute sweep is nightly (s01/s02
+      # posture). The seed is explicit and constant so a failure here is
+      # reproducible on a laptop with one command.
+      - name: Fuzzed partial-edit session (seeded, bounded)
+        if: steps.acquire.outputs.server != 'none'
+        shell: bash
+        timeout-minutes: 3
+        run: cargo run --quiet --bin lspconf -- --require-server fuzz regions.lu --seed 1 --splices 64
 
       - name: Report the skip
         if: steps.acquire.outputs.server == 'none'
         shell: bash
         run: |
           echo "SKIP: no wolf binary at pin ${{ steps.acquire.outputs.pin }}"
-          echo "SKIP: conformance replay, capability profiles, and latency budgets are dark"
-          echo "SKIP: they light up when wolf-lang ships \`wolf lsp\` (s52) and a dist artifact"
+          echo "SKIP: replay, onetruth, encoding, semantics, oracles and fuzz are dark HERE"
+          echo "SKIP: the server exists (wolf-lang s52) — what is missing is a downloadable"
+          echo "SKIP: artifact. All of the above run green locally; see README."
           {
             echo "### Server lane: SKIPPED"
             echo "No \`wolf\` binary at pin \`${{ steps.acquire.outputs.pin }}\`."
-            echo "Replay, profiles, and latency budgets are dark until wolf-lang s52."
+            echo ""
+            echo "\`wolf lsp\` **exists** at this pin — wolf-lang s52 shipped it and"
+            echo "\`PIN\` records \`serves_lsp = true\`. What is missing is a *published"
+            echo "artifact* to download; this repo does not build the compiler in CI"
+            echo "(\`vendor/README.md\`). Replay, one-truth, the encoding and semantics"
+            echo "suites, the fuzz oracles and the latency budgets all run green against a"
+            echo "locally-built binary — see \`README.md\`, *Running the server lane locally*."
           } >> "$GITHUB_STEP_SUMMARY"
 
   # The editor layer talks to a process, or it does not talk (D34).

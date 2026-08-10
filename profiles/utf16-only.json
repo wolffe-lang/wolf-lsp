@@ -1,0 +1,12 @@
+{
+  "profile": "utf16-only",
+  "provenance": {
+    "kind": "synthetic",
+    "purpose": "Offers the protocol's mandatory encoding and nothing else — the shape of every pre-3.17 client and of most clients that never revisited the field. Distinguishes 'negotiated utf-16 because it was asked for' from 'defaulted to utf-16 because nothing was asked for', which `minimal` covers."
+  },
+  "expects_encoding": "utf-16",
+  "capabilities": {
+    "general": { "positionEncodings": ["utf-16"] },
+    "textDocument": { "publishDiagnostics": { "relatedInformation": true } }
+  }
+}

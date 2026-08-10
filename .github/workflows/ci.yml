@@ -300,6 +300,82 @@ jobs:
       - name: Install the vsix into a throwaway profile
         run: npm run install:vsix
 
+  # The publish DRY RUN, and the artifact it would have uploaded (ls07 §1).
+  #
+  # ==========================================================================
+  # THIS JOB PUBLISHES NOTHING, HOLDS NO SECRET, AND CANNOT REACH A REGISTRY.
+  # ==========================================================================
+  #
+  # `@vscode/vsce` has no `--dry-run`, so the rehearsal is assembled from the
+  # three things that run offline and together cover everything `vsce publish`
+  # checks before it opens a socket: `vsce package` (same manifest validation,
+  # same prepublish script, same file selection), `vsce ls` compared against a
+  # REVIEWED contents list, and a manifest lint for the listing fields `vsce`
+  # does not enforce. What is left after all three is the upload — and the
+  # upload is human-gated on a publisher identity this repository must never
+  # hold (docs/DISTRIBUTION.md §"OWED TO HUMAN").
+  #
+  # Separate from `vscode-extension` on purpose, and the split is not
+  # duplication: that job downloads a 150 MB VS Code to answer "does the
+  # extension load and install", and this one answers "is the artifact a
+  # publish would upload the artifact somebody reviewed" — in about a minute,
+  # with no editor. Keeping them apart means the packaging gate stays green and
+  # fast on a day the editor download is broken, which has already happened
+  # once on macOS runners.
+  vscode-package:
+    name: vscode package (publish dry run)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clients/vscode
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: clients/vscode/package-lock.json
+
+      - name: Install (locked)
+        run: npm ci
+
+      - name: Compile
+        run: npm run compile
+
+      # `vsce ls` against PACKAGE-CONTENTS.txt, plus the listing-field lint.
+      # Fails on a `.vscodeignore` change or a new runtime dependency, so what
+      # ships to a user is a reviewed diff rather than a surprise.
+      - name: The publish dry run (contents + manifest lint)
+        run: npm run test:manifest
+
+      - name: Package the vsix
+        run: npm run package
+
+      - name: The vsix is under budget
+        shell: bash
+        run: |
+          set -euo pipefail
+          bytes=$(wc -c < wolf-0.0.1.vsix)
+          echo "wolf-0.0.1.vsix: $bytes bytes"
+          if [ "$bytes" -gt 1048576 ]; then
+            echo "::error::the vsix is $bytes bytes, over the 1 MiB budget."
+            echo "::error::check .vscodeignore and the runtime dependency set."
+            exit 1
+          fi
+
+      # The per-run artifact, which is the only "distribution" this repository
+      # performs: a build somebody can download from the run that produced it,
+      # traceable to a commit, expiring on its own. It is NOT a release channel
+      # and the retention is short so nobody mistakes it for one.
+      - name: Keep the vsix as a per-run artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wolf-vsix-${{ github.sha }}
+          path: clients/vscode/*.vsix
+          if-no-files-found: error
+          retention-days: 14
+
   # Does a server exist at the pin? Report it, on every platform, and never
   # fail the build for its absence — but never pass silently either.
   server-lane:

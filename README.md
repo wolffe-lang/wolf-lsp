@@ -18,6 +18,18 @@ Which editors are supported, at what verification level, and when each was last
 checked: [`docs/MATRIX.md`](docs/MATRIX.md). Every row there names its CI job or
 says plainly that it has never been run.
 
+**Nothing here has been published anywhere.** No marketplace listing, no Open
+VSX namespace, no `wolf.nvim` mirror, no registry entry, no tag — and none is
+possible until wolf-lang ships a release a stranger can install. The pipelines
+exist, are exercised offline, and stop at gates that need a person:
+
+| | |
+|---|---|
+| [`docs/COMPAT.md`](docs/COMPAT.md) | which `wolf` each client works with, and the gate that keeps the claim earned |
+| [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md) | every channel, per ecosystem, and the human act each one waits on |
+| [`docs/RELEASE.md`](docs/RELEASE.md) | the nine-step checklist — run it with `cargo xtask release-check` |
+| [`docs/UPSTREAM.md`](docs/UPSTREAM.md) | every patch's status upstream, in five words, none of them "soon" |
+
 Sprint plan: the `lsp` track (`lsNN`) in the wolf metarepo.
 Dual-licensed MIT or Apache-2.0.
 

@@ -36,6 +36,7 @@ use std::io::{BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use lsp_transcript::record::{Dir, Header, Kind, Record, Transcript};
@@ -96,6 +97,23 @@ pub struct Options {
 
 /// One observed message, in arrival order across both directions.
 struct Observed {
+    /// The order this frame was **read off the wire**, across both pumps.
+    ///
+    /// Not the order it reached the sink, and the difference is a bug this
+    /// module shipped with. The pumps forward first and record second (the
+    /// proxy must never be the reason a session behaves differently), so
+    /// between a request being forwarded and being recorded, the server can
+    /// answer it and the downward pump can record the *response* first. The
+    /// result is a transcript whose `initialize` response precedes its
+    /// `initialize` request — nondeterministically, so it survives one
+    /// re-record and reappears on the next.
+    ///
+    /// A ticket taken at read time fixes it without moving the write: the
+    /// number is claimed before the frame is forwarded, so causality is
+    /// exact (a response cannot be read before the request that caused it was
+    /// read), and the cost is one relaxed atomic increment rather than a disk
+    /// write in the forwarding path.
+    order: u64,
     dir: Dir,
     message: Value,
 }
@@ -143,6 +161,9 @@ pub fn capture(command: &[String], options: &Options, out: &Path) -> Result<Tran
     // nowhere to go anyway.
     let sink = Sink {
         observed: Arc::clone(&observed),
+        // Shared across both pumps: the ticket only orders the two directions
+        // against each other, so a per-pump counter would order nothing.
+        order: Arc::new(AtomicU64::new(0)),
         options: options.clone(),
         out: out.to_path_buf(),
     };
@@ -172,11 +193,18 @@ pub fn capture(command: &[String], options: &Options, out: &Path) -> Result<Tran
 #[derive(Clone)]
 struct Sink {
     observed: Arc<Mutex<Vec<Observed>>>,
+    order: Arc<AtomicU64>,
     options: Options,
     out: PathBuf,
 }
 
 impl Sink {
+    /// Claim the next wire-order ticket. Called at frame-read time, before
+    /// the frame is forwarded.
+    fn ticket(&self) -> u64 {
+        self.order.fetch_add(1, Ordering::Relaxed)
+    }
+
     /// Record one message and persist the transcript so far.
     fn push(&self, message: Observed) {
         match self.observed.lock() {
@@ -191,6 +219,10 @@ impl Sink {
 
     fn transcript(&self) -> Transcript {
         let observed = self.observed.lock().expect("observed mutex");
+        // Wire order, not sink order. The two differ whenever a response
+        // overtakes the recording of its own request.
+        let mut ordered: Vec<&Observed> = observed.iter().collect();
+        ordered.sort_by_key(|o| o.order);
         let mut transcript = Transcript {
             header: Header {
                 transcript: lsp_transcript::FORMAT_VERSION,
@@ -200,7 +232,7 @@ impl Sink {
                 workspace: self.options.workspace.clone(),
                 recorded: self.options.recorded.clone(),
             },
-            records: observed
+            records: ordered
                 .iter()
                 .enumerate()
                 .map(|(i, o)| to_record(i as u32 + 1, o))
@@ -234,11 +266,19 @@ fn pump<R: Read, W: Write>(from: R, mut to: W, dir: Dir, sink: &Sink) {
     loop {
         match reader.read_frame() {
             Ok(Some(body)) => {
+                // Claimed BEFORE the forward, so the number reflects when the
+                // frame was read rather than when this thread got around to
+                // recording it.
+                let order = sink.ticket();
                 if write_frame(&mut to, &body).is_err() {
                     return;
                 }
                 match serde_json::from_slice::<Value>(&body) {
-                    Ok(message) => sink.push(Observed { dir, message }),
+                    Ok(message) => sink.push(Observed {
+                        order,
+                        dir,
+                        message,
+                    }),
                     Err(e) => eprintln!("lspconf capture: {dir:?} frame is not JSON: {e}"),
                 }
             }
@@ -328,11 +368,62 @@ pub fn default_out(repo_root: &Path, name: &str) -> PathBuf {
 mod tests {
     use super::*;
 
+    /// The ordering bug this module shipped with, pinned.
+    ///
+    /// The pumps forward before they record, so a response can reach the sink
+    /// ahead of the request that caused it — producing a transcript whose
+    /// `initialize` response is `seq: 1`. It is a race, so it reproduces
+    /// intermittently and survives a re-record, which is the worst shape a bug
+    /// in a recording tool can have. `transcript()` sorts by the ticket each
+    /// frame took at READ time, and this test feeds the sink in the wrong order
+    /// on purpose.
+    #[test]
+    fn a_response_recorded_before_its_request_is_still_ordered_after_it() {
+        let sink = Sink {
+            observed: Arc::new(Mutex::new(Vec::new())),
+            order: Arc::new(AtomicU64::new(0)),
+            options: Options {
+                name: "client/scenario".to_string(),
+                profile: "minimal".to_string(),
+                workspace: "vendor/upstream/samples".to_string(),
+                pin_commit: "0".repeat(40),
+                recorded: "2026-08-10".to_string(),
+                workspace_dir: PathBuf::from("/ws"),
+            },
+            out: PathBuf::from("/dev/null"),
+        };
+
+        // Tickets in wire order: the request was read first.
+        let request_ticket = sink.ticket();
+        let response_ticket = sink.ticket();
+        assert!(request_ticket < response_ticket);
+
+        // Sink order is the reverse — the race.
+        sink.observed.lock().expect("mutex").push(Observed {
+            order: response_ticket,
+            dir: Dir::S2c,
+            message: serde_json::json!({"id": 1, "result": {}}),
+        });
+        sink.observed.lock().expect("mutex").push(Observed {
+            order: request_ticket,
+            dir: Dir::C2s,
+            message: serde_json::json!({"id": 1, "method": "initialize", "params": {}}),
+        });
+
+        let transcript = sink.transcript();
+        assert_eq!(transcript.records[0].method.as_deref(), Some("initialize"));
+        assert_eq!(transcript.records[0].dir, Dir::C2s);
+        assert_eq!(transcript.records[0].seq, 1);
+        assert_eq!(transcript.records[1].dir, Dir::S2c);
+        assert_eq!(transcript.records[1].seq, 2);
+    }
+
     #[test]
     fn requests_notifications_and_responses_are_told_apart() {
         let request = to_record(
             1,
             &Observed {
+                order: 0,
                 dir: Dir::C2s,
                 message: serde_json::json!({"id": 1, "method": "initialize", "params": {}}),
             },
@@ -342,6 +433,7 @@ mod tests {
         let notification = to_record(
             2,
             &Observed {
+                order: 0,
                 dir: Dir::C2s,
                 message: serde_json::json!({"method": "initialized", "params": {}}),
             },
@@ -352,6 +444,7 @@ mod tests {
         let response = to_record(
             3,
             &Observed {
+                order: 0,
                 dir: Dir::S2c,
                 message: serde_json::json!({"id": 1, "result": {"serverInfo": {"name": "x"}}}),
             },
@@ -371,6 +464,7 @@ mod tests {
         let r = to_record(
             1,
             &Observed {
+                order: 0,
                 dir: Dir::C2s,
                 message: serde_json::json!({
                     "method": "textDocument/didOpen",
@@ -386,6 +480,7 @@ mod tests {
         let r = to_record(
             1,
             &Observed {
+                order: 0,
                 dir: Dir::S2c,
                 message: serde_json::json!({
                     "method": "textDocument/publishDiagnostics",

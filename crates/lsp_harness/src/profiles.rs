@@ -72,7 +72,14 @@ pub struct Profile {
     pub capabilities: Value,
 }
 
-/// The six real clients the sprint names, and the sprint that owes each.
+/// The real clients this repo tracks, and the sprint that owes each a profile.
+///
+/// ls01 §4 named six. `emacs` is a seventh, added by ls06 and recorded as a
+/// delta: eglot turned out to be drivable under `emacs --batch`, so there is a
+/// real session to read a profile off — and a tracked client whose profile
+/// nothing watches is exactly the gap this list exists to close. Membership
+/// here is a claim about *tracking*, not about tier: `emacs` is T2 in
+/// `docs/MATRIX.md`, and `zed` is T2 with its profile still owed.
 pub const REAL_CLIENTS: &[(&str, &str)] = &[
     ("fackr", "ls02"),
     ("facsimile", "ls03"),
@@ -80,6 +87,7 @@ pub const REAL_CLIENTS: &[(&str, &str)] = &[
     ("vscode", "ls05"),
     ("helix", "ls06"),
     ("zed", "ls06"),
+    ("emacs", "ls06"),
 ];
 
 /// A profile that did not load or did not hold up.

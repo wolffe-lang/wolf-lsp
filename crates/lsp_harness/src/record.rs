@@ -125,7 +125,9 @@ pub fn record(
         },
         records,
     };
-    Normalizer::new(Some(workspace)).run(&mut transcript);
+    Normalizer::new(Some(workspace))
+        .with_repo_root(repo_root.to_path_buf())
+        .run(&mut transcript);
     Ok(transcript)
 }
 

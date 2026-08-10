@@ -33,6 +33,16 @@ use crate::record::{Record, Transcript};
 pub const WS: &str = "$WS";
 /// Temp-directory placeholder.
 pub const TMP: &str = "$TMP";
+/// Repository-root placeholder.
+///
+/// Distinct from [`WS`] because a client is entitled to pick a root ABOVE the
+/// directory the session ran in, and which one it picked is data worth keeping.
+/// helix walks up for `wolf.pkg` then `.git`; eglot asks project.el, which finds
+/// the git root. Both therefore report the repository root while opening a file
+/// under `vendor/upstream/samples`, and collapsing that to `$WS` would erase the
+/// difference between a client that scoped itself to the workspace and one that
+/// did not.
+pub const REPO: &str = "$REPO";
 /// Placeholder for an elided `version` member.
 pub const VERSION: &str = "$VERSION";
 /// Placeholder for a fully-elided URI.
@@ -44,7 +54,8 @@ pub enum Stage {
     /// Renumber request/response ids by first appearance, 1-based.
     /// Unconditional.
     Ids,
-    /// Rewrite absolute workspace paths to `$WS` and temp dirs to `$TMP`,
+    /// Rewrite absolute workspace paths to `$WS`, repository roots to `$REPO`
+    /// and temp dirs to `$TMP`,
     /// inside plain strings and inside `file://` URIs alike. Separators are
     /// normalized to `/` first, so a Windows run and a Linux run produce the
     /// same transcript. Unconditional.
@@ -157,6 +168,7 @@ impl<'de> Deserialize<'de> for Stage {
 #[derive(Debug, Clone)]
 pub struct Normalizer {
     workspace: Option<PathBuf>,
+    repo_root: Option<PathBuf>,
     tmp: PathBuf,
     ids: BTreeMap<String, u64>,
     next_id: u64,
@@ -169,10 +181,26 @@ impl Normalizer {
     pub fn new(workspace: Option<PathBuf>) -> Self {
         Self {
             workspace,
+            repo_root: None,
             tmp: std::env::temp_dir(),
             ids: BTreeMap::new(),
             next_id: 1,
         }
+    }
+
+    /// Also elide `root`, the repository root, as `$REPO`.
+    ///
+    /// Needed because a client may report a root ABOVE the workspace: helix's
+    /// `roots = ["wolf.pkg", ".git"]` and eglot's project.el both resolve to the
+    /// repository root while the session runs in `vendor/upstream/samples`. That
+    /// path is machine-specific and would otherwise survive into the committed
+    /// transcript, which
+    /// `client_recorded::captured_client_messages_carry_no_absolute_paths`
+    /// exists to catch — and did.
+    #[must_use]
+    pub fn with_repo_root(mut self, root: PathBuf) -> Self {
+        self.repo_root = Some(root);
+        self
     }
 
     /// Normalize a whole transcript in place, in `seq` order.
@@ -195,9 +223,15 @@ impl Normalizer {
             match stage {
                 Stage::Ids => self.renumber_id(rec),
                 Stage::Paths => {
-                    let (ws, tmp) = (self.workspace.clone(), self.tmp.clone());
+                    let (ws, repo, tmp) = (
+                        self.workspace.clone(),
+                        self.repo_root.clone(),
+                        self.tmp.clone(),
+                    );
                     for v in rec.values_mut() {
-                        map_strings(v, &mut |s| elide_paths(s, ws.as_deref(), &tmp));
+                        map_strings(v, &mut |s| {
+                            elide_paths(s, ws.as_deref(), repo.as_deref(), &tmp)
+                        });
                     }
                 }
                 Stage::Pid => {
@@ -403,10 +437,14 @@ fn drop_nulls(value: &mut Value) {
 /// workspace is `C:\…\samples` on the Windows runner and `/…/samples`
 /// elsewhere, and LSP positions are byte offsets — a transcript that
 /// disagrees about separators disagrees about every column downstream.
-fn elide_paths(s: &str, workspace: Option<&Path>, tmp: &Path) -> String {
+/// The workspace is elided FIRST and the repository root second: the workspace
+/// is the deeper path, so a URI inside it must collapse to `$WS/...` rather than
+/// to `$REPO/vendor/upstream/samples/...`. Reversing the order would make every
+/// existing transcript's document URIs change shape.
+fn elide_paths(s: &str, workspace: Option<&Path>, repo_root: Option<&Path>, tmp: &Path) -> String {
     let folded = s.replace('\\', "/");
     let mut out = folded;
-    for (root, placeholder) in [(workspace, WS), (Some(tmp), TMP)]
+    for (root, placeholder) in [(workspace, WS), (repo_root, REPO), (Some(tmp), TMP)]
         .into_iter()
         .filter_map(|(p, ph)| p.map(|p| (p, ph)))
     {

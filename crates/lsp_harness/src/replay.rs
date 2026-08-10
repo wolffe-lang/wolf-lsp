@@ -186,8 +186,14 @@ pub fn replay(
     // mean both sides or it means nothing: a reordered `relatedInformation`
     // array in the transcript would otherwise fail against a live message that
     // the same stage had just sorted.
-    let mut live = Normalizer::new(Some(workspace.clone()));
-    let mut expected = Normalizer::new(Some(workspace.clone()));
+    //
+    // Both sides also elide the REPOSITORY root, because a client-recorded
+    // transcript may legitimately carry one: helix and eglot resolve their root
+    // above the workspace (`.git`), so `$REPO` appears in `rootUri` where `$WS`
+    // appears in every document URI.
+    let mut live = Normalizer::new(Some(workspace.clone())).with_repo_root(repo_root.to_path_buf());
+    let mut expected =
+        Normalizer::new(Some(workspace.clone())).with_repo_root(repo_root.to_path_buf());
 
     for (i, rec) in transcript.records.iter().enumerate() {
         match rec.dir {

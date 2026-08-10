@@ -241,3 +241,69 @@ proptest! {
         prop_assert!(check(&sorted));
     }
 }
+
+// ------------------------------------------------- the repository root --
+
+/// A client may pick a root ABOVE the workspace, and the transcript must still
+/// be machine-independent.
+///
+/// This is a regression test with a date on it: helix (`roots = ["wolf.pkg",
+/// ".git"]`) and eglot (project.el, which finds the git root) both send
+/// `rootUri` = the repository while every document URI is under
+/// `vendor/upstream/samples`. Before ls06 the normalizer elided only the
+/// workspace, so the recording machine's home directory survived into two
+/// committed transcripts —
+/// `client_recorded::captured_client_messages_carry_no_absolute_paths` caught
+/// it, which is exactly what that test is for.
+#[test]
+fn a_root_above_the_workspace_is_elided_to_repo() {
+    let repo = std::path::PathBuf::from("/home/dev/wolf-lsp");
+    let workspace = repo.join("vendor/upstream/samples");
+
+    let mut t = Transcript {
+        header: Header {
+            transcript: lsp_transcript::FORMAT_VERSION,
+            name: "helix/smoke".into(),
+            wolf_pin: "0".repeat(40),
+            profile: "helix".into(),
+            workspace: "vendor/upstream/samples".into(),
+            recorded: "2026-08-10".into(),
+        },
+        records: vec![Record {
+            seq: 1,
+            dir: Dir::C2s,
+            kind: Kind::Request,
+            id: Some(Value::from(1)),
+            method: Some("initialize".into()),
+            params: Some(serde_json::json!({
+                "rootPath": "/home/dev/wolf-lsp",
+                "rootUri": "file:///home/dev/wolf-lsp",
+                "workspaceFolders": [{ "uri": "file:///home/dev/wolf-lsp", "name": "wolf-lsp" }],
+                "doc": "file:///home/dev/wolf-lsp/vendor/upstream/samples/hello.lu",
+            })),
+            result: None,
+            error: None,
+            matcher: None,
+            normalize: Vec::new(),
+            t_us: None,
+        }],
+    };
+
+    Normalizer::new(Some(workspace))
+        .with_repo_root(repo)
+        .run(&mut t);
+
+    let params = t.records[0].params.clone().expect("params");
+    assert_eq!(params["rootPath"], "$REPO");
+    assert_eq!(params["rootUri"], "file://$REPO");
+    assert_eq!(params["workspaceFolders"][0]["uri"], "file://$REPO");
+    // Order matters: the workspace is the DEEPER path and must win, or every
+    // document URI in every existing transcript changes shape.
+    assert_eq!(params["doc"], "file://$WS/hello.lu");
+
+    let text = jsonl::to_string(&t);
+    assert!(
+        !text.contains("/home/"),
+        "an absolute path survived normalization:\n{text}"
+    );
+}

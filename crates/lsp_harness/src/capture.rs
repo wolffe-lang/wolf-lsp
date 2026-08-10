@@ -93,6 +93,15 @@ pub struct Options {
     /// Without this, every URI the editor sent carries the recording machine's
     /// home directory and the transcript replays on exactly one computer.
     pub workspace_dir: PathBuf,
+    /// Absolute path of the repository root, for eliding it to `$REPO`.
+    ///
+    /// A separate field because a real client may report a root ABOVE the
+    /// workspace and frequently does: helix walks up for `wolf.pkg` then
+    /// `.git`, and eglot asks project.el, which finds the git root. Both send
+    /// `rootUri` = the repository while every document URI is under `$WS`, so
+    /// eliding only the workspace leaves the recording machine's home directory
+    /// in the committed transcript.
+    pub repo_root: PathBuf,
 }
 
 /// One observed message, in arrival order across both directions.
@@ -238,7 +247,9 @@ impl Sink {
                 .map(|(i, o)| to_record(i as u32 + 1, o))
                 .collect(),
         };
-        Normalizer::new(Some(self.options.workspace_dir.clone())).run(&mut transcript);
+        Normalizer::new(Some(self.options.workspace_dir.clone()))
+            .with_repo_root(self.options.repo_root.clone())
+            .run(&mut transcript);
         transcript
     }
 }
@@ -389,6 +400,7 @@ mod tests {
                 pin_commit: "0".repeat(40),
                 recorded: "2026-08-10".to_string(),
                 workspace_dir: PathBuf::from("/ws"),
+                repo_root: PathBuf::from("/repo"),
             },
             out: PathBuf::from("/dev/null"),
         };

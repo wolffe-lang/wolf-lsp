@@ -10,6 +10,7 @@ use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
+mod config;
 mod vscode;
 
 fn main() -> ExitCode {
@@ -21,6 +22,22 @@ fn main() -> ExitCode {
         Some("independence") => independence(),
         Some("fixtures-check") => fixtures_check(),
         Some("nvim-check") => nvim_derived(false),
+        // ls06 §§1-3: the config tier's cross-editor invariants, and the emacs
+        // keyword drift gate. `config-check` needs no editor installed; the
+        // lanes that DO drive `hx` and `emacs` live in the workflow, because a
+        // gate that silently passes when its editor is absent is not a gate.
+        Some("config-check") => report("config-check", config::check(&repo_root())),
+        Some("emacs-check") => report("emacs-check", config::emacs(&repo_root())),
+        // The one lane that needs an editor installed. Exit 77 with a reason
+        // when `hx` is absent, matching `doctor` — a dark lane that says
+        // nothing is a lane nobody notices is dark (ls00 §3).
+        Some("helix-health") => match config::helix_health(&repo_root()) {
+            config::Health::Ok(errors) => report("helix-health", errors),
+            config::Health::Skip(reason) => {
+                println!("SKIP: helix-health — {reason}");
+                ExitCode::from(77)
+            }
+        },
         Some("nvim-generate") => nvim_derived(true),
         // ls05 §2 names `grammar-drift`; `vscode-check` is the alias that
         // matches the `nvim-check`/`nvim-generate` family. Same command.
@@ -34,7 +51,8 @@ fn main() -> ExitCode {
             eprintln!(
                 "usage: cargo xtask \
                  <ci|sync-pin|vendor-check|independence|fixtures-check\
-                 |nvim-check|nvim-generate|grammar-drift|grammar-generate>"
+                 |nvim-check|nvim-generate|grammar-drift|grammar-generate\
+                 |config-check|emacs-check|helix-health>"
             );
             ExitCode::from(2)
         }
@@ -73,6 +91,8 @@ fn ci() -> ExitCode {
         ("fixtures-check", &["xtask", "fixtures-check"]),
         ("nvim-check", &["xtask", "nvim-check"]),
         ("grammar-drift", &["xtask", "grammar-drift"]),
+        ("config-check", &["xtask", "config-check"]),
+        ("emacs-check", &["xtask", "emacs-check"]),
     ];
     for (name, args) in steps {
         eprintln!("== xtask ci: {name}");
@@ -347,7 +367,7 @@ fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
 /// Naively joining components with `/` doubles the leading separator on unix
 /// (the root component is itself `/`), which is how a report ends up saying
 /// `//home/...`. Mirrors `lsp_harness::slash_path`.
-fn slash(path: &Path) -> String {
+pub(crate) fn slash(path: &Path) -> String {
     let mut out = String::new();
     for component in path.components() {
         let text = component.as_os_str().to_string_lossy();
@@ -585,7 +605,7 @@ fn nvim_derived(write: bool) -> ExitCode {
 /// Hand-parsed for the same reason `sample_paths` is: xtask depends on no
 /// workspace crate and no regex engine, so that it still runs when the harness
 /// does not compile.
-fn reserved_keywords(ebnf: &str) -> BTreeSet<String> {
+pub(crate) fn reserved_keywords(ebnf: &str) -> BTreeSet<String> {
     let mut out = BTreeSet::new();
     let mut in_rule = false;
     for line in ebnf.lines() {
@@ -654,7 +674,7 @@ fn syntax_keywords(vim: &str) -> Option<BTreeSet<String>> {
 }
 
 /// Every `'…'` terminal on a line, in order.
-fn quoted(line: &str) -> Vec<String> {
+pub(crate) fn quoted(line: &str) -> Vec<String> {
     let mut out = Vec::new();
     let mut chars = line.chars();
     while let Some(c) = chars.next() {

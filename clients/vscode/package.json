@@ -7,7 +7,7 @@
   "publisher": "wolf-lang-unpublished",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tenseleyFlow/wolf-lsp.git",
+    "url": "https://github.com/wolffe-lang/wolf-lsp.git",
     "directory": "clients/vscode"
   },
   "categories": [

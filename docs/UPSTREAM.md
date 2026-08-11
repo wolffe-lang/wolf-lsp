@@ -28,7 +28,7 @@ state.
 A row is never deleted. A table that forgets its declines is a table that
 proposes the same patch twice.
 
-## fackr — `tenseleyFlow/fackr`, read at `496c7e2` (v1.2.1)
+## fackr — `wolffe-lang/fackr`, read at `496c7e2` (v1.2.1)
 
 Series: [`clients/fackr/patches/`](../clients/fackr/patches/) ·
 decomposition and per-PR file lists:
@@ -77,7 +77,7 @@ opening anything.
 | [`neovim/nvim-lspconfig`](https://github.com/neovim/nvim-lspconfig) | `lsp/wolf.lua` **verbatim** — since lspconfig 2.0 an entry *is* an `lsp/<name>.lua` returning a config table (`clients/nvim/README.md`) | `NOT SUBMITTED` | wolf-lang s66. lspconfig reasonably declines entries for servers nobody can install |
 | [`mason-org/mason-registry`](https://github.com/mason-org/mason-registry) | a package definition pointing at wolf-lang's **release artifacts** | `NOT SUBMITTED` | wolf-lang s66, hard. A mason package with no artifact to download is not a package. Note D34: mason would install the *compiler*, which is wolf-lang's publisher decision to make, not this repo's |
 | [`zed-industries/extensions`](https://github.com/zed-industries/extensions) | the `zed_wolf` extension as a registry submodule entry | `NOT SUBMITTED` | s66, **and** `docs/MATRIX.md`'s Zed row: submitting an extension nobody has ever run in Zed is the fabrication that file exists to prevent |
-| [`tenseleyFlow/tree-sitter-wolf`](https://github.com/tenseleyFlow/tree-sitter-wolf) | a real `grammar.js` — the repo is a seed commit (`b1b2c17`) with none | `NOT SUBMITTED` | nobody's sprint. **This is the largest standing gap in the track**: it is why `.lu` buffers in Helix and Zed have no highlighting at all, and why both editors ship their grammar block commented out |
+| [`wolffe-lang/tree-sitter-wolf`](https://github.com/wolffe-lang/tree-sitter-wolf) | a real `grammar.js` — the repo is a seed commit (`b1b2c17`) with none | `NOT SUBMITTED` | nobody's sprint. **This is the largest standing gap in the track**: it is why `.lu` buffers in Helix and Zed have no highlighting at all, and why both editors ship their grammar block commented out |
 | Open VSX namespace `wolf-lang` | `ovsx create-namespace` + `ovsx publish` | `NOT SUBMITTED` | needs an Eclipse Foundation token — [`DISTRIBUTION.md`](DISTRIBUTION.md) §OWED TO HUMAN |
 | VS Marketplace publisher | the publisher identity the vsix's `publisher` field names | `NOT SUBMITTED` | `wolf-lang-unpublished` is a deliberate placeholder. Registration is a human act with a credential this repo must never hold |
 

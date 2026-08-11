@@ -3,7 +3,7 @@
 " Source:    DERIVED, not written. See clients/nvim/inventory.md.
 "
 " This is the real highlighting story for wolf in Neovim today, not a stopgap
-" for one: `tenseleyFlow/tree-sitter-wolf` is scaffold-only, so a `.lu` buffer
+" for one: `wolffe-lang/tree-sitter-wolf` is scaffold-only, so a `.lu` buffer
 " is coloured by these patterns unless a parser has been installed by hand.
 " `wolf.nvim` detects that and switches without a message.
 "

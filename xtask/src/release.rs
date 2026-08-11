@@ -103,7 +103,7 @@ pub fn check(root: &Path) -> Report {
             pin_commit.get(..7).unwrap_or("???????")
         ),
         "wolf-lang s66 tags and publishes a release; then `gh release list --repo \
-         tenseleyFlow/wolf-lang` is non-empty and the server lane stops being dark.",
+         wolffe-lang/wolf-lang` is non-empty and the server lane stops being dark.",
     );
 
     // --- step 1: the pin is bumped and re-vendored, in its own commit ---
@@ -284,7 +284,7 @@ pub fn check(root: &Path) -> Report {
     r.pending(
         "7d. nvim mirror pushed and tagged",
         "the split is proven locally (7c) and the push command is documented; \
-         `tenseleyFlow/wolf.nvim` does not exist.",
+         `wolffe-lang/wolf.nvim` does not exist.",
         "create the mirror repository, then run the push in docs/DISTRIBUTION.md §neovim. The \
          mirror is generated — never commit to it by hand.",
     );
@@ -555,7 +555,7 @@ pub enum Split {
 /// `clients/nvim/` and is *published* to a standalone mirror by
 /// `git subtree split` (ls07 §2): plugin managers handle subdirectories badly
 /// and inconsistently — lazy.nvim has no option for one at all — so a mirror
-/// costs one CI step and makes `{'tenseleyFlow/wolf.nvim'}` work everywhere.
+/// costs one CI step and makes `{'wolffe-lang/wolf.nvim'}` work everywhere.
 ///
 /// This function computes the split and **verifies the resulting tree**. It
 /// does not push, does not create a branch, and does not tag: the mirror
@@ -657,9 +657,9 @@ pub fn nvim_split(root: &Path, into: Option<&Path>) -> Result<Split, String> {
         );
     }
     println!(
-        "\nThe push is NOT run and cannot be: `tenseleyFlow/wolf.nvim` does not exist.\n\
+        "\nThe push is NOT run and cannot be: `wolffe-lang/wolf.nvim` does not exist.\n\
          When it does, the publish job runs exactly:\n\
-         \n    git push git@github.com:tenseleyFlow/wolf.nvim.git {sha}:refs/heads/main\n\
+         \n    git push git@github.com:wolffe-lang/wolf.nvim.git {sha}:refs/heads/main\n\
          \nand the mirror's HEAD must already point at `refs/heads/main` — a repository\n\
          whose default branch is anything else accepts that push and then hands every\n\
          cloner an empty checkout. See docs/DISTRIBUTION.md §neovim."

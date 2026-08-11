@@ -70,7 +70,7 @@ the compiler said).
 nothing to ship in its place.** helix highlights exclusively through
 tree-sitter — there is no regex fallback of the kind `clients/nvim/syntax/`
 and `clients/vscode/syntaxes/` provide — and
-`tenseleyFlow/tree-sitter-wolf` is a seed commit containing three files, none of
+`wolffe-lang/tree-sitter-wolf` is a seed commit containing three files, none of
 them `grammar.js` (`b1b2c17`, "scaffold; grammar port to follow
 opportunistically"). So the `[[grammar]]` block ships **commented out**, with
 that reason on the line above it. A config that references a missing grammar

@@ -148,7 +148,7 @@ point, and it is why a config tier is viable at all. So:
 - **Syntax highlighting is uneven, and the split is structural.** Neovim and VS
   Code have non-tree-sitter highlighters (`syntax/wolf.vim`,
   `.tmLanguage.json`) and get highlighting today. Helix and Zed highlight
-  through tree-sitter only, and `tenseleyFlow/tree-sitter-wolf` is a seed commit
+  through tree-sitter only, and `wolffe-lang/tree-sitter-wolf` is a seed commit
   with no `grammar.js` (`b1b2c17`) — so **a `.lu` buffer in Helix or Zed has no
   highlighting at all**. Emacs gets keywords, types and doc comments from
   font-lock, and nothing more.

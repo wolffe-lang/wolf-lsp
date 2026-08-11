@@ -41,7 +41,7 @@ pin in `vendor/upstream/PIN` is a private-repo sha — not something a user can
 acquire. Until wolf-lang s66 publishes an artifact, "install the extension" has
 no coherent second half.
 
-*Clears when:* `gh release list --repo tenseleyFlow/wolf-lang` is non-empty.
+*Clears when:* `gh release list --repo wolffe-lang/wolf-lang` is non-empty.
 
 ### 1. Bump the pin, re-vendor, in its own commit
 
@@ -113,7 +113,7 @@ release tag.
 | 7a. VS Code Marketplace | `PENDING` — the pipeline is dry-run proven (`vsce package` + `vsce ls` against a reviewed contents list + the manifest lint, CI job `vscode-package`). The publisher is an unregistered placeholder, so no token exists and no publish is possible |
 | 7b. Open VSX | `PENDING` — same vsix, `ovsx publish`. No namespace registered |
 | 7c. nvim mirror split | **checked.** `git subtree split --prefix=clients/nvim`, then every file the mirror needs asserted present and nothing from the harness leaked. Proven end to end into a scratch path with local-only remotes, including a real Neovim loading the cloned mirror |
-| 7d. nvim mirror push | `PENDING` — `tenseleyFlow/wolf.nvim` does not exist. **Its default branch must be `main` before the first push**, or every clone is empty; see `DISTRIBUTION.md` §neovim |
+| 7d. nvim mirror push | `PENDING` — `wolffe-lang/wolf.nvim` does not exist. **Its default branch must be `main` before the first push**, or every clone is empty; see `DISTRIBUTION.md` §neovim |
 
 Note what 7c reports on a dirty working tree: `git subtree split` reads
 **history**, so on uncommitted changes it faithfully splits HEAD — a correct

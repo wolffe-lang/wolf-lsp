@@ -14,7 +14,7 @@ compatibility row in `docs/COMPAT.md` and nothing else.
   `wolf lsp`.
 - `.wolfi` is deliberately **not** associated with the server (D32), for the
   same reason it is not in the Helix, Neovim, VS Code or Zed configurations.
-- No tree-sitter mode: `tenseleyFlow/tree-sitter-wolf` has no grammar, so
+- No tree-sitter mode: `wolffe-lang/tree-sitter-wolf` has no grammar, so
   highlighting is font-lock keywords and nothing more.
 - No runtime version check, by design. A snippet a user pastes into `init.el`
   that then compares versions against a range is a snippet nobody pastes;

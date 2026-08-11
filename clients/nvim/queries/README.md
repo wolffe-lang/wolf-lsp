@@ -6,7 +6,7 @@ and it is not a placeholder anyone forgot to fill.
 
 ## The blocker
 
-`tenseleyFlow/tree-sitter-wolf` is scaffold-only. At the pin this plugin was
+`wolffe-lang/tree-sitter-wolf` is scaffold-only. At the pin this plugin was
 written against the repository contains `LICENSE-APACHE`, `LICENSE-MIT` and
 `README.md` — no `grammar.js`, no `src/`, no parser. Its stated scope is that
 the grammar gets "filled opportunistically between compiler sprints", and ls04

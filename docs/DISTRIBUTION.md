@@ -172,7 +172,7 @@ a standalone mirror repository** built by `git subtree split`.
 The alternative — telling users to install a subdirectory — was rejected because
 plugin managers handle subdirectories badly and inconsistently, and lazy.nvim
 has no option for one at all. A mirror costs one CI step and makes
-`{ 'tenseleyFlow/wolf.nvim' }` work in every manager.
+`{ 'wolffe-lang/wolf.nvim' }` work in every manager.
 
 The mirror is **generated, never hand-edited**. Its README must say so in its
 first paragraph, because the mirror is what a contributor finds first and a PR
@@ -217,9 +217,9 @@ a repository whose `HEAD` points somewhere else (a fresh `git init` still says
 
 ```sh
 sha=$(git subtree split --prefix=clients/nvim)
-git push git@github.com:tenseleyFlow/wolf.nvim.git "$sha:refs/heads/main"
+git push git@github.com:wolffe-lang/wolf.nvim.git "$sha:refs/heads/main"
 git tag  -f client-nvim-v0.1.0 "$sha"
-git push git@github.com:tenseleyFlow/wolf.nvim.git client-nvim-v0.1.0
+git push git@github.com:wolffe-lang/wolf.nvim.git client-nvim-v0.1.0
 ```
 
 `doc/tags` is **committed**, not regenerated at publish time, so `:h wolf.nvim`
@@ -229,7 +229,7 @@ committing it safe.
 
 ### OWED TO HUMAN — the mirror repository
 
-- [ ] Create `tenseleyFlow/wolf.nvim`, **public**, default branch `main` (see
+- [ ] Create `wolffe-lang/wolf.nvim`, **public**, default branch `main` (see
       the finding above).
 - [ ] Add a deploy key with write access, or a fine-grained PAT scoped to that
       one repository, as `secrets.NVIM_MIRROR_KEY`. Not a broad org token: this
@@ -243,13 +243,13 @@ committing it safe.
 
 ```lua
 -- lazy.nvim
-{ 'tenseleyFlow/wolf.nvim' }
+{ 'wolffe-lang/wolf.nvim' }
 
 -- packer
-use 'tenseleyFlow/wolf.nvim'
+use 'wolffe-lang/wolf.nvim'
 
 -- built-in packages, no manager at all
--- git clone https://github.com/tenseleyFlow/wolf.nvim \
+-- git clone https://github.com/wolffe-lang/wolf.nvim \
 --   ~/.local/share/nvim/site/pack/wolf/start/wolf.nvim
 ```
 
@@ -324,7 +324,7 @@ Submitting an extension nobody has ever loaded is precisely the fabrication
 A user who installs it today gets a working language server and **no syntax
 highlighting**: `[grammars.wolf]` ships commented out because Zed builds every
 grammar named in the manifest *at install time*, and pointing it at the empty
-`tenseleyFlow/tree-sitter-wolf` would fail the install and take the language
+`wolffe-lang/tree-sitter-wolf` would fail the install and take the language
 server down with it.
 
 ---

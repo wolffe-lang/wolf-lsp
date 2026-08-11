@@ -1,6 +1,6 @@
 ---@brief
 ---
---- https://github.com/tenseleyFlow/wolf-lang
+--- https://github.com/wolffe-lang/wolf-lang
 ---
 --- `wolf lsp` is the wolf compiler's language-server subcommand. There is no
 --- separate server to install: the binary that answers `initialize` is the

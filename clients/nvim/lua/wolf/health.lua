@@ -167,7 +167,7 @@ local function check_binary()
       ('`%s` is NEWER than any wolf the conformance suite has been run'):format(verdict.found),
       'against. Usually fine — the plugin only sends standard LSP — but nothing',
       'verified this combination. Update the plugin, or report what broke:',
-      'https://github.com/tenseleyFlow/wolf-lsp/issues',
+      'https://github.com/wolffe-lang/wolf-lsp/issues',
     })
   elseif verdict.state == 'below' then
     vim.list_extend(advice, {
@@ -265,7 +265,7 @@ local function check_treesitter()
   local ts = require('wolf.treesitter')
   if not ts.available(true) then
     health.info('no `wolf` parser installed — expected today; the regex fallback is in use', {
-      '`tenseleyFlow/tree-sitter-wolf` is scaffold-only (licenses and a README);',
+      '`wolffe-lang/tree-sitter-wolf` is scaffold-only (licenses and a README);',
       'the grammar is filled opportunistically between compiler sprints.',
       'syntax/wolf.vim is the real highlighting story until it exists, and it is',
       'derived from the same pinned grammar the parser will be.',

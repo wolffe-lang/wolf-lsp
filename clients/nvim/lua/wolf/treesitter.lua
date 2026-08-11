@@ -1,6 +1,6 @@
 --- Tree-sitter wiring — inert today, correct the day the grammar exists.
 ---
---- `tenseleyFlow/tree-sitter-wolf` is **scaffold-only**: at the time this was
+--- `wolffe-lang/tree-sitter-wolf` is **scaffold-only**: at the time this was
 --- written the repository contains two licenses and a README and no grammar,
 --- and its stated scope is "filled opportunistically between compiler
 --- sprints". So this module ships the wiring and none of the pretending:

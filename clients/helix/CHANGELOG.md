@@ -16,7 +16,7 @@ against on which date.
   v0 is a binary format and `wolf lsp` discovers modules by `.lu` alone (D32).
   Attaching the server there would produce a buffer that looks supported and is
   not.
-- `[[grammar]]` ships **commented out**. `tenseleyFlow/tree-sitter-wolf` is a
+- `[[grammar]]` ships **commented out**. `wolffe-lang/tree-sitter-wolf` is a
   seed commit with no `grammar.js`, so a `.lu` buffer in Helix has **no syntax
   highlighting**. Uncommenting it only makes Helix noisy at startup; it does not
   produce highlighting.

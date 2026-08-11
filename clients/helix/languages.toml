@@ -88,7 +88,7 @@ text-width = 100
 # ------------------------------------------------------------ grammar --
 
 # The tree-sitter grammar block stays COMMENTED OUT because
-# `tenseleyFlow/tree-sitter-wolf` is a seed commit with no `grammar.js` in it
+# `wolffe-lang/tree-sitter-wolf` is a seed commit with no `grammar.js` in it
 # (`b1b2c17`, "scaffold; grammar port to follow opportunistically"). Shipping a
 # `[[grammar]]` that points at it would make `hx -g fetch` fail and `hx` noisy
 # at startup, and noisy startup is how users delete config.
@@ -97,7 +97,7 @@ text-width = 100
 #
 #   [[grammar]]
 #   name = "wolf"
-#   source = { git = "https://github.com/tenseleyFlow/tree-sitter-wolf", rev = "TODO" }
+#   source = { git = "https://github.com/wolffe-lang/tree-sitter-wolf", rev = "TODO" }
 #
 # Until then a wolf buffer in helix has **no syntax highlighting at all** —
 # helix has no regex-highlighting fallback the way Neovim and VS Code do, so

@@ -1,7 +1,7 @@
 # License
 
 The Wolf VS Code extension is dual-licensed under **MIT OR Apache-2.0**, at
-your option — the same terms as the rest of `tenseleyFlow/wolf-lsp`.
+your option — the same terms as the rest of `wolffe-lang/wolf-lsp`.
 
 This file exists because a marketplace listing without a license file is a
 listing nobody can legally use, and `vsce package` warns about exactly that.

@@ -64,12 +64,12 @@ repository (ls07), lazy users point at a local checkout:
 
 ```lua
 -- packer.nvim — has a subdirectory option, so it installs from the repository
-use { 'tenseleyFlow/wolf-lsp', rtp = 'clients/nvim' }
+use { 'wolffe-lang/wolf-lsp', rtp = 'clients/nvim' }
 ```
 
 ```sh
 # built-in packages, no plugin manager
-git clone https://github.com/tenseleyFlow/wolf-lsp \
+git clone https://github.com/wolffe-lang/wolf-lsp \
   ~/.local/share/nvim/site/pack/wolf/start/wolf-lsp
 ln -s ~/.local/share/nvim/site/pack/wolf/start/wolf-lsp/clients/nvim \
       ~/.local/share/nvim/site/pack/wolf/start/wolf.nvim

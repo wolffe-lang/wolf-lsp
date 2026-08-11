@@ -76,11 +76,11 @@ packer.nvim ~
 >lua
     -- packer HAS a subdirectory option, so it can install straight from the
     -- repository.
-    use { 'tenseleyFlow/wolf-lsp', rtp = 'clients/nvim' }
+    use { 'wolffe-lang/wolf-lsp', rtp = 'clients/nvim' }
 <
 Built-in packages, no plugin manager ~
 >sh
-    git clone https://github.com/tenseleyFlow/wolf-lsp \
+    git clone https://github.com/wolffe-lang/wolf-lsp \
       ~/.local/share/nvim/site/pack/wolf/start/wolf-lsp
     ln -s ~/.local/share/nvim/site/pack/wolf/start/wolf-lsp/clients/nvim \
           ~/.local/share/nvim/site/pack/wolf/start/wolf.nvim
@@ -264,7 +264,7 @@ three are arguments for semantic tokens whenever the compiler ships them.
 ==============================================================================
 10. TREE-SITTER                                              *wolf-treesitter*
 
-There is no tree-sitter grammar for wolf yet. `tenseleyFlow/tree-sitter-wolf`
+There is no tree-sitter grammar for wolf yet. `wolffe-lang/tree-sitter-wolf`
 is scaffold-only — two licenses and a README — and the grammar is filled
 opportunistically between compiler sprints.
 

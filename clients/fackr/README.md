@@ -7,7 +7,7 @@ A client with no type-level safety net is the harshest honest test of whether
 `wolf lsp` is a well-behaved server, and it found things a generated client
 never will.
 
-- Upstream: `tenseleyFlow/fackr`, read at `496c7e2` (v1.2.1)
+- Upstream: `wolffe-lang/fackr`, read at `496c7e2` (v1.2.1)
 - Capability profile: [`profiles/fackr.json`](../../profiles/fackr.json)
 - Recorded session: [`transcripts/fackr/smoke.jsonl`](../../transcripts/fackr/smoke.jsonl)
 - Patch series: [`patches/`](patches/)

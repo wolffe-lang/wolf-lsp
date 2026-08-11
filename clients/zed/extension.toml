@@ -15,7 +15,7 @@ description = "Wolf language support: diagnostics, hover, symbols, formatting an
 version = "0.0.1"
 schema_version = 1
 authors = ["wolf-lang contributors"]
-repository = "https://github.com/tenseleyFlow/wolf-lsp"
+repository = "https://github.com/wolffe-lang/wolf-lsp"
 
 # One server, named `wolf`, for one language. The id on the left is what a user
 # writes under `"lsp"` in `settings.json` to override the binary path, and it is
@@ -36,7 +36,7 @@ name = "wolf"
 languages = ["Wolf"]
 
 # The tree-sitter grammar block stays COMMENTED OUT because
-# `tenseleyFlow/tree-sitter-wolf` is a seed commit with no `grammar.js` in it
+# `wolffe-lang/tree-sitter-wolf` is a seed commit with no `grammar.js` in it
 # (`b1b2c17`, "scaffold; grammar port to follow opportunistically"). Zed builds
 # every grammar named here when the extension is installed, so a block pointing
 # at an empty repository would fail the install outright — the extension would
@@ -46,5 +46,5 @@ languages = ["Wolf"]
 # `languages/wolf/config.toml`, and add `languages/wolf/highlights.scm`.
 #
 #   [grammars.wolf]
-#   repository = "https://github.com/tenseleyFlow/tree-sitter-wolf"
+#   repository = "https://github.com/wolffe-lang/tree-sitter-wolf"
 #   commit = "TODO"

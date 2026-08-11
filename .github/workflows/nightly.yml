@@ -184,7 +184,7 @@ jobs:
           mkdir -p .wolf-bin
           # Structured count, not a prose grep: the empty-result message
           # contains the repo name and fooled a loose match once already.
-          n_rel=$(gh release list --repo tenseleyFlow/wolf-lang --limit 1 \
+          n_rel=$(gh release list --repo wolffe-lang/wolf-lang --limit 1 \
             --json tagName --jq 'length' 2>/dev/null || echo 0)
           if [ "$n_rel" -gt 0 ]; then
             echo "server=maybe" >> "$GITHUB_OUTPUT"

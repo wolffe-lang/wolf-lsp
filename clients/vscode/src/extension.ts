@@ -29,7 +29,7 @@ import { PIN } from './pin';
 /// listing and no published wolf release, so the repository README is the whole
 /// story — and a notification linking to a page nobody has written would be
 /// worse than one linking nowhere.
-const INSTALL_URL = 'https://github.com/tenseleyFlow/wolf-lsp#installing';
+const INSTALL_URL = 'https://github.com/wolffe-lang/wolf-lsp#installing';
 
 let client: LanguageClient | undefined;
 
@@ -218,7 +218,7 @@ function warnIfOutOfRange(version: string): void {
 
 /// `docs/COMPAT.md` on the repository, which is the only place the range is
 /// explained — there is no published documentation site.
-const COMPAT_URL = 'https://github.com/tenseleyFlow/wolf-lsp/blob/trunk/docs/COMPAT.md';
+const COMPAT_URL = 'https://github.com/wolffe-lang/wolf-lsp/blob/trunk/docs/COMPAT.md';
 
 // ----------------------------------------------------------- the client --
 
@@ -333,7 +333,7 @@ async function showVersion(): Promise<void> {
 				'This wolf is newer than anything the conformance suite has been run',
 				'against. Usually fine — the extension only sends standard LSP — but',
 				'nothing verified this combination. Update the extension, or report',
-				'what broke: https://github.com/tenseleyFlow/wolf-lsp/issues',
+				'what broke: https://github.com/wolffe-lang/wolf-lsp/issues',
 			);
 		} else if (verdict === 'below') {
 			lines.push(

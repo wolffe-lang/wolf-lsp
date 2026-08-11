@@ -8,7 +8,7 @@ This file travels into the generated `wolf.nvim` mirror, which is why it says
 
 ## 0.0.1 — UNRELEASED
 
-**Never published.** `tenseleyFlow/wolf.nvim` does not exist yet; the mirror
+**Never published.** `wolffe-lang/wolf.nvim` does not exist yet; the mirror
 split that would create its first commit is computed and verified locally by
 `cargo xtask nvim-split` and pushed by nobody. Until then the plugin installs
 from a `wolf-lsp` checkout (`README.md` §Installing).

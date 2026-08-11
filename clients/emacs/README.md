@@ -214,7 +214,7 @@ build rather than teaching a language that does not exist.
 
 **`treesit` is wired to nothing, deliberately.** Emacs 30 has
 `treesit-language-source-alist` and would happily build a `wolf` grammar —
-except that `tenseleyFlow/tree-sitter-wolf` is a seed commit with no
+except that `wolffe-lang/tree-sitter-wolf` is a seed commit with no
 `grammar.js` in it (`b1b2c17`). A `wolf-ts-mode` today would be a mode with no
 parser, which is worse than no mode.
 

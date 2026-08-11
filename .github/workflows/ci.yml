@@ -422,7 +422,7 @@ jobs:
           # up on macOS first, upstream).
           # Structured query: prose messages contain the repo name, which a
           # loose grep once matched ("no releases found in .../wolf-lang").
-          n_rel=$(gh release list --repo tenseleyFlow/wolf-lang --limit 1 \
+          n_rel=$(gh release list --repo wolffe-lang/wolf-lang --limit 1 \
             --json tagName --jq 'length' 2>/dev/null || echo 0)
           if [ "$n_rel" -gt 0 ]; then
             echo "found a release listing; artifact download lands with the first tagged wolf-lang build"
@@ -719,7 +719,7 @@ jobs:
           if [ -z "$gitlink" ]; then
             echo "::error::no gitlink recorded for upstream/."
             echo "::error::.gitmodules names the submodule but no commit records a sha for it."
-            echo "::error::fix: git submodule add https://github.com/tenseleyFlow/wolf-lang.git upstream"
+            echo "::error::fix: git submodule add https://github.com/wolffe-lang/wolf-lang.git upstream"
             echo "::error::     git -C upstream checkout \$(grep '^commit' vendor/upstream/PIN | cut -d= -f2 | tr -d ' \"')"
             echo "::error::     git add .gitmodules upstream"
             exit 1

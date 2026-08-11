@@ -3,7 +3,7 @@
   "provenance": {
     "kind": "derived",
     "client": "fackr",
-    "repository": "https://github.com/tenseleyFlow/fackr",
+    "repository": "https://github.com/wolffe-lang/fackr",
     "commit": "496c7e27d69625a7a2a4f0fff578586890f076bd",
     "read_on": "2026-08-10",
     "source": [

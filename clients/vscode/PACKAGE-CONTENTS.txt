@@ -13,6 +13,7 @@ CHANGELOG.md
 LICENSE.md
 README.md
 compat.json
+icon.png
 language-configuration.json
 out/compat.js
 out/extension.js

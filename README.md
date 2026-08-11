@@ -1,5 +1,7 @@
 # wolf-lsp
 
+<img src="assets/wolf-logo.svg" alt="the wolf mark" width="120" align="right"/>
+
 The wolf editor layer: clients, configs, conformance testing, and packaging
 for the wolf language server.
 

@@ -185,7 +185,7 @@ function checkManifest(): void {
 		fail('a license ships inside the vsix', 'clients/vscode/LICENSE.md is missing');
 	} else {
 		const text = fs.readFileSync(licence, 'utf8');
-		const drifted = ['LICENSE-MIT', 'LICENSE-APACHE'].filter(
+		const drifted = ['LICENSE'].filter(
 			(f) => !text.includes(fs.readFileSync(path.join(REPO_ROOT, f), 'utf8').trimEnd()),
 		);
 		if (drifted.length > 0) {

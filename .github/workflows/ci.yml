@@ -425,8 +425,19 @@ jobs:
           n_rel=$(gh release list --repo wolffe-lang/wolf-lang --limit 1 \
             --json tagName --jq 'length' 2>/dev/null || echo 0)
           if [ "$n_rel" -gt 0 ]; then
-            echo "found a release listing; artifact download lands with the first tagged wolf-lang build"
-            echo "server=maybe" >> "$GITHUB_OUTPUT"
+            # A release exists — try the asset at OUR pin. Assets are named
+            # wolf-<shortsha>-linux-x86_64.tar.gz per xtask dist; the release
+            # may be at a different sha than this repo's pin, in which case
+            # the lane stays dark honestly (ls-next owns pin-matched assets).
+            short=$(echo "$pin" | cut -c1-7)
+            if gh release download --repo wolffe-lang/wolf-lang \
+                 --pattern "wolf-$short-linux-x86_64.tar.gz" -D .wolf-bin 2>/dev/null; then
+              tar -xzf .wolf-bin/wolf-$short-linux-x86_64.tar.gz -C .wolf-bin
+              echo "server=downloaded" >> "$GITHUB_OUTPUT"
+            else
+              echo "SERVER UNAVAILABLE: releases exist but none carries an asset at pin $short"
+              echo "server=none" >> "$GITHUB_OUTPUT"
+            fi
           else
             echo "SERVER UNAVAILABLE: wolf-lang publishes no artifact for pin $pin"
             echo '  `wolf lsp` exists at this pin (s52) — what is missing is a DOWNLOAD,'

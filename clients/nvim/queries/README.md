@@ -7,7 +7,7 @@ and it is not a placeholder anyone forgot to fill.
 ## The blocker
 
 `wolffe-lang/tree-sitter-wolf` is scaffold-only. At the pin this plugin was
-written against the repository contains `LICENSE-APACHE`, `LICENSE-MIT` and
+written against the repository contains `LICENSE` and
 `README.md` — no `grammar.js`, no `src/`, no parser. Its stated scope is that
 the grammar gets "filled opportunistically between compiler sprints", and ls04
 is explicit that nothing in this sprint blocks on it.

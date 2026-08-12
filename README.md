@@ -5,31 +5,32 @@
 The wolf editor layer: clients, configs, conformance testing, and packaging
 for the wolf language server.
 
-**The engine is not here.** The language server is `wolf lsp` — the wolf
-compiler itself, serving the Language Server Protocol from the same code
+**The engine is not here.** The language server is `wolf lsp`, which is the
+wolf compiler itself serving the Language Server Protocol from the same code
 that compiles (one process, one truth; see wolf-lang's `wolf_query`
 contract). This repo makes editors speak to it:
 
-- the protocol **conformance harness** (recorded JSON-RPC session replay
-  against `wolf lsp`, capability snapshots, latency budgets)
-- first-class clients: **fackr**, **facsimile**, Neovim, VS Code
+- the protocol **conformance harness**: recorded JSON-RPC session replay
+  against `wolf lsp`, capability snapshots, latency budgets
+- maintained clients: **fackr**, **facsimile**, Neovim, VS Code
 - config tier: Helix, Zed, Emacs (eglot) · documented tier: JetBrains (LSP4IJ)
-- marketplace/packaging for all of the above
+- marketplace and packaging for all of the above
 
 Which editors are supported, at what verification level, and when each was last
 checked: [`docs/MATRIX.md`](docs/MATRIX.md). Every row there names its CI job or
 says plainly that it has never been run.
 
 **Nothing here has been published anywhere.** No marketplace listing, no Open
-VSX namespace, no `wolf.nvim` mirror, no registry entry, no tag — and none is
-possible until wolf-lang ships a release a stranger can install. The pipelines
-exist, are exercised offline, and stop at gates that need a person:
+VSX namespace, no `wolf.nvim` mirror, no registry entry, no tag. wolf-lang has
+since published v0.1.0 with an x86-64 linux tarball, and the other tier-1
+platforms have no artifact yet. The pipelines exist and are exercised offline.
+They stop at gates that need a person:
 
 | | |
 |---|---|
 | [`docs/COMPAT.md`](docs/COMPAT.md) | which `wolf` each client works with, and the gate that keeps the claim earned |
 | [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md) | every channel, per ecosystem, and the human act each one waits on |
-| [`docs/RELEASE.md`](docs/RELEASE.md) | the nine-step checklist — run it with `cargo xtask release-check` |
+| [`docs/RELEASE.md`](docs/RELEASE.md) | the checklist, steps 0 through 9. Run it with `cargo xtask release-check` |
 | [`docs/UPSTREAM.md`](docs/UPSTREAM.md) | every patch's status upstream, in five words, none of them "soon" |
 
 Sprint plan: the `lsp` track (`lsNN`) in the wolf metarepo.
@@ -38,8 +39,8 @@ Licensed under [GPL-3.0-or-later](LICENSE).
 ## The harness
 
 `lspconf` drives a real `wolf lsp` child process over stdio. Half of it needs
-no server and runs everywhere; the other half needs a binary at the pin and
-**skips loudly** — exit `77`, with the reason — when there is none.
+no server and runs everywhere. The other half needs a binary at the pin, and
+**skips loudly** when there is none: exit `77`, with the reason.
 
 ```
 lspconf verify              transcripts and scripts: parseable, valid, canonical
@@ -62,11 +63,11 @@ with no script beside it.
 
 ## Running the server lane locally
 
-CI cannot do this and is not supposed to: wolf-lang publishes no release
-artifact yet, and this repo **never builds the compiler in CI**
-(`vendor/README.md` explains why — a private submodule with no deploy keys, and
-a multi-minute build per job to produce something the acquisition step is meant
-to download). Locally it is three commands, once:
+CI cannot do this and is not supposed to. This repo **never builds the
+compiler in CI**: wolf-lang is a binary dependency here, so building the whole
+compiler in every job would be a multi-minute tax to produce something the
+acquisition step is meant to download (`vendor/README.md` has the long
+version). Locally it is three commands, once:
 
 ```sh
 git submodule update --init upstream
@@ -84,20 +85,20 @@ cargo run --bin lspconf -- --require-server fuzz regions.lu --seed 1
 cargo test                                             # the gated suites go live
 ```
 
-Without `WOLF_BIN`, resolution falls back to `.wolf-bin/` (the artifact cache CI
-will use) and then to `wolf` on `PATH` — and `doctor` reports which one won,
-because "works on my machine" is usually a second `wolf` earlier in `PATH`.
+Without `WOLF_BIN`, resolution falls back to `.wolf-bin/`, the artifact cache
+CI uses, and then to `wolf` on `PATH`. `doctor` reports which one won, because
+"works on my machine" is usually a second `wolf` earlier in `PATH`.
 
 ## When the build and the editor disagree
 
-`lspconf onetruth` is D34 made falsifiable: for every sample it runs
-`wolf conform-run --error-format=json` and an LSP session over the same bytes
-and asserts the diagnostics are the same — same codes, same spans (through the
+`lspconf onetruth` is D34 made falsifiable. For every sample it runs
+`wolf conform-run --error-format=json` and an LSP session over the same bytes,
+then asserts the diagnostics agree: same codes, same spans (through the
 negotiated position encoding), same messages, and reachable from *some* open
 document of the module.
 
 A mismatch is a **wolf-lang bug**, filed upstream with both records attached.
-It is never normalized away here and never patched around: the editor layer
-detects divergence, it does not hide it. `divergences.toml` is the ledger of
-filed ones — an unfiled divergence fails, and so does a ledger entry whose bug
-has been fixed.
+It is never normalized away here and never patched around. The editor layer
+detects divergence; hiding it would defeat the harness. `divergences.toml` is
+the ledger of the filed ones. An unfiled divergence fails the gate, and so
+does a ledger entry whose bug has been fixed.

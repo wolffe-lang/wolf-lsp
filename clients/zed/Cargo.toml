@@ -9,7 +9,7 @@
 name = "zed_wolf"
 version = "0.0.1"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "GPL-3.0-or-later"
 repository = "https://github.com/wolffe-lang/wolf-lsp"
 publish = false
 

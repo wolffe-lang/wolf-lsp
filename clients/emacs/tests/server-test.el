@@ -1,6 +1,6 @@
 ;;; server-test.el --- The eglot lane, against a real `wolf lsp' -*- lexical-binding: t; -*-
 
-;; SPDX-License-Identifier: MIT OR Apache-2.0
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 

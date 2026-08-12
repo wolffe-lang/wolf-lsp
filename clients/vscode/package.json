@@ -3,7 +3,7 @@
   "displayName": "Wolf",
   "description": "Wolf language support. `wolf lsp` is the compiler; this extension starts it and gets out of the way.",
   "version": "0.0.1",
-  "license": "MIT OR Apache-2.0",
+  "license": "GPL-3.0-or-later",
   "publisher": "wolf-lang-unpublished",
   "repository": {
     "type": "git",

@@ -33,7 +33,7 @@ exist, are exercised offline, and stop at gates that need a person:
 | [`docs/UPSTREAM.md`](docs/UPSTREAM.md) | every patch's status upstream, in five words, none of them "soon" |
 
 Sprint plan: the `lsp` track (`lsNN`) in the wolf metarepo.
-Dual-licensed MIT or Apache-2.0.
+Licensed under [GPL-3.0-or-later](LICENSE).
 
 ## The harness
 

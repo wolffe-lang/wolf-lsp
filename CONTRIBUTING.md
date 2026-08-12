@@ -34,8 +34,6 @@ Mirroring the compiler and interpreter tracks:
 - **Terse, imperative subjects**, under ~250 characters unless the change
   genuinely needs elaboration: `matcher: default ServerCapabilities to subset`,
   not `Added some logic so that capabilities can grow without...`.
-- **No trailers.** No `Co-Authored-By`, no `Generated with`, no tool
-  attribution of any kind.
 - Never `git checkout` files that were just written but not yet committed.
   Stage or stash first. This has eaten work before.
 

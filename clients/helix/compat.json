@@ -3,7 +3,7 @@
   "client_version": "0.0.1",
   "artifact": "TOML fragment — clients/helix/languages.toml, copied into the user's config",
   "wolf": {
-    "min": "0.0.1",
+    "min": "0.1.0",
     "max_tested": "0.1.0",
     "pin": "f9ee9aaa6712eead72ede2e933d1bf57b45cf1bc",
     "pin_version_string": "wolf 0.1.0 (wolfgang)"

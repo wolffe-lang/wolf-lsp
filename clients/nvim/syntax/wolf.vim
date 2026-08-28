@@ -55,12 +55,13 @@ syn keyword wolfKeyword      select spawn take unsafe use
 
 " ------------------------------------------------------------------- types --
 "
-" Small, and deliberately so. Wolf has NO fixed-width scalar inventory at this
-" pin: `i32`/`u64`/`f64` and friends appear in neither `grammar.ebnf` nor any
-" `spec/*.md`. Guessing the rest would be inventing language surface in an
-" editor file, which is how a highlighter teaches people a language that does
-" not exist.
-syn keyword wolfType bool int str Self
+" The fixed-width scalar inventory is REAL at pin f9ee9aa: spec/10 (types,
+" D54) writes `f32`/`f64`/`i32`/`u8` normatively, and the compiler's closed
+" BUILTIN_TYPES set is the fifteen scalars plus the `wrapping` constructor
+" (D56), painted here with `Self` beside them. (Through 70bdd35 this row was
+" four names, because no spec then named a fixed-width scalar.) Not derivable
+" from the EBNF — re-read wolf_sema/src/prelude.rs at each pin.
+syn keyword wolfType bool byte f32 f64 i8 i16 i32 i64 int str u8 u16 u32 u64 uint wrapping Self
 
 " `type` and `region` are also type-level (`type ::= … | 'type' | 'region'`)
 " but they are reserved keywords, so they are already coloured above.

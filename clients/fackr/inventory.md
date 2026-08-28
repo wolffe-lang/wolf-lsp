@@ -61,6 +61,14 @@ up teaching people a language that does not exist.
 `type` and `region` are *also* type-level (`type ::= … | 'type' | 'region'`)
 but they are reserved keywords, so they are already in the set above.
 
+> **Stale at pin f9ee9aa (le01):** the claim above was true at the pin this
+> series was derived from. spec/10 (types, D54) now writes the fixed-width
+> scalars normatively and the compiler's closed `BUILTIN_TYPES` is sixteen
+> names (fifteen scalars plus `wrapping`, D56) — so the four-name table this
+> editor carries is due a refresh the next time its series is touched. The
+> table itself has not been changed here: it lives in the editor's repo, and
+> regenerating it is that series' job, not this ledger's.
+
 ## Operators — §3.2's climb, longest match first
 
 ```

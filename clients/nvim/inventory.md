@@ -73,15 +73,16 @@ means nothing special.
 ## Types
 
 ```
-bool int str Self
+bool byte f32 f64 i8 i16 i32 i64 int str u8 u16 u32 u64 uint wrapping Self
 ```
 
-Small, and deliberately so. Wolf has **no fixed-width scalar inventory at this
-pin**: `i32`/`u64`/`f64` and friends appear in neither `grammar.ebnf` nor any
-`spec/*.md`. Every name above is one the pinned spec or corpus actually
-contains. Guessing the rest would be inventing language surface in an editor
-file, which is how a highlighter ends up teaching people a language that does
-not exist.
+The fixed-width scalar inventory is **real at pin f9ee9aa**: spec/10 (types,
+D54) writes `f32`/`f64`/`i32`/`u8` normatively, and the compiler's closed
+`BUILTIN_TYPES` set is the fifteen scalars plus the `wrapping` constructor
+(D56). Through the 70bdd35 pin this list was four names — no `spec/*.md` then
+named a fixed-width scalar, and guessing would have invented language surface.
+Still not derivable from the EBNF; re-read `wolf_sema/src/prelude.rs` at each
+pin.
 
 `type` and `region` are also type-level (`type ::= … | 'type' | 'region'`) but
 they are reserved keywords, so they are already in the set above.

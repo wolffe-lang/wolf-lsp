@@ -1,5 +1,5 @@
   1 "//! check: run(exit=0, stdout=\"hello, wolf\")" comment.line.documentation.wolf
-  2 "//! phase: mem"             comment.line.documentation.wolf
+  2 "//! phase: run"             comment.line.documentation.wolf
   3 "//! conforms: str.interp"   comment.line.documentation.wolf
   4 "//!"                        comment.line.documentation.wolf
   5 "//! The first program. Every string literal is an f-string (D26/X9);" comment.line.documentation.wolf

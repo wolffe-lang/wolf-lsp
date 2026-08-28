@@ -115,16 +115,15 @@
  31 ")"                          —
  33 "if"                         keyword.control.conditional.wolf
  33 " words "                    —
- 33 "="                          keyword.operator.wolf
- 33 "="                          keyword.operator.wolf
+ 33 "=="                         keyword.operator.wolf
  33 "6"                          constant.numeric.decimal.wolf
- 33 " && lines "                 —
- 33 "="                          keyword.operator.wolf
- 33 "="                          keyword.operator.wolf
+ 33 "&&"                         keyword.operator.wolf
+ 33 " lines "                    —
+ 33 "=="                         keyword.operator.wolf
  33 "2"                          constant.numeric.decimal.wolf
- 33 " && head "                  —
- 33 "="                          keyword.operator.wolf
- 33 "="                          keyword.operator.wolf
+ 33 "&&"                         keyword.operator.wolf
+ 33 " head "                     —
+ 33 "=="                         keyword.operator.wolf
  33 "\""                         string.quoted.double.wolf punctuation.definition.string.begin.wolf
  33 "the wolf"                   string.quoted.double.wolf
  33 "\""                         string.quoted.double.wolf punctuation.definition.string.end.wolf

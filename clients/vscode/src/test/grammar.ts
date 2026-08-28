@@ -44,8 +44,9 @@ const SUBJECTS: ReadonlyArray<readonly [string, string]> = [
 	[
 		'strings.lu',
 		'every string form — `"""` block, `re"…"` generalized, plain — plus a ' +
-			'`{words:>3}` format spec, `^13` from-end indexing, and the uncoloured ' +
-			'`==`/`&&` that record the elided precedence climb',
+			'`{words:>3}` format spec, `^13` from-end indexing, and `==`/`&&` ' +
+			'coloured as single operators now that the pinned EBNF renders the ' +
+			'full precedence climb (f9ee9aa)',
 	],
 ];
 

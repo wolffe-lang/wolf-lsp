@@ -1,15 +1,18 @@
 # The wolf-lang commit this repo is keyed to. A bump is its own commit, with
 # the re-vendored data, and nothing else (vendor/README.md).
-commit = 70bdd35c9d24c5bfba2c46e6334f886d8b2fe474
-# The exact `wolf --version` string that commit produces. `lspconf doctor`
+commit = f9ee9aaa6712eead72ede2e933d1bf57b45cf1bc
+# The exact `wolf --version` string that commit produces (first line; the
+# binary now prints a second line naming its lupin pairing). `lspconf doctor`
 # fails on a mismatch: a stale local `wolf` producing green transcripts is the
 # failure mode the pin exists to prevent.
-version = "wolf 0.0.1 (pre-alpha)"
+version = "wolf 0.1.0 (wolfgang)"
 # Does `wolf lsp` exist at this commit? YES — wolf-lang s52 landed it
 # (`wolf: the lsp subcommand`, 07e553d). This flip is what lights every
 # server-dependent lane: record, replay, onetruth, bench, and the encoding,
 # cancellation, and fuzz suites all reach `Availability::Ready` as soon as a
-# binary at this version resolves. CI still skips, for a *different* reason
-# now — wolf-lang tags no releases, so there is no artifact to download; see
-# README §Running the server lane locally.
+# binary at this version resolves. And wolf-lang now RELEASES: v0.1.0
+# ("wolfgang", the identity release, tagged 2026-08-12 at 94aa69d, an
+# ancestor of this pin) is published with artifacts. The acquire step still
+# stays dark unless the published asset matches THIS pin — a v0.1.0 asset is
+# not evidence about a later sha; see README §Running the server lane locally.
 serves_lsp = true

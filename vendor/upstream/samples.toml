@@ -56,10 +56,12 @@ reason = "cross-file relatedInformation: the `member: true` sibling that carries
 #
 # ls01 §5 requires **astral-plane** text (an emoji: one char, two UTF-16 units,
 # four bytes) with positions before, between, and after the surrogate pair, plus
-# combining marks and a ZWJ sequence. No file in the corpus at this pin contains
-# any character above the BMP — the richest sample here tops out at U+2026.
-# (Re-checked at the s52 pin bump: a scan of all 149 corpus `.lu` files for any
-# code point above U+FFFF still finds none. The request stands.)
+# combining marks and a ZWJ sequence. (Re-checked at the f9ee9aa pin bump: of
+# 397 corpus `.lu` files, three now carry an astral character — the s120
+# witnesses `strings/{chars_walk,boundary_battery,equality_lanes}.lu`, each
+# with the 4-byte `🐺` — but none carries a combining mark or a ZWJ sequence,
+# so the corpus still does not cover what the fixture covers. The request
+# stands, narrowed to the combining-mark/ZWJ half.)
 #
 # The rule is that fixtures are requested upstream, never forked locally (ls00
 # §5): a locally-authored `.lu` is not canonical `wolf fmt` output and drifts
@@ -82,6 +84,6 @@ reason = "cross-file relatedInformation: the `member: true` sibling that carries
 # until the corpus carries the sample.
 [gap.astral_plane]
 needed_by = "ls01 §5 (UTF-16 / positionEncoding correctness)"
-status = "requested upstream; no astral-plane sample exists at this pin (re-verified at 67c977f)"
+status = "requested upstream; astral-only samples exist at this pin (s120's wolf-emoji witnesses, re-verified at f9ee9aa) but none has combining marks or ZWJ, so the fixture's coverage is still unmatched"
 local_stopgap = "fixtures/astral.lu"
 retire_when = "a corpus sample carries astral-plane, combining-mark, and ZWJ text; then delete fixtures/astral.lu in the same commit as the pin bump"

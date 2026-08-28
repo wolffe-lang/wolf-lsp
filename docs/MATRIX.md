@@ -117,11 +117,16 @@ without a lane is the exact artefact this file exists to prevent.
 - **Zed's build target is `wasm32-wasip2`, not `wasm32-wasip1`.** ls06 §2 names
   wasip1; Zed's `extension_builder.rs` pins
   `const RUST_TARGET: &str = "wasm32-wasip2"`.
-- **Helix's `[[grammar]]` block ships commented out** as the sprint requires,
-  and so does Zed's `[grammars.wolf]` — for a sharper reason than helix's. helix
-  merely gets noisy at startup; **Zed builds every grammar named in the manifest
-  at install time**, so a block pointing at the empty `tree-sitter-wolf` fails
-  the install and takes the language server down with it.
+- **Helix's `[[grammar]]` block and Zed's `[grammars.wolf]` are LIVE as of
+  le02**, both pinned to tree-sitter-wolf rev `0458cdf` (the le02 branch head;
+  the integrator re-pins on merge/tag). They shipped commented out while
+  `tree-sitter-wolf` was an empty scaffold — helix merely got noisy at startup,
+  but **Zed builds every grammar named in the manifest at install time**, so a
+  block pointing at an empty repo failed the install and took the language
+  server down with it. That hazard is why the pin points at a rev with a
+  committed, CI-verified `src/parser.c`. le02 also added `grammar = "wolf"` and
+  `highlights.scm` to `clients/zed/languages/wolf/`, and helix users copy
+  tree-sitter-wolf's `queries/*.scm` to `runtime/queries/wolf/`.
 - **The sprint's helix acceptance test was exercised and reverted.** A fragment
   with a TOML syntax error turns `cargo xtask helix-health` red (4 problems,
   exit 1); adding `language-servers` to the `wolfi` block turns both
@@ -145,13 +150,14 @@ point, and it is why a config tier is viable at all. So:
   binary format and `wolf lsp` discovers modules by `.lu` alone (D32). Four
   clients reached that ruling independently, and `cargo xtask config-check`
   now fails the build if any of them stops honouring it.
-- **Syntax highlighting is uneven, and the split is structural.** Neovim and VS
-  Code have non-tree-sitter highlighters (`syntax/wolf.vim`,
-  `.tmLanguage.json`) and get highlighting today. Helix and Zed highlight
-  through tree-sitter only, and `wolffe-lang/tree-sitter-wolf` is a seed commit
-  with no `grammar.js` (`b1b2c17`) — so **a `.lu` buffer in Helix or Zed has no
-  highlighting at all**. Emacs gets keywords, types and doc comments from
-  font-lock, and nothing more.
+- **Syntax highlighting is uneven, but the tree-sitter gap is closed.** Neovim
+  and VS Code have non-tree-sitter highlighters (`syntax/wolf.vim`,
+  `.tmLanguage.json`). Helix and Zed highlight through tree-sitter only; since
+  le02 `wolffe-lang/tree-sitter-wolf` carries the real grammar (f-string
+  interpolation as expression nodes, corpus-gated at zero ERRORs) and both
+  clients' grammar blocks are live — a `.lu` buffer in Helix or Zed highlights
+  once the pinned rev is fetched/installed. Emacs still gets keywords, types
+  and doc comments from font-lock, and nothing more.
 
 ## Which encodings the real clients reach
 

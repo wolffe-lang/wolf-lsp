@@ -6,7 +6,14 @@ run. Every row below names the tier it is verified at, the evidence for that
 tier, and — for T1 and T2 — the CI job that re-checks the evidence on every
 push. A row that claims a verification it does not have is a bug in this file.
 
-**Last reviewed against wolf pin `70bdd35`, 2026-08-10.**
+**Last reviewed against wolf pin `f9ee9aa`, 2026-08-27** (le01). The scripted
+transcript library was re-recorded at that pin and `lspconf replay` +
+`onetruth` ran green under all nine derived profiles (10 samples, zero
+divergences). The six **captured** editor smokes were NOT re-captured: they
+keep the pin they were recorded at (`70bdd35`; `67c977f` for fackr) and
+`lspconf replay` refuses them against the new pin until someone drives each
+real editor again. Their rows below stay stamped with the pin their evidence
+was actually earned at.
 
 ## The three tiers
 
@@ -20,8 +27,8 @@ push. A row that claims a verification it does not have is a bug in this file.
 
 | editor | tier | CI job | evidence | last verified |
 |---|---|---|---|---|
-| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (dark: no artifact) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | 2026-08-10, pin `67c977f` |
-| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (dark: no artifact) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | 2026-08-10, pin `70bdd35` |
+| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (dark: no pin-matched artifact) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | 2026-08-10, pin `67c977f` |
+| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (dark: no pin-matched artifact) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | 2026-08-10, pin `70bdd35` |
 | [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.4`) | 2026-08-10, pin `70bdd35`, NVIM v0.12.4 |
 | [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 14 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | 2026-08-10, pin `70bdd35`, VS Code 1.132.0 |
 | [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | 2026-08-10, pin `70bdd35`, helix 25.07.1 |
@@ -109,8 +116,10 @@ without a lane is the exact artefact this file exists to prevent.
   met: a real 23-record eglot session was recorded
   (`transcripts/emacs/smoke.jsonl`) and a profile derived from it. The other
   half — replayed headlessly in CI — is not met, for the same reason it is not
-  met for any T1 row today: there is no published `wolf` artifact for CI to
-  acquire, so `server-lane` is dark everywhere.
+  met for any T1 row today: no published `wolf` artifact matches the current
+  pin, so `server-lane` is dark everywhere. (wolf-lang now releases — v0.1.0
+  "wolfgang", tagged at `94aa69d` — but the pin has moved past it; the lane
+  lights when a release lands at, or the pin returns to, a published sha.)
 - **`emacs` was added to `profiles::REAL_CLIENTS`**, which ls01 §4 fixed at six
   clients. A tracked client whose profile nothing watches for staleness is the
   gap that list exists to close.

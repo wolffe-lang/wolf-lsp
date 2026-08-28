@@ -4,9 +4,9 @@
   "artifact": "wasm32-wasip2 component + manifest — clients/zed/",
   "wolf": {
     "min": "0.0.1",
-    "max_tested": "0.0.1",
-    "pin": "70bdd35c9d24c5bfba2c46e6334f886d8b2fe474",
-    "pin_version_string": "wolf 0.0.1 (pre-alpha)"
+    "max_tested": "0.1.0",
+    "pin": "f9ee9aaa6712eead72ede2e933d1bf57b45cf1bc",
+    "pin_version_string": "wolf 0.1.0 (wolfgang)"
   },
   "verified": {
     "date": "2026-08-10",

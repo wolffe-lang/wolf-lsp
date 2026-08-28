@@ -35,16 +35,18 @@ repository = "https://github.com/wolffe-lang/wolf-lsp"
 name = "wolf"
 languages = ["Wolf"]
 
-# The tree-sitter grammar block stays COMMENTED OUT because
-# `wolffe-lang/tree-sitter-wolf` is a seed commit with no `grammar.js` in it
-# (`b1b2c17`, "scaffold; grammar port to follow opportunistically"). Zed builds
-# every grammar named here when the extension is installed, so a block pointing
-# at an empty repository would fail the install outright — the extension would
-# not load at all, and the language server would go with it.
+# The grammar is real (le02): `wolffe-lang/tree-sitter-wolf` carries
+# `grammar.js`, `src/parser.c` (committed — Zed compiles it at extension
+# install), queries, and a CI gate that parses wolf-lang's full corpus at
+# zero ERROR nodes. `languages/wolf/config.toml` names `grammar = "wolf"`
+# and `languages/wolf/highlights.scm` carries the queries this extension
+# ships.
 #
-# Uncomment when the grammar exists, add `grammar = "wolf"` to
-# `languages/wolf/config.toml`, and add `languages/wolf/highlights.scm`.
-#
-#   [grammars.wolf]
-#   repository = "https://github.com/wolffe-lang/tree-sitter-wolf"
-#   commit = "TODO"
+# The commit is the le02 branch head, pinned at wiring time; the
+# integrator re-pins it to the merge commit (or a tag) when
+# tree-sitter-wolf's trunk takes the branch — pins move only with a human
+# hand, like every pin here.
+
+[grammars.wolf]
+repository = "https://github.com/wolffe-lang/tree-sitter-wolf"
+commit = "0458cdf51b1068196f5ef7389f7f312fcdb854b0"

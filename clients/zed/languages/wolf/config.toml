@@ -13,20 +13,12 @@ name = "Wolf"
 # discovery is `.lu`-keyed (D32).
 path_suffixes = ["lu"]
 
-# **There is deliberately no `grammar` key.**
-#
-# `grammar` is `Option<Arc<str>>` in Zed's `LanguageConfig` and defaults to
-# `None`; Zed's own built-in "Plain Text" language ships with none. With no
-# grammar, `language_registry` takes the branch that attaches no queries at all
-# — so this file's comments, brackets, autoclose and indent behaviour all work
-# and only tree-sitter highlighting is absent. That is a strictly better failure
-# than pointing at `tree-sitter-wolf`, which has no `grammar.js` yet and whose
-# build failure would take the whole extension — language server included —
-# down with it.
-#
-# Consequence, stated plainly: **a `.lu` buffer in Zed has no syntax
-# highlighting today.** Diagnostics, hover, symbols, formatting and code actions
-# all still arrive, because those come from the server.
+# The grammar key names `[grammars.wolf]` in `extension.toml` (le02):
+# tree-sitter-wolf is real now, Zed builds its committed `src/parser.c` at
+# extension install, and `highlights.scm` in this directory carries the
+# queries. Before le02 this key was deliberately absent — an empty grammar
+# repo would have failed the install and taken the language server with it.
+grammar = "wolf"
 
 # `[gram.lex.comment]`: `//` line comments, with `///` (item doc) and `//!`
 # (inner doc) as prefixes of the same form. Listed longest-first because Zed

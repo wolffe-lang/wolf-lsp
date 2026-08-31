@@ -516,6 +516,12 @@ mod tests {
         );
         assert_eq!(version_number("wolf 1.2.30").as_deref(), Some("1.2.30"));
         assert_eq!(version_number("wolf pre-alpha"), None);
+        // D57 identities: build metadata after `+` names the commit and is
+        // not part of the version number.
+        assert_eq!(
+            version_number("wolf 0.2.0+dev.83f83bb (wolfgang, pin 83f83bb)").as_deref(),
+            Some("0.2.0")
+        );
     }
 
     #[test]

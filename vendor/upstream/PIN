@@ -1,18 +1,21 @@
 # The wolf-lang commit this repo is keyed to. A bump is its own commit, with
 # the re-vendored data, and nothing else (vendor/README.md).
-commit = f9ee9aaa6712eead72ede2e933d1bf57b45cf1bc
+commit = 83f83bbf44ce5dd6a8f6e2fe255fa37d1fe3954b
 # The exact `wolf --version` string that commit produces (first line; the
 # binary now prints a second line naming its lupin pairing). `lspconf doctor`
 # fails on a mismatch: a stale local `wolf` producing green transcripts is the
-# failure mode the pin exists to prevent.
-version = "wolf 0.1.0 (wolfgang)"
+# failure mode the pin exists to prevent. Since D57 an UNSTAMPED build prints
+# `+dev.unknown` — a string any trunk build of the same crate version also
+# prints, which is exactly the stale-binary hole — so the pinned string is the
+# `WOLF_COMMIT=83f83bb` stamped build's (README §Running the server lane
+# locally has the one-line recipe).
+version = "wolf 0.2.0+dev.83f83bb (wolfgang, pin 83f83bb)"
 # Does `wolf lsp` exist at this commit? YES — wolf-lang s52 landed it
 # (`wolf: the lsp subcommand`, 07e553d). This flip is what lights every
 # server-dependent lane: record, replay, onetruth, bench, and the encoding,
 # cancellation, and fuzz suites all reach `Availability::Ready` as soon as a
-# binary at this version resolves. And wolf-lang now RELEASES: v0.1.0
-# ("wolfgang", the identity release, tagged 2026-08-12 at 94aa69d, an
-# ancestor of this pin) is published with artifacts. The acquire step still
-# stays dark unless the published asset matches THIS pin — a v0.1.0 asset is
-# not evidence about a later sha; see README §Running the server lane locally.
+# binary at this version resolves. wolf-lang's releases are v0.1.0 (94aa69d)
+# and v0.2.0 (c88ab64) — both ancestors of this pin, neither AT it — so the
+# acquire step stays dark until an asset is published at this sha; a v0.2.0
+# asset is not evidence about a later commit.
 serves_lsp = true

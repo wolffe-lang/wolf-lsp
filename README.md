@@ -71,9 +71,15 @@ version). Locally it is three commands, once:
 
 ```sh
 git submodule update --init upstream
-cargo build --release -p wolf_driver --manifest-path upstream/Cargo.toml
+WOLF_COMMIT=$(git -C upstream rev-parse --short=7 HEAD) \
+  cargo build --release -p wolf_driver --manifest-path upstream/Cargo.toml
 export WOLF_BIN="$PWD/upstream/target/release/wolf"
 ```
+
+The `WOLF_COMMIT` stamp is load-bearing since D57: an unstamped build prints
+`+dev.unknown` — the same string every trunk build of that crate version
+prints — and `doctor` refuses it, because a version string that cannot name
+its commit is exactly the stale-binary hole the pin exists to close.
 
 Then `cargo run --bin lspconf -- doctor` should say `READY`, and everything
 above works:

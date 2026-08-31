@@ -64,7 +64,11 @@ use serde_json::{Value, json};
 ///
 /// `E`, `e` and `_` are here for a different reason: they are fragments of the
 /// number and pattern grammars (`EXPONENT`, `closed_pattern`), matched by the
-/// hand-written numeric rules rather than as words.
+/// hand-written numeric rules rather than as words. `n`, `r` and `t` joined
+/// them at the 83f83bb pin: they are the escape letters of `CHAR_ESC`
+/// (`[gram.lex.char]`, D58), matched inside the hand-written char-literal
+/// rule, and colouring the letter `n` as a keyword would be wrong everywhere
+/// outside `'\n'`.
 ///
 /// This list is **exhaustive over the pin**, and generation fails when a word
 /// terminal appears in neither it nor `reserved_kw`. That failure is the point:
@@ -72,8 +76,8 @@ use serde_json::{Value, json};
 /// about whether it is contextual or reserved, instead of silently becoming
 /// neither.
 const CONTEXTUAL: &[&str] = &[
-    "E", "_", "c", "e", "from", "inout", "lateout", "noalias", "out", "pkg", "pool", "rc", "self",
-    "timeout",
+    "E", "_", "c", "e", "from", "inout", "lateout", "n", "noalias", "out", "pkg", "pool", "r",
+    "rc", "self", "t", "timeout",
 ];
 
 /// Symbolic terminals that are **delimiters or literal-form fragments**, not
@@ -84,9 +88,13 @@ const CONTEXTUAL: &[&str] = &[
 /// upstream highlights immediately (and shows up as drift), which is the right
 /// default — an uncoloured new operator is a smaller wrong than a silent one.
 const DELIMITERS: &[&str] = &[
-    "\"", "#[", "(", ")", ",", ".", ":", "[", "]", "{", "}", // punctuation
+    "\"", "#![", "#[", "(", ")", ",", ".", ":", "[", "]", "{", "}", // punctuation
     "{{", "}}", // the f-string brace escapes, matched inside strings
     "0b", "0o", "0x", // integer radix prefixes, matched by the numeric rules
+    // char-literal fragments ([gram.lex.char], the 83f83bb pin): the quote,
+    // the backslash and the `\x`/`\u{` escape openers, and the bare `0` of
+    // `'\0'` — matched inside the hand-written char rule, never operators.
+    "'", "0", "\\", "\\u{", "\\x",
 ];
 
 /// The type names the grammar paints, and the one thing in this file that the
@@ -94,7 +102,8 @@ const DELIMITERS: &[&str] = &[
 ///
 /// Wolf's fixed-width scalar inventory is REAL at this pin: spec/10 (types,
 /// D54) writes `f32`/`f64`/`i32`/`u8` normatively, and the compiler's closed
-/// `BUILTIN_TYPES` set at f9ee9aa is the fifteen scalars plus the `wrapping`
+/// `BUILTIN_TYPES` set at 83f83bb is the fifteen scalars, `char` (s121, D58
+/// — `[type.char]` made it a builtin at this pin) and the `wrapping`
 /// constructor (D56) painted here, with `Self` beside them. (Through the
 /// 70bdd35 pin this list was four names, because no `spec/*.md` then named a
 /// fixed-width scalar and inventing them would have taught users a language
@@ -104,8 +113,8 @@ const DELIMITERS: &[&str] = &[
 /// `type` and `region` are type-level too, but they are reserved keywords and
 /// are already coloured as such.
 const TYPE_NAMES: &[&str] = &[
-    "Self", "bool", "byte", "f32", "f64", "i16", "i32", "i64", "i8", "int", "str", "u16", "u32",
-    "u64", "u8", "uint", "wrapping",
+    "Self", "bool", "byte", "char", "f32", "f64", "i16", "i32", "i64", "i8", "int", "str", "u16",
+    "u32", "u64", "u8", "uint", "wrapping",
 ];
 
 /// Which scope each reserved keyword is painted with.
@@ -334,6 +343,7 @@ fn wolf_grammar(inv: &Inventory) -> Value {
             { "include": "#comments" },
             { "include": "#attributes" },
             { "include": "#strings" },
+            { "include": "#chars" },
             { "include": "#numbers" },
             { "include": "#keywords" },
             { "include": "#types" },
@@ -355,12 +365,14 @@ fn wolf_grammar(inv: &Inventory) -> Value {
                 ]
             },
 
-            // `#[…]` is a BOUNDED region. Wolf has no preprocessor, so `#`
-            // must never swallow the rest of the line — the trap
-            // `clients/facsimile/inventory.md` records from the other side.
+            // `#[…]` is a BOUNDED region — and so is `#![…]`, the file-wide
+            // inner attribute (`[gram.attr.index]`, s126). Wolf has no
+            // preprocessor, so `#` must never swallow the rest of the line —
+            // the trap `clients/facsimile/inventory.md` records from the
+            // other side.
             "attributes": {
                 "name": "meta.attribute.wolf",
-                "begin": "#\\[",
+                "begin": "#!?\\[",
                 "end": "\\]",
                 "beginCaptures": { "0": { "name": "punctuation.definition.attribute.wolf" } },
                 "endCaptures": { "0": { "name": "punctuation.definition.attribute.wolf" } },
@@ -463,6 +475,18 @@ fn wolf_grammar(inv: &Inventory) -> Value {
             "format-spec": {
                 "name": "constant.other.format-spec.wolf",
                 "match": ":[^{}\"]*(?=\\})"
+            },
+
+            // `[gram.lex.char]` (D58, the 83f83bb pin): one scalar or one
+            // escape between single quotes — `'a'`, `'\n'`, `'\x41'`,
+            // `'\u{1F43A}'`. The match is CLOSED (both quotes in one regex,
+            // no begin/end region) because a lone `'` is a stray byte in
+            // wolf, not a string opener — a region rule would swallow the
+            // rest of the line the way `#` must not (the facsimile trap).
+            "chars": {
+                "name": "constant.character.wolf",
+                "match": "'([^'\\\\\\r\\n]|\\\\[ntr0\\\\'\"]|\\\\x[0-9A-Fa-f]{2}|\\\\u\\{[0-9A-Fa-f]+\\})'",
+                "captures": { "0": { "name": "constant.character.wolf" } }
             },
 
             // Radix forms before decimal, or `0x1f` lexes as `0` followed by

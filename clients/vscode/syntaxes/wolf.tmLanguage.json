@@ -19,6 +19,9 @@
       "include": "#strings"
     },
     {
+      "include": "#chars"
+    },
+    {
       "include": "#numbers"
     },
     {
@@ -33,7 +36,7 @@
   ],
   "repository": {
     "attributes": {
-      "begin": "#\\[",
+      "begin": "#!?\\[",
       "beginCaptures": {
         "0": {
           "name": "punctuation.definition.attribute.wolf"
@@ -74,6 +77,15 @@
           "include": "#interpolation"
         }
       ]
+    },
+    "chars": {
+      "captures": {
+        "0": {
+          "name": "constant.character.wolf"
+        }
+      },
+      "match": "'([^'\\\\\\r\\n]|\\\\[ntr0\\\\'\"]|\\\\x[0-9A-Fa-f]{2}|\\\\u\\{[0-9A-Fa-f]+\\})'",
+      "name": "constant.character.wolf"
     },
     "comments": {
       "patterns": [
@@ -279,7 +291,7 @@
       ]
     },
     "types": {
-      "match": "\\b(Self|bool|byte|f32|f64|i16|i32|i64|i8|int|str|u16|u32|u64|u8|uint|wrapping)\\b",
+      "match": "\\b(Self|bool|byte|char|f32|f64|i16|i32|i64|i8|int|str|u16|u32|u64|u8|uint|wrapping)\\b",
       "name": "support.type.wolf"
     }
   },

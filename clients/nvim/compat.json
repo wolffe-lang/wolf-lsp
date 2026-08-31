@@ -3,19 +3,19 @@
   "client_version": "0.0.1",
   "artifact": "plugin tree — clients/nvim/, published as the generated wolf.nvim mirror",
   "wolf": {
-    "min": "0.1.0",
-    "max_tested": "0.1.0",
-    "pin": "f9ee9aaa6712eead72ede2e933d1bf57b45cf1bc",
-    "pin_version_string": "wolf 0.1.0 (wolfgang)"
+    "min": "0.2.0",
+    "max_tested": "0.2.0",
+    "pin": "83f83bbf44ce5dd6a8f6e2fe255fa37d1fe3954b",
+    "pin_version_string": "wolf 0.2.0+dev.83f83bb (wolfgang, pin 83f83bb)"
   },
   "verified": {
-    "date": "2026-08-27",
-    "host": "local (linux x86-64)",
+    "date": "2026-08-31",
+    "host": "local (macos arm64)",
     "evidence": [
       "transcripts/nvim/smoke.jsonl",
       "profiles/nvim.json",
       "clients/nvim/tests/plugin_spec.lua",
-      "lspconf replay + onetruth under this client's derived profile at pin f9ee9aa, 2026-08-27 (the captured smoke keeps its recorded pin)"
+      "lspconf replay + onetruth under this client's derived profile at pin 83f83bb, 2026-08-31 (the captured smoke keeps its recorded pin)"
     ]
   },
   "warning_surface": ":checkhealth wolf"

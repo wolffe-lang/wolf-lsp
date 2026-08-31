@@ -11,7 +11,10 @@ STR_PART   ::= STR_TEXT | '{{' | '}}' | INTERP
 INTERP     ::= '{' expr FORMAT_SPEC? '}'
 FORMAT_SPEC ::= ':' /* fill/align/sign/width/precision/type, spec §7.4 */
 
-unit  ::= inner_doc* item*
+CHAR_LIT  ::= "'" (CHAR_TEXT | CHAR_ESC) "'"
+CHAR_ESC  ::= '\' ('n' | 't' | 'r' | '0' | '\' | "'" | '"') | '\x' HEX_DIGIT HEX_DIGIT | '\u{' HEX_DIGIT+ '}'
+
+unit  ::= inner_doc* inner_attribute* item*
 item  ::= attribute* visibility? bare_item
 bare_item ::= fn_item | let_item | var_item | type_item | trait_item
             | impl_item | use_item | import_c_item | const_item
@@ -33,8 +36,9 @@ view_set  ::= '.' '{' IDENT (',' IDENT)* '}'
 fn_ret    ::= '->' ret_type
 ret_type  ::= type ('!' error_row)?   /* `-> !T` parses via type's '!' type */
 
-let_item ::= 'let' pattern (':' type)? '=' expr TERM
-var_item ::= 'var' pattern (':' type)? '=' expr TERM
+let_item ::= 'let' binder (',' binder)* TERM
+var_item ::= 'var' binder (',' binder)* TERM
+binder ::= pattern (':' type)? '=' expr
 const_item ::= 'const' IDENT (':' type)? '=' expr TERM
 
 type_item   ::= 'type' IDENT generics? '=' type_def TERM?
@@ -53,6 +57,7 @@ impl_item  ::= 'impl' generics? type ('for' type)? '{' impl_member* '}'
 impl_member ::= fn_item | type_item | const_item
 
 attribute ::= '#[' attr (',' attr)* ']'
+inner_attribute ::= '#![' attr (',' attr)* ']'
 attr      ::= path attr_input?
 attr_input ::= '(' attr_arg (',' attr_arg)* ')' | '=' literal
 attr_arg  ::= attr | literal   /* `key = "v"` is attr with '=' input */
@@ -110,7 +115,7 @@ primary ::= literal | path | struct_lit | '(' expr (',' expr)* ','? ')' | block
           | asm_expr | borrow_expr
 struct_lit ::= path '{' (field_init (',' field_init)* ','?)? '}'
 field_init ::= IDENT ':' expr | IDENT
-literal ::= INT | FLOAT | STRING | MULTILINE_STRING | RAW_STRING
+literal ::= INT | FLOAT | CHAR_LIT | STRING | MULTILINE_STRING | RAW_STRING
           | GENERALIZED_STRING | 'true' | 'false'
 
 if_expr    ::= 'if' expr block ('else' (if_expr | block))?
@@ -170,8 +175,10 @@ row_entry ::= path ('(' type (',' type)* ')')?
 pattern ::= closed_pattern ('|' closed_pattern)*
 closed_pattern ::= '_' | literal | IDENT
           | path '(' pattern (',' pattern)* ','? ')'
+          | path '{' field_pat (',' field_pat)* ','? '..'? '}'
           | '(' pattern (',' pattern)* ','? ')'
           | IDENT '@' closed_pattern
+field_pat ::= IDENT (':' pattern)?
 
 reserved_kw ::= 'as' | 'asm' | 'assume' | 'borrow' | 'break' | 'comptime'
   | 'const' | 'continue' | 'copy' | 'defer' | 'distinct' | 'dyn' | 'else'

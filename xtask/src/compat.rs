@@ -365,10 +365,12 @@ fn first_version_key(text: &str) -> Option<String> {
 
 /// `wolf 0.0.1 (pre-alpha)` → `0.0.1`.
 pub fn version_number(version_string: &str) -> Option<String> {
-    version_string
-        .split_whitespace()
-        .find(|w| triple(w).is_some())
-        .map(str::to_string)
+    version_string.split_whitespace().find_map(|w| {
+        // Semver build metadata after `+` names the build's commit (D57's
+        // `0.2.0+dev.83f83bb`) and is not part of the version number.
+        let bare = w.split('+').next().unwrap_or(w);
+        triple(bare).is_some().then(|| bare.to_string())
+    })
 }
 
 /// `0.0.1` → `(0, 0, 1)`, for ordering. `None` when it is not a triple.
@@ -514,6 +516,12 @@ mod tests {
         );
         assert_eq!(version_number("wolf 1.2.30").as_deref(), Some("1.2.30"));
         assert_eq!(version_number("wolf pre-alpha"), None);
+        // D57 identities: build metadata after `+` names the commit and is
+        // not part of the version number.
+        assert_eq!(
+            version_number("wolf 0.2.0+dev.83f83bb (wolfgang, pin 83f83bb)").as_deref(),
+            Some("0.2.0")
+        );
     }
 
     #[test]

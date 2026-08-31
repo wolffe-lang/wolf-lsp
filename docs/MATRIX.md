@@ -6,14 +6,15 @@ run. Every row below names the tier it is verified at, the evidence for that
 tier, and — for T1 and T2 — the CI job that re-checks the evidence on every
 push. A row that claims a verification it does not have is a bug in this file.
 
-**Last reviewed against wolf pin `f9ee9aa`, 2026-08-27** (le01). The scripted
+**Last reviewed against wolf pin `83f83bb`, 2026-08-31** (le03). The scripted
 transcript library was re-recorded at that pin and `lspconf replay` +
 `onetruth` ran green under all nine derived profiles (10 samples, zero
-divergences). The six **captured** editor smokes were NOT re-captured: they
-keep the pin they were recorded at (`70bdd35`; `67c977f` for fackr) and
-`lspconf replay` refuses them against the new pin until someone drives each
-real editor again. Their rows below stay stamped with the pin their evidence
-was actually earned at.
+divergences). The six **captured** editor smokes were NOT re-captured — the
+same posture le01 recorded: they keep the pin they were recorded at
+(`70bdd35`; `67c977f` for fackr) and `lspconf replay` refuses them against
+the new pin until someone drives each real editor again (release-check 3b
+stays red on exactly this until then). Their rows below stay stamped with
+the pin their evidence was actually earned at.
 
 ## The three tiers
 
@@ -127,8 +128,10 @@ without a lane is the exact artefact this file exists to prevent.
   wasip1; Zed's `extension_builder.rs` pins
   `const RUST_TARGET: &str = "wasm32-wasip2"`.
 - **Helix's `[[grammar]]` block and Zed's `[grammars.wolf]` are LIVE as of
-  le02**, both pinned to tree-sitter-wolf rev `0458cdf` (the le02 branch head;
-  the integrator re-pins on merge/tag). They shipped commented out while
+  le02**, re-pinned at le03 to tree-sitter-wolf rev `09b3ca3` (the le03
+  branch head — the grammar catch-up: char literals D58, D63 binder groups,
+  struct patterns; the integrator re-pins on merge/tag), and `config-check`
+  now holds the two spellings of the rev equal. They shipped commented out while
   `tree-sitter-wolf` was an empty scaffold — helix merely got noisy at startup,
   but **Zed builds every grammar named in the manifest at install time**, so a
   block pointing at an empty repo failed the install and took the language
@@ -163,7 +166,9 @@ point, and it is why a config tier is viable at all. So:
   and VS Code have non-tree-sitter highlighters (`syntax/wolf.vim`,
   `.tmLanguage.json`). Helix and Zed highlight through tree-sitter only; since
   le02 `wolffe-lang/tree-sitter-wolf` carries the real grammar (f-string
-  interpolation as expression nodes, corpus-gated at zero ERRORs) and both
+  interpolation as expression nodes, corpus-gated at zero ERRORs — and since
+  le03 char literals, D63 binder groups and struct patterns, with the
+  wolf-lang corpus gate at 443 files / zero ERRORs) and both
   clients' grammar blocks are live — a `.lu` buffer in Helix or Zed highlights
   once the pinned rev is fetched/installed. Emacs still gets keywords, types
   and doc comments from font-lock, and nothing more.

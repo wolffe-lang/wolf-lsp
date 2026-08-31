@@ -73,13 +73,13 @@ means nothing special.
 ## Types
 
 ```
-bool byte f32 f64 i8 i16 i32 i64 int str u8 u16 u32 u64 uint wrapping Self
+bool byte char f32 f64 i8 i16 i32 i64 int str u8 u16 u32 u64 uint wrapping Self
 ```
 
-The fixed-width scalar inventory is **real at pin f9ee9aa**: spec/10 (types,
+The fixed-width scalar inventory is **real at pin 83f83bb**: spec/10 (types,
 D54) writes `f32`/`f64`/`i32`/`u8` normatively, and the compiler's closed
-`BUILTIN_TYPES` set is the fifteen scalars plus the `wrapping` constructor
-(D56). Through the 70bdd35 pin this list was four names — no `spec/*.md` then
+`BUILTIN_TYPES` set is the fifteen scalars, `char` (s121, D58 — a builtin
+since this pin) and the `wrapping` constructor (D56). Through the 70bdd35 pin this list was four names — no `spec/*.md` then
 named a fixed-width scalar, and guessing would have invented language surface.
 Still not derivable from the EBNF; re-read `wolf_sema/src/prelude.rs` at each
 pin.

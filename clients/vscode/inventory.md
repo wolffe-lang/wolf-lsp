@@ -42,10 +42,11 @@ hand-edit *be* the drift, which is what ls05 §2 asks for in those words.
 | the type names | **no**, and not derivable — see below | yes (byte diff) only |
 
 The last row is the one leak, and it is the same leak ls04 has. The
-fixed-width scalar inventory is **real at pin f9ee9aa**: spec/10 (types, D54)
+fixed-width scalar inventory is **real at pin 83f83bb**: spec/10 (types, D54)
 writes `f32`/`f64`/`i32`/`u8` normatively, and the painted set is the
-compiler's closed `BUILTIN_TYPES` — fifteen scalars plus the `wrapping`
-constructor (D56) — with `Self` beside them. The EBNF still has no rule
+compiler's closed `BUILTIN_TYPES` — fifteen scalars, `char` (s121, D58, a
+builtin since this pin) and the `wrapping` constructor (D56) — with `Self`
+beside them. The EBNF still has no rule
 listing type names, so a type added upstream will not appear here on its own;
 `TYPE_NAMES` in `xtask/src/vscode.rs` is re-read against
 `wolf_sema/src/prelude.rs` at each pin. (Through 70bdd35 the list was four

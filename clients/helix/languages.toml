@@ -92,9 +92,11 @@ text-width = 100
 # wolf-lang's full corpus at zero ERROR nodes. `hx -g fetch && hx -g build`
 # compiles the committed `src/parser.c` from the pinned rev.
 #
-# The rev is the le02 branch head, pinned at wiring time; the integrator
-# re-pins it to the merge commit (or a tag) when tree-sitter-wolf's trunk
-# takes the branch — pins move only with a human hand, like every pin here.
+# The rev is the le03 branch head (the grammar catch-up: char literals,
+# D63 binder groups, struct patterns), pinned at wiring time; the
+# integrator re-pins it to the merge commit (or a tag) when
+# tree-sitter-wolf's trunk takes the branch — pins move only with a human
+# hand, like every pin here.
 #
 # Highlighting also needs the query files on the runtime path: copy
 # `queries/*.scm` from tree-sitter-wolf into `runtime/queries/wolf/`
@@ -103,4 +105,4 @@ text-width = 100
 
 [[grammar]]
 name = "wolf"
-source = { git = "https://github.com/wolffe-lang/tree-sitter-wolf", rev = "0458cdf51b1068196f5ef7389f7f312fcdb854b0" }
+source = { git = "https://github.com/wolffe-lang/tree-sitter-wolf", rev = "09b3ca3ecc04c0ea363633de7fafef6982aeabbe" }

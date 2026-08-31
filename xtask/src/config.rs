@@ -10,9 +10,15 @@
 //! - `.wolfi` is never attached to a language server anywhere. Three sprints
 //!   reached that ruling independently (ls04, ls05, ls06) and each recorded it
 //!   in prose; prose does not fail a build;
-//! - no editor references `tree-sitter-wolf`, which has no `grammar.js` yet. A
-//!   live grammar block makes `hx` noisy at startup and makes a Zed extension
-//!   fail to install outright — taking the language server down with it;
+//! - the grammar blocks are LIVE (le02 — `tree-sitter-wolf` carries a real
+//!   grammar with a committed `src/parser.c`) and both editors must name the
+//!   SAME rev: helix's `[[grammar]]` `rev` and Zed's `[grammars.wolf]`
+//!   `commit` are two spellings of one pin, and Zed BUILDS the grammar at
+//!   install time, so a rev that drifts or dangles takes the language server
+//!   down with it. (Until le02 this bullet was the opposite claim — no live
+//!   block anywhere — and le02 flipped the configs without flipping the
+//!   check, which is how trunk CI went red: the gate now asserts the state
+//!   the repo actually ships.);
 //! - the formatter's two numbers, `INDENT = 4` and `WIDTH = 100`, are the same
 //!   numbers in every client. A hand-picked tab width in an editor config is a
 //!   second formatter with an opinion.
@@ -97,10 +103,12 @@ fn section<'a>(lines: &'a [&'a str], header: &str) -> Vec<&'a str> {
 
 // ------------------------------------------------------------------ helix --
 
-fn helix(root: &Path, errors: &mut Vec<String>) {
+/// Returns the tree-sitter-wolf rev the fragment pins, for the cross-editor
+/// one-pin check in [`check`].
+fn helix(root: &Path, errors: &mut Vec<String>) -> Option<String> {
     let rel = "clients/helix/languages.toml";
     let Some(text) = read(root, rel, errors) else {
-        return;
+        return None;
     };
     let lines = live_lines(&text, '#');
 
@@ -214,18 +222,46 @@ fn helix(root: &Path, errors: &mut Vec<String>) {
         ));
     }
 
-    if lines.iter().any(|l| l.starts_with("[[grammar]]")) {
+    // Live since le02: the grammar is real, and `hx -g fetch && hx -g build`
+    // compiles the committed parser from the pinned rev. The rev is returned
+    // so `check` can hold it against Zed's — one pin, two spellings.
+    if !lines.iter().any(|l| l.starts_with("[[grammar]]")) {
         errors.push(format!(
-            "{rel}: a live `[[grammar]]` block — `tree-sitter-wolf` has no grammar.js at \
-             b1b2c17, and a config referencing a missing grammar makes `hx` noisy at \
-             startup"
+            "{rel}: no live `[[grammar]]` block — `tree-sitter-wolf` is real since le02 and \
+             a fragment without the block leaves every helix user unhighlighted"
         ));
+        return None;
     }
+    match grammar_rev(&lines, "rev") {
+        Some(rev) => Some(rev),
+        None => {
+            errors.push(format!(
+                "{rel}: the `[[grammar]]` block has no `rev = \"<40-hex>\"` — an unpinned \
+                 grammar is whatever trunk was this morning, which is the thing every other \
+                 pin in this repository exists to prevent"
+            ));
+            None
+        }
+    }
+}
+
+/// The first 40-hex `<key> = "…"` value on any live line.
+fn grammar_rev(lines: &[&str], key: &str) -> Option<String> {
+    lines.iter().find_map(|line| {
+        let at = line.find(&format!("{key} = \""))?;
+        let rest = &line[at + key.len() + 4..];
+        let end = rest.find('"')?;
+        let rev = &rest[..end];
+        (rev.len() == 40 && rev.chars().all(|c| c.is_ascii_hexdigit())).then(|| rev.to_string())
+    })
 }
 
 // -------------------------------------------------------------------- zed --
 
-fn zed(root: &Path, errors: &mut Vec<String>) {
+/// Returns the tree-sitter-wolf commit the manifest pins, for the
+/// cross-editor one-pin check in [`check`].
+fn zed(root: &Path, errors: &mut Vec<String>) -> Option<String> {
+    let mut grammar_commit = None;
     let manifest_rel = "clients/zed/extension.toml";
     if let Some(text) = read(root, manifest_rel, errors) {
         let lines = live_lines(&text, '#');
@@ -246,12 +282,25 @@ fn zed(root: &Path, errors: &mut Vec<String>) {
                 other.unwrap_or("<absent>")
             )),
         }
-        if lines.iter().any(|l| l.starts_with("[grammars.")) {
+        // Live since le02. Zed BUILDS every grammar named here at extension
+        // install, straight from the committed `src/parser.c` at `commit` —
+        // which is why the commit must exist and be pinned, and why it must
+        // be the same rev helix names (`check` compares them).
+        let grammar = section(&lines, "[grammars.wolf]");
+        if grammar.is_empty() {
             errors.push(format!(
-                "{manifest_rel}: a live [grammars.*] table — Zed BUILDS every grammar named \
-                 here at install time, so pointing at the empty `tree-sitter-wolf` fails the \
-                 install and takes the language server down with it"
+                "{manifest_rel}: no live [grammars.wolf] table — `tree-sitter-wolf` is real \
+                 since le02, and without the table `languages/wolf/config.toml`'s \
+                 `grammar = \"wolf\"` names a grammar Zed cannot build"
             ));
+        } else {
+            grammar_commit = grammar_rev(&grammar, "commit");
+            if grammar_commit.is_none() {
+                errors.push(format!(
+                    "{manifest_rel}: [grammars.wolf] has no `commit = \"<40-hex>\"` — an \
+                     unpinned grammar is whatever trunk was this morning"
+                ));
+            }
         }
     }
 
@@ -295,12 +344,24 @@ fn zed(root: &Path, errors: &mut Vec<String>) {
                 "{cfg_rel}: `tab_size` must be {INDENT} — `wolf_fmt::doc::INDENT`"
             ));
         }
-        if lines.iter().any(|l| l.starts_with("grammar ")) {
+        // Live since le02: the key names the [grammars.wolf] table, and the
+        // extension ships `languages/wolf/highlights.scm` beside it — a
+        // grammar with no queries highlights nothing, silently.
+        if value(&lines, "grammar") != Some("\"wolf\"") {
             errors.push(format!(
-                "{cfg_rel}: a live `grammar` key — `grammar` is Option<Arc<str>> in Zed's \
-                 LanguageConfig and omitting it is what lets the language work with no \
-                 tree-sitter parser (Zed's own \"Plain Text\" ships with none)"
+                "{cfg_rel}: `grammar` must be \"wolf\" — the [grammars.wolf] table in \
+                 extension.toml is what it names, and without the key Zed parses `.lu` as \
+                 plain text"
             ));
+        }
+        let hl_rel = "clients/zed/languages/wolf/highlights.scm";
+        match std::fs::read_to_string(root.join(hl_rel)) {
+            Ok(hl) if hl.lines().any(|l| l.trim_start().starts_with('(')) => {}
+            Ok(_) => errors.push(format!(
+                "{hl_rel}: no capture patterns — a live grammar with empty queries \
+                 highlights nothing, silently"
+            )),
+            Err(e) => errors.push(format!("{hl_rel}: {e}")),
         }
         if lines.iter().any(|l| l.starts_with("block_comment")) {
             errors.push(format!(
@@ -317,6 +378,7 @@ fn zed(root: &Path, errors: &mut Vec<String>) {
             errors.push(format!("{wolfi_rel}: `path_suffixes` must be [\"wolfi\"]"));
         }
     }
+    grammar_commit
 }
 
 // ------------------------------------------------------------------ emacs --
@@ -632,12 +694,17 @@ pub fn helix_health(root: &Path) -> Health {
                      language servers` — got:\n{text}"
                 ));
             }
+            // Since le02 the queries are real (tree-sitter-wolf's
+            // `queries/*.scm`, copied to helix's runtime dir by the user), so
+            // their presence is a property of the RUNNER, reported either way
+            // and asserted neither: a CI runner has no runtime queries, a
+            // developer who ran the README's copy step has them.
             if text.contains("Highlight queries: ✓") {
-                errors.push(
-                    "hx --health wolf: helix reports highlight queries for wolf — this repo \
-                     ships none and `tree-sitter-wolf` has no grammar.js, so something is \
-                     supplying queries that nobody here can re-derive"
-                        .to_string(),
+                eprintln!("helix: runtime highlight queries present on this runner");
+            } else {
+                eprintln!(
+                    "helix: no runtime highlight queries on this runner (copy \
+                     tree-sitter-wolf's queries/*.scm to runtime/queries/wolf/ to light them)"
                 );
             }
             eprintln!("helix: --health wolf recognises the language and configures `wolf`");
@@ -671,13 +738,27 @@ pub fn helix_health(root: &Path) -> Health {
 /// `cargo xtask config-check` — the cross-editor invariants of the config tier.
 pub fn check(root: &Path) -> Vec<String> {
     let mut errors = Vec::new();
-    helix(root, &mut errors);
-    zed(root, &mut errors);
+    let helix_rev = helix(root, &mut errors);
+    let zed_commit = zed(root, &mut errors);
+    // One grammar pin, two spellings: helix's `rev` and Zed's `commit` are
+    // the same tree-sitter-wolf commit or one of the two editors is
+    // highlighting a different language.
+    if let (Some(h), Some(z)) = (&helix_rev, &zed_commit) {
+        if h != z {
+            errors.push(format!(
+                "grammar pin drift: clients/helix/languages.toml pins tree-sitter-wolf at \
+                 {h} but clients/zed/extension.toml pins {z} — one grammar, one rev, two \
+                 spellings"
+            ));
+        }
+    }
     numbers(root, &mut errors);
     if errors.is_empty() {
         eprintln!(
-            "config-check: helix, zed and emacs all spawn `wolf lsp`; `.wolfi` is attached to \
-             no server; no live grammar block; INDENT/WIDTH agree across 4 clients"
+            "config-check: helix, zed and emacs all spawn `wolf lsp`; `.wolfi` is attached \
+             to no server; the grammar blocks are live at one pinned rev ({}); INDENT/WIDTH \
+             agree across 4 clients",
+            helix_rev.as_deref().unwrap_or("<unpinned>"),
         );
     }
     errors

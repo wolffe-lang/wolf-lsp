@@ -107,9 +107,7 @@ fn section<'a>(lines: &'a [&'a str], header: &str) -> Vec<&'a str> {
 /// one-pin check in [`check`].
 fn helix(root: &Path, errors: &mut Vec<String>) -> Option<String> {
     let rel = "clients/helix/languages.toml";
-    let Some(text) = read(root, rel, errors) else {
-        return None;
-    };
+    let text = read(root, rel, errors)?;
     let lines = live_lines(&text, '#');
 
     // `hx --health wolf` in CI proves the TOML parses and that the command is
@@ -743,14 +741,13 @@ pub fn check(root: &Path) -> Vec<String> {
     // One grammar pin, two spellings: helix's `rev` and Zed's `commit` are
     // the same tree-sitter-wolf commit or one of the two editors is
     // highlighting a different language.
-    if let (Some(h), Some(z)) = (&helix_rev, &zed_commit) {
-        if h != z {
-            errors.push(format!(
-                "grammar pin drift: clients/helix/languages.toml pins tree-sitter-wolf at \
-                 {h} but clients/zed/extension.toml pins {z} — one grammar, one rev, two \
-                 spellings"
-            ));
-        }
+    if let (Some(h), Some(z)) = (&helix_rev, &zed_commit)
+        && h != z
+    {
+        errors.push(format!(
+            "grammar pin drift: clients/helix/languages.toml pins tree-sitter-wolf at {h} \
+             but clients/zed/extension.toml pins {z} — one grammar, one rev, two spellings"
+        ));
     }
     numbers(root, &mut errors);
     if errors.is_empty() {

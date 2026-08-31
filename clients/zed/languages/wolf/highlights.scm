@@ -34,6 +34,7 @@
 (boolean_literal) @constant.builtin.boolean
 (integer_literal) @constant.numeric.integer
 (float_literal) @constant.numeric.float
+(char_literal) @constant.character
 
 ; ------------------------------------------------------------ functions
 
@@ -63,6 +64,9 @@
 (generic_parameter name: (identifier) @type.parameter)
 (enum_variant name: (identifier) @type.enum.variant)
 (constructor_pattern type: (path (identifier) @constructor))
+(struct_pattern type: (path (identifier) @type))
+(field_pattern name: (identifier) @variable.other.member)
+(rest_pattern) @operator
 (row_entry (path (identifier) @type.enum.variant))
 (struct_expression name: (type_path (path (identifier) @type)))
 
@@ -105,6 +109,7 @@
 ; ---------------------------------------------------------- attributes
 
 (attribute) @attribute
+(inner_attribute) @attribute
 (shebang) @comment
 
 ; ------------------------------------------------------------ keywords

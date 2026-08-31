@@ -68,6 +68,10 @@ but they are reserved keywords, so they are already in the set above.
 > editor carries is due a refresh the next time its series is touched. The
 > table itself has not been changed here: it lives in the editor's repo, and
 > regenerating it is that series' job, not this ledger's.
+>
+> **Re-checked at pin 83f83bb (le03):** still stale, and the drift widened —
+> `char` joined `BUILTIN_TYPES` at s121 (D58), so the closed set is seventeen
+> names now. The refresh still travels with the series, not this ledger.
 
 ## Operators — §3.2's climb, longest match first
 

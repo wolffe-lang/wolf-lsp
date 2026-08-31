@@ -36,10 +36,11 @@
 Enforced against the pinned grammar by `cargo xtask emacs-check'.")
 
 (defconst wolf-mode-builtin-types
-  '("Self" "bool" "byte" "f32" "f64" "i16" "i32" "i64" "i8" "int" "str"
-    "u16" "u32" "u64" "u8" "uint" "wrapping")
+  '("Self" "bool" "byte" "char" "f32" "f64" "i16" "i32" "i64" "i8" "int"
+    "str" "u16" "u32" "u64" "u8" "uint" "wrapping")
   "Type names that are NOT reserved words, so they live outside the markers.
-The closed builtin set at pin f9ee9aa (wolf_sema BUILTIN_TYPES; spec/10
+The closed builtin set at pin 83f83bb (wolf_sema BUILTIN_TYPES — `char'
+joined at s121; spec/10
 writes the fixed-width scalars normatively), plus `Self'.
 `type' and `region' are also type-level but are reserved, and are coloured
 as keywords above rather than duplicated here.")

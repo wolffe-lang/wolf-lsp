@@ -291,7 +291,7 @@
       ]
     },
     "types": {
-      "match": "\\b(Self|bool|byte|f32|f64|i16|i32|i64|i8|int|str|u16|u32|u64|u8|uint|wrapping)\\b",
+      "match": "\\b(Self|bool|byte|char|f32|f64|i16|i32|i64|i8|int|str|u16|u32|u64|u8|uint|wrapping)\\b",
       "name": "support.type.wolf"
     }
   },

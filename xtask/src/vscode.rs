@@ -102,7 +102,8 @@ const DELIMITERS: &[&str] = &[
 ///
 /// Wolf's fixed-width scalar inventory is REAL at this pin: spec/10 (types,
 /// D54) writes `f32`/`f64`/`i32`/`u8` normatively, and the compiler's closed
-/// `BUILTIN_TYPES` set at f9ee9aa is the fifteen scalars plus the `wrapping`
+/// `BUILTIN_TYPES` set at 83f83bb is the fifteen scalars, `char` (s121, D58
+/// — `[type.char]` made it a builtin at this pin) and the `wrapping`
 /// constructor (D56) painted here, with `Self` beside them. (Through the
 /// 70bdd35 pin this list was four names, because no `spec/*.md` then named a
 /// fixed-width scalar and inventing them would have taught users a language
@@ -112,8 +113,8 @@ const DELIMITERS: &[&str] = &[
 /// `type` and `region` are type-level too, but they are reserved keywords and
 /// are already coloured as such.
 const TYPE_NAMES: &[&str] = &[
-    "Self", "bool", "byte", "f32", "f64", "i16", "i32", "i64", "i8", "int", "str", "u16", "u32",
-    "u64", "u8", "uint", "wrapping",
+    "Self", "bool", "byte", "char", "f32", "f64", "i16", "i32", "i64", "i8", "int", "str", "u16",
+    "u32", "u64", "u8", "uint", "wrapping",
 ];
 
 /// Which scope each reserved keyword is painted with.

@@ -729,15 +729,22 @@ fn syntax_keywords(vim: &str) -> Option<BTreeSet<String>> {
     saw_markers.then_some(out)
 }
 
-/// Every `'…'` terminal on a line, in order.
+/// Every `'…'` or `"…"` terminal on a line, in order.
+///
+/// Both quote styles are terminals in the vendored EBNF: a terminal that IS
+/// an apostrophe is spelled `"'"` and one that is a double quote is spelled
+/// `'"'` (`[gram.lex.char]`'s `CHAR_LIT`/`CHAR_ESC`, the 83f83bb pin). A
+/// single-quote-only reader lexed the text BETWEEN `"'"` and `"'"` as one
+/// token, so `(CHAR_TEXT | CHAR_ESC)` leaked into the operator alternation.
 pub(crate) fn quoted(line: &str) -> Vec<String> {
     let mut out = Vec::new();
     let mut chars = line.chars();
     while let Some(c) = chars.next() {
-        if c != '\'' {
-            continue;
-        }
-        let token: String = chars.by_ref().take_while(|c| *c != '\'').collect();
+        let delim = match c {
+            '\'' | '"' => c,
+            _ => continue,
+        };
+        let token: String = chars.by_ref().take_while(|c| *c != delim).collect();
         if !token.is_empty() {
             out.push(token);
         }

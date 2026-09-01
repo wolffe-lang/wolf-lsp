@@ -477,15 +477,26 @@ fn wolf_grammar(inv: &Inventory) -> Value {
                 "match": ":[^{}\"]*(?=\\})"
             },
 
-            // `[gram.lex.char]` (D58, the 83f83bb pin): one scalar or one
+            // `[gram.lex.char]` (D58, the 75fd2d0 pin): one scalar or one
             // escape between single quotes — `'a'`, `'\n'`, `'\x41'`,
             // `'\u{1F43A}'`. The match is CLOSED (both quotes in one regex,
             // no begin/end region) because a lone `'` is a stray byte in
             // wolf, not a string opener — a region rule would swallow the
             // rest of the line the way `#` must not (the facsimile trap).
+            //
+            // `\u{…}` takes ONE TO SIX hex digits. This rule wrote
+            // `HEX_DIGIT+` at the 83f83bb pin because that is what `CHAR_ESC`
+            // derived then; v0.2.1's `UNI_ESC` settles wolf-lang#189 the
+            // other way (the prose was the letter), so the bound lands here.
+            // `syntax/wolf.vim` already wrote `\x\{1,6}` — the two editors
+            // disagreed, and the amendment says which was right.
+            //
+            // A closed match is also how TextMate expresses the refusal it
+            // has no word for: `'\u{0000041}'` simply is not a char literal,
+            // so it goes unpainted, which is the signal a reader can act on.
             "chars": {
                 "name": "constant.character.wolf",
-                "match": "'([^'\\\\\\r\\n]|\\\\[ntr0\\\\'\"]|\\\\x[0-9A-Fa-f]{2}|\\\\u\\{[0-9A-Fa-f]+\\})'",
+                "match": "'([^'\\\\\\r\\n]|\\\\[ntr0\\\\'\"]|\\\\x[0-9A-Fa-f]{2}|\\\\u\\{[0-9A-Fa-f]{1,6}\\})'",
                 "captures": { "0": { "name": "constant.character.wolf" } }
             },
 

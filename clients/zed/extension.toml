@@ -42,12 +42,12 @@ languages = ["Wolf"]
 # and `languages/wolf/highlights.scm` carries the queries this extension
 # ships.
 #
-# The commit is the le03 branch head (the grammar catch-up: char
-# literals, D63 binder groups, struct patterns), pinned at wiring time;
+# The commit is the le04 branch head (the `\u{…}` escape bounded at one
+# to six hex digits, per v0.2.1's UNI_ESC), pinned at wiring time;
 # the integrator re-pins it to the merge commit (or a tag) when
 # tree-sitter-wolf's trunk takes the branch — pins move only with a human
 # hand, like every pin here.
 
 [grammars.wolf]
 repository = "https://github.com/wolffe-lang/tree-sitter-wolf"
-commit = "09b3ca3ecc04c0ea363633de7fafef6982aeabbe"
+commit = "f704738b208f5a935162abf32dc79a00a6ae97b4"

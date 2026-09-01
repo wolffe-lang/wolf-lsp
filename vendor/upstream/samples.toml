@@ -84,6 +84,6 @@ reason = "cross-file relatedInformation: the `member: true` sibling that carries
 # until the corpus carries the sample.
 [gap.astral_plane]
 needed_by = "ls01 §5 (UTF-16 / positionEncoding correctness)"
-status = "requested upstream; astral-only samples exist at this pin (s120's wolf-emoji witnesses; re-checked at 83f83bb, where the s121 char-era witnesses add astral CHAR LITERALS too) but none has combining marks or ZWJ, so the fixture's coverage is still unmatched"
+status = "requested upstream; astral-only samples exist at this pin (s120's wolf-emoji witnesses; re-checked at 83f83bb, where the s121 char-era witnesses add astral CHAR LITERALS too; re-checked again at 75fd2d0 / v0.2.1) but none has combining marks or ZWJ — measured, not assumed: a sweep of the whole 467-file corpus finds zero U+200D and zero U+0300..U+036F, in raw bytes or escape-spelled. The spec now USES a combining pair as an example ('[gram.lex.char]' calls 'e\\u{301}' two scalars) without a corpus file carrying one, so the fixture's coverage is still unmatched"
 local_stopgap = "fixtures/astral.lu"
 retire_when = "a corpus sample carries astral-plane, combining-mark, and ZWJ text; then delete fixtures/astral.lu in the same commit as the pin bump"

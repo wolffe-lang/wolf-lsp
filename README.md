@@ -71,15 +71,31 @@ version). Locally it is three commands, once:
 
 ```sh
 git submodule update --init upstream
-WOLF_COMMIT=$(git -C upstream rev-parse --short=7 HEAD) \
-  cargo build --release -p wolf_driver --manifest-path upstream/Cargo.toml
+(cd upstream && cargo xtask dist)
 export WOLF_BIN="$PWD/upstream/target/release/wolf"
 ```
 
-The `WOLF_COMMIT` stamp is load-bearing since D57: an unstamped build prints
-`+dev.unknown` — the same string every trunk build of that crate version
-prints — and `doctor` refuses it, because a version string that cannot name
-its commit is exactly the stale-binary hole the pin exists to close.
+The build stamp is load-bearing since D57, and **the builder must compute it**,
+not the caller. An unstamped build prints `+dev.unknown` — the same string
+every trunk build of that crate version prints — and `doctor` refuses it,
+because a version string that cannot name its commit is exactly the
+stale-binary hole the pin exists to close.
+
+Two things changed at le04, which is why this is `xtask dist` and no longer a
+hand-rolled `cargo build` with `WOLF_COMMIT` in front of it:
+
+- A **release** stamp needs `WOLF_RELEASE=v{version}` as well as
+  `WOLF_COMMIT`, and upstream grants it only when that exact tag points at
+  HEAD. Our pin is now a release tag (`v0.2.1`), so a `WOLF_COMMIT`-only build
+  prints `0.2.1+dev.<sha>` and never the bare version the PIN records.
+- The old recipe abbreviated the sha itself, as `--short=7`. Upstream's own
+  stamp uses `--short` with git's **auto** width, which is eight for wolf-lang
+  today, so the two disagree by one character and `doctor` refuses the
+  difference. Running upstream's builder means the stamp is upstream's
+  answer rather than our restatement of it.
+
+`cargo xtask dist` also stages a tarball under `upstream/target/dist/`; ignore
+it, or use it — the binary at `upstream/target/release/wolf` is the same build.
 
 Then `cargo run --bin lspconf -- doctor` should say `READY`, and everything
 above works:

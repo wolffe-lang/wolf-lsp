@@ -72,6 +72,11 @@ but they are reserved keywords, so they are already in the set above.
 > **Re-checked at pin 83f83bb (le03):** still stale, and the drift widened —
 > `char` joined `BUILTIN_TYPES` at s121 (D58), so the closed set is seventeen
 > names now. The refresh still travels with the series, not this ledger.
+>
+> **Re-checked at pin 75fd2d0 (v0.2.1, le04):** unchanged — `BUILTIN_TYPES`
+> is byte-identical across `83f83bb..v0.2.1`, so the set is still seventeen
+> names and the drift is neither wider nor narrower. The refresh still travels
+> with the series, not this ledger.
 
 ## Operators — §3.2's climb, longest match first
 

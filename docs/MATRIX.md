@@ -6,15 +6,27 @@ run. Every row below names the tier it is verified at, the evidence for that
 tier, and — for T1 and T2 — the CI job that re-checks the evidence on every
 push. A row that claims a verification it does not have is a bug in this file.
 
-**Last reviewed against wolf pin `83f83bb`, 2026-08-31** (le03). The scripted
-transcript library was re-recorded at that pin and `lspconf replay` +
-`onetruth` ran green under all nine derived profiles (10 samples, zero
-divergences). The six **captured** editor smokes were NOT re-captured — the
-same posture le01 recorded: they keep the pin they were recorded at
-(`70bdd35`; `67c977f` for fackr) and `lspconf replay` refuses them against
-the new pin until someone drives each real editor again (release-check 3b
-stays red on exactly this until then). Their rows below stay stamped with
-the pin their evidence was actually earned at.
+**Last reviewed against wolf pin `75fd2d0`, 2026-09-01** (le04) — the first
+pin that is a wolf-lang **release tag**, `v0.2.1`, so the pinned version
+string is the bare `wolf 0.2.1 (wolfgang, pin 75fd2d0b)` rather than a
+`+dev.<sha>` one. The scripted transcript library was re-recorded at that pin
+and `lspconf replay` + `onetruth` ran green under all nine derived profiles
+(10 samples, zero divergences); every re-recording is a one-line diff — only
+the header's date and `wolf_pin` move — so the server's wire behaviour is
+byte-identical across `83f83bb..v0.2.1`. The six **captured** editor smokes
+were NOT re-captured — the same posture le01 recorded: they keep the pin they
+were recorded at (`70bdd35`; `67c977f` for fackr) and `lspconf replay`
+refuses them against the new pin until someone drives each real editor again
+(release-check 3b stays red on exactly this until then). Their rows below stay
+stamped with the pin their evidence was actually earned at.
+
+**The acquire lane is dark for a new reason.** Every earlier pin was an
+off-tag sha no published asset could match. This one is a release tag, and
+wolf-lang's v0.2.1 release carries four tier-1 assets — but the release is a
+**DRAFT** (so is v0.2.0; only v0.1.0 is published). A draft's assets sit
+behind an `untagged-…` URL and need an authenticated request, so an
+unauthenticated acquire still gets nothing. Reported upstream; not worked
+around here.
 
 ## The three tiers
 
@@ -128,9 +140,9 @@ without a lane is the exact artefact this file exists to prevent.
   wasip1; Zed's `extension_builder.rs` pins
   `const RUST_TARGET: &str = "wasm32-wasip2"`.
 - **Helix's `[[grammar]]` block and Zed's `[grammars.wolf]` are LIVE as of
-  le02**, re-pinned at le03 to tree-sitter-wolf rev `09b3ca3` (the le03
-  branch head — the grammar catch-up: char literals D58, D63 binder groups,
-  struct patterns; the integrator re-pins on merge/tag), and `config-check`
+  le02**, re-pinned at le04 to tree-sitter-wolf rev `bba5274` (the le04
+  branch head — the `\u{…}` escape bounded at one to six hex digits per
+  v0.2.1's `UNI_ESC`; the integrator re-pins on merge/tag), and `config-check`
   now holds the two spellings of the rev equal. They shipped commented out while
   `tree-sitter-wolf` was an empty scaffold — helix merely got noisy at startup,
   but **Zed builds every grammar named in the manifest at install time**, so a

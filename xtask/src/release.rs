@@ -91,19 +91,31 @@ pub fn check(root: &Path) -> Report {
 
     // --- step 0: the precondition the whole checklist hangs off ---------
     //
-    // The sprint keys client releases to a published wolf artifact (s66). There
-    // is none: `wolf-lang` tags no releases, so "install the extension" has no
-    // coherent second half — nothing a user could install would have a `wolf`
-    // to talk to. Every publish step below is downstream of this one.
+    // The sprint keys client releases to a published wolf artifact (s66).
+    //
+    // This step's REASON has been rewritten twice as the world moved, and the
+    // rewrites are the point — a permanently-PENDING step whose reason goes
+    // stale is a step nobody reads. It said "wolf-lang tags no releases"
+    // (true until v0.1.0, 2026-08-12) and then still said it while the repo
+    // pinned an off-tag sha no asset could match. le04 pins a release TAG for
+    // the first time, and the gate finally has one honest sentence left:
+    // v0.2.1's release exists, carries four tier-1 assets, and is a DRAFT.
+    // A draft's assets need an authenticated request, so a user still cannot
+    // acquire one. Every publish step below is downstream of this.
     r.pending(
         "0. wolf-lang has a published release to be compatible WITH",
         format!(
-            "no tagged wolf-lang release exists. The repo pins commit {} \
-             ({pin_version}), which is a private-repo sha and not something a user can acquire.",
+            "the pin is a release tag ({}, {pin_version}), and wolf-lang's release for \
+             it carries tier-1 assets — but that release is a DRAFT, as is v0.2.0. Only \
+             v0.1.0 is published. A draft's assets sit behind an `untagged-…` URL and \
+             need an authenticated request, so a user still cannot acquire the binary \
+             these clients are verified against.",
             pin_commit.get(..7).unwrap_or("???????")
         ),
-        "wolf-lang s66 tags and publishes a release; then `gh release list --repo \
-         wolffe-lang/wolf-lang` is non-empty and the server lane stops being dark.",
+        "wolf-lang publishes the drafted release; then `gh release view v<x.y.z> --repo \
+         wolffe-lang/wolf-lang` reports it as published rather than Draft, and the \
+         server lane stops being dark. Verify by reading the release page — this \
+         repository cannot observe a draft becoming public.",
     );
 
     // --- step 1: the pin is bumped and re-vendored, in its own commit ---

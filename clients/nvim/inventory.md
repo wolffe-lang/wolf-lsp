@@ -76,7 +76,8 @@ means nothing special.
 bool byte char f32 f64 i8 i16 i32 i64 int str u8 u16 u32 u64 uint wrapping Self
 ```
 
-The fixed-width scalar inventory is **real at pin 83f83bb**: spec/10 (types,
+The fixed-width scalar inventory is **real at pin 75fd2d0** (v0.2.1; re-read
+at le04, `BUILTIN_TYPES` byte-identical across `83f83bb..v0.2.1`): spec/10 (types,
 D54) writes `f32`/`f64`/`i32`/`u8` normatively, and the compiler's closed
 `BUILTIN_TYPES` set is the fifteen scalars, `char` (s121, D58 — a builtin
 since this pin) and the `wrapping` constructor (D56). Through the 70bdd35 pin this list was four names — no `spec/*.md` then

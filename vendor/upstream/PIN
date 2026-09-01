@@ -1,21 +1,53 @@
 # The wolf-lang commit this repo is keyed to. A bump is its own commit, with
 # the re-vendored data, and nothing else (vendor/README.md).
-commit = 83f83bbf44ce5dd6a8f6e2fe255fa37d1fe3954b
+#
+# le04 pins the RELEASE TAG rather than a trunk commit: `v0.2.1` points at
+# this sha. Trunk has moved past it (r04 merged after the release), and the
+# next bump may well be a trunk sha again — nothing here requires a tag.
+commit = 75fd2d0b25b6ed995ec7293053bc32fb3497e272
 # The exact `wolf --version` string that commit produces (first line; the
 # binary now prints a second line naming its lupin pairing). `lspconf doctor`
 # fails on a mismatch: a stale local `wolf` producing green transcripts is the
-# failure mode the pin exists to prevent. Since D57 an UNSTAMPED build prints
-# `+dev.unknown` — a string any trunk build of the same crate version also
-# prints, which is exactly the stale-binary hole — so the pinned string is the
-# `WOLF_COMMIT=83f83bb` stamped build's (README §Running the server lane
-# locally has the one-line recipe).
-version = "wolf 0.2.0+dev.83f83bb (wolfgang, pin 83f83bb)"
+# failure mode the pin exists to prevent.
+#
+# D57 decides the shape, and the shape CHANGED at this bump. A build is a
+# release build only when the builder stamps BOTH `WOLF_COMMIT=<short sha>`
+# and `WOLF_RELEASE=v{crate version}`, and the second is granted only when
+# that exact tag points at HEAD. Every previous pin was an off-tag commit, so
+# every previous pinned string carried `+dev.<sha>`; this one is at v0.2.1, so
+# the release build prints the BARE version and the pin clause. An unstamped
+# build still prints `+dev.unknown` — the string any trunk build of the same
+# crate version prints, which is exactly the stale-binary hole — so the pinned
+# string remains a stamped build's, and `cargo xtask dist` in the submodule is
+# the builder that computes the stamp (README §Running the server lane
+# locally; its plain-cargo recipe cannot grant the release half).
+#
+# `xtask compat`'s `version_number` reads the number out of this string; it
+# learned semver build metadata at le03 and takes the bare tag form
+# unchanged — `0.2.1`, no `+` to strip. Asserted in xtask/src/compat.rs.
+#
+# The pin clause is EIGHT hex digits here, and that was measured, not chosen.
+# wolf-lang's `git_short_sha()` runs `git rev-parse --short HEAD` with git's
+# AUTO abbreviation, which has just grown from seven to eight in a full clone
+# of that repo. The README's old local recipe hard-coded `--short=7` and so
+# would print `pin 75fd2d0` — a string `doctor` refuses against this pin. The
+# recipe now mirrors upstream's own command instead of restating it. That the
+# identity string's width depends on how big the reader's clone is, is an
+# upstream finding, not a thing to paper over here.
+version = "wolf 0.2.1 (wolfgang, pin 75fd2d0b)"
 # Does `wolf lsp` exist at this commit? YES — wolf-lang s52 landed it
 # (`wolf: the lsp subcommand`, 07e553d). This flip is what lights every
 # server-dependent lane: record, replay, onetruth, bench, and the encoding,
 # cancellation, and fuzz suites all reach `Availability::Ready` as soon as a
-# binary at this version resolves. wolf-lang's releases are v0.1.0 (94aa69d)
-# and v0.2.0 (c88ab64) — both ancestors of this pin, neither AT it — so the
-# acquire step stays dark until an asset is published at this sha; a v0.2.0
-# asset is not evidence about a later commit.
+# binary at this version resolves.
+#
+# The acquire step is dark for a NEW reason at this pin, and the change is
+# worth reading. Every earlier pin was an off-tag sha, so no published asset
+# could ever match it. This pin IS a release tag, and wolf-lang's v0.2.1
+# release does carry four tier-1 assets — but the release is a **DRAFT**
+# (`gh release list --repo wolffe-lang/wolf-lang`, 2026-09-01: v0.2.1 Draft,
+# v0.2.0 Draft, v0.1.0 Latest). A draft's assets sit behind an `untagged-…`
+# URL and need an authenticated request, so an unauthenticated acquire still
+# gets nothing. The gate moved from "no asset exists at this sha" to "the
+# asset exists and is unpublished" — reported upstream, not worked around.
 serves_lsp = true

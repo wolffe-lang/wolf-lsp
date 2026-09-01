@@ -178,6 +178,14 @@ cd clients/zed && cargo check                      # host: type-correct API usag
 cargo build --target wasm32-wasip2                 # the real artifact
 ```
 
+If that last command says `can't find crate for core` on a machine where
+`rustup target list --installed` clearly lists `wasm32-wasip2`, check *which*
+`rustc` is answering: `rustc --target wasm32-wasip2 --print target-libdir`.
+A distro or Homebrew `rust` earlier on `PATH` than rustup's shim ignores
+`rust-toolchain.toml` and has no wasm std of its own, so the target is
+installed for a toolchain that never gets asked. Put `~/.cargo/bin` first
+(le04 lost twenty minutes to this; CI is unaffected — it has only rustup).
+
 The static lane was exercised red before being trusted: adding a live
 `[grammars.wolf]` table turns `config-check` red with the install-failure
 reason, and removing it turns it green again.

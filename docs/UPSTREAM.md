@@ -89,7 +89,7 @@ fast-forward today.)
 | [`neovim/nvim-lspconfig`](https://github.com/neovim/nvim-lspconfig) | `lsp/wolf.lua` **verbatim** — since lspconfig 2.0 an entry *is* an `lsp/<name>.lua` returning a config table (`clients/nvim/README.md`) | `NOT SUBMITTED` | the s66 gate CLEARED 2026-08-12 (wolf-lang v0.1.0 is published and installable); what remains is the human act of opening the PR, per `RELEASE.md` |
 | [`mason-org/mason-registry`](https://github.com/mason-org/mason-registry) | a package definition pointing at wolf-lang's **release artifacts** | `NOT SUBMITTED` | the s66 gate CLEARED 2026-08-12 — v0.1.0 ships artifacts to point at. Note D34 still: mason would install the *compiler*, which is wolf-lang's publisher decision to make, not this repo's |
 | [`zed-industries/extensions`](https://github.com/zed-industries/extensions) | the `zed_wolf` extension as a registry submodule entry | `NOT SUBMITTED` | s66 cleared, but `docs/MATRIX.md`'s Zed row still gates: submitting an extension nobody has ever run in Zed is the fabrication that file exists to prevent |
-| [`wolffe-lang/tree-sitter-wolf`](https://github.com/wolffe-lang/tree-sitter-wolf) | a real `grammar.js` — the repo is a seed commit (`b1b2c17`) with none | `NOT SUBMITTED` | nobody's sprint. **This is the largest standing gap in the track**: it is why `.lu` buffers in Helix and Zed have no highlighting at all, and why both editors ship their grammar block commented out |
+| [`wolffe-lang/tree-sitter-wolf`](https://github.com/wolffe-lang/tree-sitter-wolf) | nothing — the grammar lives in that repo's own trunk | `MERGED` | **Corrected at le04.** This row read "the repo is a seed commit (`b1b2c17`) with none" and called itself "the largest standing gap in the track" for three sprints after le02 wrote the grammar there; le03 and le04 have since extended it. Helix's `[[grammar]]` and Zed's `[grammars.wolf]` have been LIVE since le02 and are pinned here at `bba5274`, so the sentence about commented-out blocks was false too. Nothing is owed upstream on this row: this repo consumes that grammar by pin, it does not submit to it |
 | Open VSX namespace `wolf-lang` | `ovsx create-namespace` + `ovsx publish` | `NOT SUBMITTED` | needs an Eclipse Foundation token — [`DISTRIBUTION.md`](DISTRIBUTION.md) §OWED TO HUMAN |
 | VS Marketplace publisher | the publisher identity the vsix's `publisher` field names | `NOT SUBMITTED` | `wolf-lang-unpublished` is a deliberate placeholder. Registration is a human act with a credential this repo must never hold |
 
@@ -101,3 +101,9 @@ PR moving from open to merged. So step 9b of the checklist is permanently
 `PENDING`: before tagging, open each link and re-read the state. A `SUBMITTED`
 row that quietly became `MERGED` is exactly the drift this table exists to
 catch, and the only mechanism that catches it is a person.
+
+That mechanism failed once already in each direction, which is why the
+paragraph above is not decoration: le01 found six facsimile rows reading
+`NOT SUBMITTED` while merged, and le04 found the tree-sitter-wolf row still
+describing an empty repo three sprints after this track filled it. **Re-read
+every row at every pin bump.** The rows are prose; no gate can check them.

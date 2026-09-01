@@ -105,4 +105,4 @@ text-width = 100
 
 [[grammar]]
 name = "wolf"
-source = { git = "https://github.com/wolffe-lang/tree-sitter-wolf", rev = "09b3ca3ecc04c0ea363633de7fafef6982aeabbe" }
+source = { git = "https://github.com/wolffe-lang/tree-sitter-wolf", rev = "bba527442ee8c4837756f42b415bde3f63bc4a3b" }

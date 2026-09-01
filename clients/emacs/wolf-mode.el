@@ -39,7 +39,7 @@ Enforced against the pinned grammar by `cargo xtask emacs-check'.")
   '("Self" "bool" "byte" "char" "f32" "f64" "i16" "i32" "i64" "i8" "int"
     "str" "u16" "u32" "u64" "u8" "uint" "wrapping")
   "Type names that are NOT reserved words, so they live outside the markers.
-The closed builtin set at pin 83f83bb (wolf_sema BUILTIN_TYPES — `char'
+The closed builtin set at pin 75fd2d0 (wolf_sema BUILTIN_TYPES — `char'
 joined at s121; spec/10
 writes the fixed-width scalars normatively), plus `Self'.
 `type' and `region' are also type-level but are reserved, and are coloured
@@ -64,8 +64,14 @@ the compiler, and the compiler is the authority (D22).")
     (modify-syntax-entry ?\n ">" table)
     ;; `IDENT ::= (`_' XID_Continue+) | (XID_Start XID_Continue*)'.
     (modify-syntax-entry ?_ "_" table)
-    ;; No character literal in wolf, so `'' is punctuation and never a string
-    ;; delimiter — otherwise every apostrophe in a comment opens a string.
+    ;; `'' is punctuation, never a string delimiter — otherwise every
+    ;; apostrophe in a comment opens a string.  Wolf DOES have character
+    ;; literals ([gram.lex.char], s121/D58): this table simply declines to
+    ;; model them, because Emacs' syntax table has one setting per character
+    ;; and a `'' that opens a string would swallow prose.  The cost is that
+    ;; `'a'' goes unpainted; the alternative miscolours every contraction in
+    ;; every comment.  A font-lock rule could paint the literal without
+    ;; touching the syntax table — owed, not done (le04).
     (modify-syntax-entry ?\' "." table)
     (modify-syntax-entry ?\" "\"" table)
     table)

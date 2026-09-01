@@ -3,18 +3,18 @@
   "client_version": "0.0.1",
   "artifact": "wasm32-wasip2 component + manifest — clients/zed/",
   "wolf": {
-    "min": "0.2.0",
-    "max_tested": "0.2.0",
-    "pin": "83f83bbf44ce5dd6a8f6e2fe255fa37d1fe3954b",
-    "pin_version_string": "wolf 0.2.0+dev.83f83bb (wolfgang, pin 83f83bb)"
+    "min": "0.2.1",
+    "max_tested": "0.2.1",
+    "pin": "75fd2d0b25b6ed995ec7293053bc32fb3497e272",
+    "pin_version_string": "wolf 0.2.1 (wolfgang, pin 75fd2d0b)"
   },
   "verified": {
-    "date": "2026-08-31",
+    "date": "2026-09-01",
     "host": "local (macos arm64)",
     "evidence": [
-      "cargo build --target wasm32-wasip2 (CI job `zed-extension`; re-run local macos arm64 2026-08-31)",
+      "cargo build --target wasm32-wasip2 (CI job `zed-extension`; re-run local macos arm64 2026-09-01)",
       "cargo xtask config-check",
-      "lspconf replay + onetruth at pin 83f83bb, 2026-08-31 — under the OTHER clients' derived profiles; Zed still has no recorded session of its own"
+      "lspconf replay + onetruth at pin 75fd2d0 (v0.2.1), 2026-09-01 — under the OTHER clients' derived profiles; Zed still has no recorded session of its own"
     ],
     "caveat": "NO SESSION HAS EVER BEEN RECORDED. Zed has never been run against this extension by CI or by hand (docs/MATRIX.md). Its row inherits the range from the pin the other clients were verified at; a Zed session did not earn it — profiles/zed.json and transcripts/zed/smoke.jsonl are still owed. Read the row as 'the wasm builds and the config is statically consistent at this pin', which is the whole T2 claim."
   },

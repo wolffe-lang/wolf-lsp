@@ -3,19 +3,19 @@
   "client_version": "0.0.1",
   "artifact": "elisp file — clients/emacs/wolf-mode.el, also quoted verbatim in its README",
   "wolf": {
-    "min": "0.2.0",
-    "max_tested": "0.2.0",
-    "pin": "83f83bbf44ce5dd6a8f6e2fe255fa37d1fe3954b",
-    "pin_version_string": "wolf 0.2.0+dev.83f83bb (wolfgang, pin 83f83bb)"
+    "min": "0.2.1",
+    "max_tested": "0.2.1",
+    "pin": "75fd2d0b25b6ed995ec7293053bc32fb3497e272",
+    "pin_version_string": "wolf 0.2.1 (wolfgang, pin 75fd2d0b)"
   },
   "verified": {
-    "date": "2026-08-31",
+    "date": "2026-09-01",
     "host": "local (macos arm64)",
     "evidence": [
       "transcripts/emacs/smoke.jsonl",
       "profiles/emacs.json",
       "clients/emacs/tests/mode-test.el",
-      "lspconf replay + onetruth under this client's derived profile at pin 83f83bb, 2026-08-31 (the captured smoke keeps its recorded pin)"
+      "lspconf replay + onetruth under this client's derived profile at pin 75fd2d0 (v0.2.1), 2026-09-01 (the captured smoke keeps its recorded pin)"
     ]
   },
   "warning_surface": "none — the mode is a copy-pasteable snippet, and a snippet that phones a version check is a snippet nobody pastes"

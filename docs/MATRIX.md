@@ -140,7 +140,7 @@ without a lane is the exact artefact this file exists to prevent.
   wasip1; Zed's `extension_builder.rs` pins
   `const RUST_TARGET: &str = "wasm32-wasip2"`.
 - **Helix's `[[grammar]]` block and Zed's `[grammars.wolf]` are LIVE as of
-  le02**, re-pinned at le04 to tree-sitter-wolf rev `f704738` (the le04
+  le02**, re-pinned at le04 to tree-sitter-wolf rev `bba5274` (the le04
   branch head — the `\u{…}` escape bounded at one to six hex digits per
   v0.2.1's `UNI_ESC`; the integrator re-pins on merge/tag), and `config-check`
   now holds the two spellings of the rev equal. They shipped commented out while

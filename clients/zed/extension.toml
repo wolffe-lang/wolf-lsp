@@ -50,4 +50,4 @@ languages = ["Wolf"]
 
 [grammars.wolf]
 repository = "https://github.com/wolffe-lang/tree-sitter-wolf"
-commit = "f704738b208f5a935162abf32dc79a00a6ae97b4"
+commit = "bba527442ee8c4837756f42b415bde3f63bc4a3b"

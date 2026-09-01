@@ -55,7 +55,7 @@ syn keyword wolfKeyword      select spawn take unsafe use
 
 " ------------------------------------------------------------------- types --
 "
-" The fixed-width scalar inventory is REAL at pin 83f83bb: spec/10 (types,
+" The fixed-width scalar inventory is REAL at pin 75fd2d0 (v0.2.1): spec/10 (types,
 " D54) writes `f32`/`f64`/`i32`/`u8` normatively, and the compiler's closed
 " BUILTIN_TYPES set is the fifteen scalars, `char` (s121, D58 — a builtin
 " since this pin) and the `wrapping` constructor (D56), painted here with

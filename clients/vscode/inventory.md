@@ -42,7 +42,8 @@ hand-edit *be* the drift, which is what ls05 §2 asks for in those words.
 | the type names | **no**, and not derivable — see below | yes (byte diff) only |
 
 The last row is the one leak, and it is the same leak ls04 has. The
-fixed-width scalar inventory is **real at pin 83f83bb**: spec/10 (types, D54)
+fixed-width scalar inventory is **real at pin 75fd2d0** (v0.2.1; re-read at
+le04, `BUILTIN_TYPES` byte-identical across `83f83bb..v0.2.1`): spec/10 (types, D54)
 writes `f32`/`f64`/`i32`/`u8` normatively, and the painted set is the
 compiler's closed `BUILTIN_TYPES` — fifteen scalars, `char` (s121, D58, a
 builtin since this pin) and the `wrapping` constructor (D56) — with `Self`

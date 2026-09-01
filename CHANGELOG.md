@@ -36,7 +36,7 @@ is worth having checked rather than assumed. Compat rows earn `0.2.1`,
 COMPAT regenerated, MATRIX re-stamped.
 
 **The escape reaches the editors.** tree-sitter-wolf re-pins at its le04
-head `f704738`: v0.2.1's `UNI_ESC` bounds `\u{…}` at one to six hex
+head `bba5274`: v0.2.1's `UNI_ESC` bounds `\u{…}` at one to six hex
 digits (wolf-lang#189, closed at the prose's letter), and the grammar
 takes the bound where it can. Zed's shipped `highlights.scm` needed no
 re-sync — the queries are byte-identical at this bump — and the captures
@@ -107,9 +107,13 @@ trunk **this wave**, after this pin. The editors deliberately do NOT
 take it here; they take it at their next pin (le05-era). Until then
 tree-sitter-wolf still parses `Point { x .. }`, so a lax-comma file that
 highlights cleanly today will start **refusing under a future `wolfc`**,
-and that is expected rather than a regression. wolf-lang#190 stays open
-as D67's tracker. (`Point { x y z }` and `(a b)`, the other laxities
-D67 names, already fail to parse in the pinned grammar.)
+and that is expected rather than a regression. (`Point { x y z }` and
+`(a b)`, the other laxities D67 names, already fail to parse in the
+pinned grammar, so exactly one spelling changes for the editors.) D67
+names wolf-lang#190 as its tracker, but that issue is CLOSED
+(`COMPLETED`, 2026-09-01, seconds after the v0.2.1 release draft) while
+its own last comment says it stays open — flagged on the issue, not
+reopened, since reopening is the orchestrator's call.
 
 ## le03 — 2026-08-31 — the grammar catches up
 

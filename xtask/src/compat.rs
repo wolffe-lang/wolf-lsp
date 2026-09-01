@@ -522,6 +522,16 @@ mod tests {
             version_number("wolf 0.2.0+dev.83f83bb (wolfgang, pin 83f83bb)").as_deref(),
             Some("0.2.0")
         );
+        // D57's OTHER identity, and the one le04 pinned: a build made at its
+        // own release tag prints the BARE version with no `+` at all. The
+        // le03 metadata rule must not have made the plain case worse, and the
+        // pin clause must not be mistaken for a version — `75fd2d0b)` parses
+        // as no triple, and eight hex digits is what upstream's auto-width
+        // `git rev-parse --short` emits today.
+        assert_eq!(
+            version_number("wolf 0.2.1 (wolfgang, pin 75fd2d0b)").as_deref(),
+            Some("0.2.1")
+        );
     }
 
     #[test]

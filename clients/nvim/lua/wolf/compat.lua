@@ -12,7 +12,7 @@
 return {
   client = "wolf.nvim",
   client_version = "0.0.1",
-  min = "0.2.1",
-  max_tested = "0.2.1",
-  verified = "2026-09-01",
+  min = "0.2.2",
+  max_tested = "0.2.2",
+  verified = "2026-09-02",
 }

@@ -27,12 +27,39 @@ That rule is a gate, not a convention. `cargo xtask compat-check` derives the
 moment a range outruns its evidence is the moment somebody edits the file rather
 than the moment somebody tags a release.
 
-**Today the earned set has exactly one member.** `wolf-lang` publishes no
-releases; this repository pins one commit, `wolf --version` at that commit
-prints one string, and every transcript under `transcripts/` was recorded
-against it. So the schema supports ranges and the data claims a point. Widening
-`max_tested` to a version nobody has run turns the build red, which was tested
-deliberately — see *The red test*, below.
+**Today the earned set has exactly one member.** Not because wolf-lang has no
+releases any more — as of 2026-09-02 it publishes them, and `v0.2.2` is Latest
+with three tier-1 archives — but because this repository pins one commit,
+`wolf --version` at that commit prints one string, and every transcript under
+`transcripts/` was recorded against it. So the schema supports ranges and the
+data claims a point. Widening `max_tested` to a version nobody has run turns
+the build red, which was tested deliberately — see *The red test*, below.
+
+### The pin clause is as wide as the builder's clone (wolf-lang#199)
+
+The declared range is compared against the *number* in `wolf --version`, so
+this does not move a range — but it decides whether `lspconf doctor` accepts
+your binary at all, and it is worth stating where a reader will look for it.
+
+`vendor/upstream/PIN` records the exact string the pinned commit prints and
+`doctor` refuses anything else. At `v0.2.1` that string ended `pin 75fd2d0b`,
+**eight** hex digits. At `v0.2.2` it ends `pin 8cda3aa`, **seven**. The commits
+did not change shape; the clause is `git rev-parse --short`'s AUTO
+abbreviation, and git sizes that to the object count of the repository it runs
+in. So the width is a property of the **builder's clone**, not of the commit —
+le04 suspected it, le05 measured it on nomad-1 (a 2086-object clone of
+wolf-lang abbreviates `8cda3aa41…` to `8cda3aa`, and the binary built there
+prints `pin 8cda3aa` to match).
+
+**What that means for you.** If you *acquire* the published artifact for the
+pin, this never bites: one build, one string, and `doctor` is green. If you
+BUILD your own `wolf` from a full clone of wolf-lang, the same commit will
+stamp `pin 8cda3aa4` and `doctor` will refuse it — correctly, by its own rule,
+against a binary that is in fact the right one. The remedy is not to loosen
+`doctor`: a pin that accepts a prefix accepts a stale binary too, which is the
+single failure this whole mechanism exists to prevent. The remedy is upstream,
+and it stays filed as **wolf-lang#199** — D57's version clause should not
+depend on how much of the history the builder happened to fetch.
 
 ## Pre-1.0 posture, stated plainly
 
@@ -52,11 +79,11 @@ usually mostly works, and blocking a user's editor is worse than warning them.
 
 | client | version | artifact | wolf min | wolf max_tested | pin | verified | warning surface |
 |---|---|---|---|---|---|---|---|
-| [wolf-mode.el](../clients/emacs/README.md) | 0.0.1 | elisp file — clients/emacs/wolf-mode.el, also quoted verbatim in its README | 0.2.1 | 0.2.1 | `75fd2d0` | 2026-09-01 (local (macos arm64)) | none — the mode is a copy-pasteable snippet, and a snippet that phones a version check is a snippet nobody pastes |
-| [helix config fragment](../clients/helix/README.md) | 0.0.1 | TOML fragment — clients/helix/languages.toml, copied into the user's config | 0.2.1 | 0.2.1 | `75fd2d0` | 2026-09-01 (local (macos arm64)) | none — a TOML fragment cannot run code; docs/COMPAT.md is the whole statement |
-| [wolf.nvim](../clients/nvim/README.md) | 0.0.1 | plugin tree — clients/nvim/, published as the generated wolf.nvim mirror | 0.2.1 | 0.2.1 | `75fd2d0` | 2026-09-01 (local (macos arm64)) | :checkhealth wolf |
-| [wolf (VS Code extension)](../clients/vscode/README.md) | 0.0.1 | vsix — clients/vscode/, packaged by @vscode/vsce | 0.2.1 | 0.2.1 | `75fd2d0` | 2026-09-01 (local (macos arm64)) | one notification at activation, plus `Wolf: Show Version` |
-| [zed_wolf](../clients/zed/README.md) | 0.0.1 | wasm32-wasip2 component + manifest — clients/zed/ | 0.2.1 | 0.2.1 | `75fd2d0` | 2026-09-01 (local (macos arm64)) | none — the extension's wasm entry point is `language_server_command`, which Zed calls before any place a notification could be raised |
+| [wolf-mode.el](../clients/emacs/README.md) | 0.0.1 | elisp file — clients/emacs/wolf-mode.el, also quoted verbatim in its README | 0.2.2 | 0.2.2 | `8cda3aa` | 2026-09-02 (local (macos arm64)) | none — the mode is a copy-pasteable snippet, and a snippet that phones a version check is a snippet nobody pastes |
+| [helix config fragment](../clients/helix/README.md) | 0.0.1 | TOML fragment — clients/helix/languages.toml, copied into the user's config | 0.2.2 | 0.2.2 | `8cda3aa` | 2026-09-02 (local (macos arm64)) | none — a TOML fragment cannot run code; docs/COMPAT.md is the whole statement |
+| [wolf.nvim](../clients/nvim/README.md) | 0.0.1 | plugin tree — clients/nvim/, published as the generated wolf.nvim mirror | 0.2.2 | 0.2.2 | `8cda3aa` | 2026-09-02 (local (macos arm64)) | :checkhealth wolf |
+| [wolf (VS Code extension)](../clients/vscode/README.md) | 0.0.1 | vsix — clients/vscode/, packaged by @vscode/vsce | 0.2.2 | 0.2.2 | `8cda3aa` | 2026-09-02 (local (macos arm64)) | one notification at activation, plus `Wolf: Show Version` |
+| [zed_wolf](../clients/zed/README.md) | 0.0.1 | wasm32-wasip2 component + manifest — clients/zed/ | 0.2.2 | 0.2.2 | `8cda3aa` | 2026-09-02 (local (macos arm64)) | none — the extension's wasm entry point is `language_server_command`, which Zed calls before any place a notification could be raised |
 
 **`zed_wolf` caveat.** NO SESSION HAS EVER BEEN RECORDED. Zed has never been run against this extension by CI or by hand (docs/MATRIX.md). Its row inherits the range from the pin the other clients were verified at; a Zed session did not earn it — profiles/zed.json and transcripts/zed/smoke.jsonl are still owed. Read the row as 'the wasm builds and the config is statically consistent at this pin', which is the whole T2 claim.
 <!-- compat-table-end -->

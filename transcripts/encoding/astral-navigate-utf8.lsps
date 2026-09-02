@@ -1,0 +1,20 @@
+#! Navigation under utf8 (s133): the three astral-navigate files are NOT
+#! copies — the same `bmp` sits at a different `character` in each. The
+#! request on line 45 (`    let tail = "é中🐺👨‍👩é" != bmp`) is the
+#! client->offset direction: the column is counted in this encoding's
+#! units past astral, BMP, combining and ZWJ text. The references answer
+#! from the declaration on line 21 (ASCII before it, so the same column
+#! everywhere) is the byte->client direction: the use on line 45 must
+#! come back at column 44 HERE and elsewhere in the other two. A rename
+#! through the same position pins the edit range in this encoding too.
+name      encoding/astral-navigate-utf8
+profile   utf8-first
+workspace fixtures
+
+initialize
+open      astral.lu
+wait      diagnostics astral.lu
+req       definition astral.lu 45:44
+req       references astral.lu 21:8 decl
+req       rename astral.lu 45:44 base
+shutdown

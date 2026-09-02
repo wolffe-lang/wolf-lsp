@@ -1,0 +1,21 @@
+#! Go to definition (s133), under the emacs profile: a cross-file item
+#! (`geometry.area` -> the sibling module's `pub fn area`, at a URI this
+#! client never opened), the module name itself (a directory: its first
+#! file, at the top), a local through an f-string interpolation, and a
+#! prelude name (`print`: null, never an error). The answer's SHAPE is the
+#! profile's own claim — `LocationLink[]` where the client declares
+#! `linkSupport`, `Location[]` where it does not — which is why there is
+#! one of these per client and they are not copies.
+name      navigation/definition-emacs
+profile   emacs
+
+initialize
+open      resolve/two_mod/main.lu
+wait      diagnostics resolve/two_mod/main.lu
+req       definition resolve/two_mod/main.lu 11:16
+req       definition resolve/two_mod/main.lu 11:7
+open      hello.lu
+wait      diagnostics hello.lu
+req       definition hello.lu 10:19
+req       definition hello.lu 10:4
+shutdown

@@ -152,12 +152,21 @@ in message size and its `read_buffer` regrows by copy. A large completion list
 or a long markdown hover visibly stalls the editor. *Holds today — wolf's
 hover is a short code fence.*
 
-**Two response shapes, for capabilities wolf does not serve yet.** When
-completion lands it must be a `CompletionList` (`{"items": […]}`) — a bare
-array yields zero items — and definitions must be `Location`/`Location[]`,
-because `LocationLink[]` is not parsed **despite `linkSupport: true` being
-advertised**. *Not yet applicable; recorded so the sprint that adds them does
-not have to rediscover it.*
+**Two response shapes, and where they landed.** facsimile's completion
+parser wants a `CompletionList` (`{"items": […]}`) — a bare array yields zero
+items — and its definition parser reads `Location`/`Location[]` only, while
+its `initialize` **declares `linkSupport: true`**. Both capabilities now
+exist (s122 completion; s133 definition/references/rename) and both follow
+the protocol rather than the parser: completion answers the bare array the
+spec allows, and definition answers `LocationLink[]` to any client that
+declares `linkSupport` — facsimile included, because the declaration is the
+client's own claim and a server that second-guessed it would be the
+workaround this file forbids. The fix is facsimile's, one line either way:
+declare `linkSupport: false`, or parse the link shape it asked for. Filed on
+FortranGoingOnForty/facsimile#4; the shapes are pinned per client in
+`transcripts/navigation/definition-*.jsonl` (facsimile's carries the links;
+helix's, which declares no `linkSupport`, carries plain locations).
+*Constraint satisfied by the protocol, not by the parser.*
 
 ## From Neovim (ls04, `v0.12.4`)
 

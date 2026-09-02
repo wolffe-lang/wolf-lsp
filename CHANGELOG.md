@@ -1,5 +1,60 @@
 # Changelog
 
+## s133-transcripts — 2026-09-02 — the server navigates
+
+wolf-lang's s133 branch serves `textDocument/definition`,
+`textDocument/references` and `textDocument/rename` (+`prepareRename`)
+— wolf-lang#208's three dead keys. This branch is the harness half,
+**recorded against that branch's binary with the pin UNMOVED**:
+`vendor/upstream/PIN` still names `v0.2.1`, every transcript header
+still says so, and the sessions were driven with `WOLF_BIN` pointed at
+a `wolf 0.2.1+dev` build of `s133` (the Doctor's version check was
+satisfied by a local, uncommitted edit of the PIN's `version` line for
+the duration of the recording — the honest statement of what these
+bytes were earned against). le05 re-pins at the tag that carries s133
+and re-records; that is expected to be a header-only diff.
+
+**21 new scripted sessions.** `transcripts/navigation/` holds one script
+per rung per maintained client profile — `definition-`, `references-`,
+`rename-` × fackr, facsimile, nvim, vscode, helix, emacs — over
+`resolve/two_mod` (a cross-file item, a module name) and `hello.lu` (a
+local, a prelude name). The request lines are identical across the six;
+the answers are not, and that is the point: `LocationLink[]` to the five
+profiles that declare `linkSupport`, `Location[]` to helix;
+`documentChanges` to the five that declare
+`workspaceEdit.documentChanges`, the `changes` map to nvim. Rename's
+refusal set rides every one of them as `-32803` errors, and
+`docs/COMPAT.md` states it in a table. `transcripts/encoding/` gains
+`astral-navigate-{utf8,utf16,utf32}` — the astral-utf16 shape applied to
+navigation: the same `bmp` requested and answered at three different
+columns.
+
+**The capability snapshot regains three providers.** All 26 existing
+sessions re-recorded: every diff is the header date plus
+`definitionProvider: true`, `referencesProvider: true`,
+`renameProvider: {prepareProvider: true}` in the `initialize` answer —
+byte-identical otherwise, which is the regression claim for everything
+s122 and before served. `lifecycle/unknown-method` probed
+`textDocument/definition` as its unimplemented method and now probes
+`signatureHelp` (s134's), since the old probe is answered.
+
+**Two harness changes.** `lspconf`'s script DSL learned `definition`,
+`references … decl|nodecl`, `prepareRename` and `rename … <newName>`
+(the `raw` escape hatch would have done, but a verb per rung keeps the
+scripts reviewable). The `set:` matcher accepts `null` — the array-
+valued methods may all answer "nothing here", and a null is not a set of
+anything; it matches only itself.
+
+**MATRIX** gains a capability-rows table (what the server serves and
+which transcript pins it per client); **SERVER-CONSTRAINTS** records
+where facsimile's two response-shape traps landed: the server follows
+the protocol (bare completion array; `LocationLink[]` to a `linkSupport`
+declaration — facsimile's own), and the one-line fix is facsimile's,
+filed on FortranGoingOnForty/facsimile#4 together with the static
+capability table that still gates F12/Shift+F12/F2 off. The `lspconf
+bench` table before/after the s133 binary: `diagnostics-after-edit` p95
+105.7 → 105.7 ms (p50 104.9 → 104.6) — the number near perception holds.
+
 ## le04 — 2026-09-01 — the pin and the escape
 
 The upstream pin advances to **`75fd2d0`, the `v0.2.1` release tag** —

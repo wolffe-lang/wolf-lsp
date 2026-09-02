@@ -132,3 +132,41 @@ The same command is red for a `pin` that disagrees with `vendor/upstream/PIN`,
 for a `client_version` that disagrees with `package.json`, for an empty range,
 for a `verified.evidence` entry naming a file that does not exist, and for a
 hand edit to either generated artifact.
+
+## Rename's refusal set (s133)
+
+`textDocument/rename` (and `prepareRename` before it) never produces a partial
+edit. It answers the whole edit — every use in every file of the package the
+entry reaches, the declaration, the `use`-site path segment — or it refuses,
+as a `ResponseError` with code `-32803` (`RequestFailed`) whose message names
+the token and the reason. A client shows the message; nothing was changed.
+The set, pinned in every `transcripts/navigation/rename-<client>.jsonl`:
+
+| cursor on | refused as |
+|---|---|
+| a keyword (`fn`, `let`, …; `self` and `Self` included) | `` `fn` is a keyword and cannot be renamed `` |
+| a builtin type (`int`, `str`, `List`, …) | `` `int` is a builtin type `` |
+| a prelude name (`print`, `assert`, …; D31) | `` `print` is a prelude name (D31): it has no declaration in this package `` |
+| a std stub item or module (`use std.…`) | `` `x` is a std item: it lives outside this package (cross-package rename is refused) `` |
+| a C symbol (`import c`; `c.malloc`) | `` `malloc` is a C symbol (`import c`): it lives outside this package `` |
+| a module name (`use geometry`, `geometry.area`) | `` `geometry` names the module `geometry` — a directory (D32: directory = module), not a token; rename the directory `` |
+| anything else (a literal, punctuation, whitespace) | `null` — nothing to rename, not an error |
+
+And for the new name: a keyword (`` `let` is a keyword and cannot be a name ``)
+or anything that does not lex as exactly one identifier (`` `9x` is not an
+identifier ``). No conflict check is made against names already in scope — the
+compiler's next diagnostics (E0302 duplicate definition, W0305 shadowing) are
+the authority, not a second checker inside the server.
+
+**The `//!` header is never an edit site.** The D59 module-formation marker
+(`//! member: true` / `//! member: false`) carries no identifier — `member:`
+is a boolean — so renaming a `pub` member of a `member: true` file changes the
+item's name token and its uses, and leaves every `//!` line untouched. Doc
+links in `///` prose are not rewritten either (a rename is a binding-table
+edit; prose is not in the table).
+
+**The reachable set is the package around the entry.** wolf's v0 model is
+single-entry (D32): asked from `main.lu`, a rename reaches the sibling module
+it imports; asked from a `member: true` sibling opened on its own, the set is
+that module alone — the entry that imports it is not in its package. Honest
+rather than guessed; a workspace-root model is s57's.

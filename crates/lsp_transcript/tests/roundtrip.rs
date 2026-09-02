@@ -84,6 +84,124 @@ fn two_machines_normalize_to_the_same_transcript() {
     );
 }
 
+/// `WorkspaceEdit.changes` is the one LSP map whose KEYS are data.
+///
+/// A `rename` (or a `codeAction` edit) answered to a client that does not
+/// declare `workspaceEdit.documentChanges` — nvim and helix, of the maintained
+/// profiles — puts its document URIs in key position and nowhere else. The
+/// `paths` stage walked values only, so those URIs shipped **absolute** in six
+/// committed transcripts, and any checkout with a different name failed to
+/// replay them. le06.
+#[test]
+fn a_workspace_edit_changes_map_has_its_keys_elided_too() {
+    let repo = std::path::PathBuf::from("/home/dev/wolf-lsp");
+    let workspace = repo.join("fixtures");
+
+    let mut t = Transcript {
+        header: Header {
+            transcript: lsp_transcript::FORMAT_VERSION,
+            name: "encoding/astral-navigate-utf8".into(),
+            wolf_pin: "0".repeat(40),
+            profile: "utf8-first".into(),
+            workspace: "fixtures".into(),
+            recorded: "2026-09-02".into(),
+        },
+        records: vec![Record {
+            seq: 1,
+            dir: Dir::S2c,
+            kind: Kind::Response,
+            id: Some(Value::from(1)),
+            method: None,
+            params: None,
+            result: Some(serde_json::json!({
+                "changes": {
+                    "file:///home/dev/wolf-lsp/fixtures/astral.lu": [{ "newText": "base" }],
+                    "file:///home/dev/wolf-lsp/vendor/upstream/samples/hello.lu": [],
+                }
+            })),
+            error: None,
+            matcher: None,
+            normalize: Vec::new(),
+            t_us: None,
+        }],
+    };
+
+    Normalizer::new(Some(workspace))
+        .with_repo_root(repo)
+        .run(&mut t);
+
+    let changes = t.records[0].result.clone().expect("result")["changes"].clone();
+    assert!(
+        changes.get("file://$WS/astral.lu").is_some(),
+        "the workspace key was not elided: {changes}"
+    );
+    // Two distinct keys stay two: only a prefix is replaced, so nothing can
+    // collide and no edit list can be lost.
+    assert!(
+        changes
+            .get("file://$REPO/vendor/upstream/samples/hello.lu")
+            .is_some(),
+        "the second key was lost or mangled: {changes}"
+    );
+    assert_eq!(changes.as_object().map(serde_json::Map::len), Some(2));
+
+    let text = jsonl::to_string(&t);
+    assert!(
+        !text.contains("/home/"),
+        "an absolute path survived in a key:\n{text}"
+    );
+}
+
+/// The tilde form is a real spelling, not a courtesy.
+///
+/// eglot names its workspace folder through emacs's `abbreviate-file-name`, so
+/// `transcripts/emacs/smoke.jsonl` carries `"~/…/wolf-lsp/"` — a home directory
+/// in a committed artifact that absolute-prefix matching cannot see, because
+/// the absolute prefix is not in the string.
+#[test]
+fn a_tilde_abbreviated_root_is_elided_too() {
+    let Ok(home) = std::env::var("HOME") else {
+        return; // no HOME: the stage elides no tilde form, by design.
+    };
+    let home = home.trim_end_matches('/').to_string();
+    let repo = std::path::PathBuf::from(format!("{home}/wolf-lsp"));
+
+    let mut t = Transcript {
+        header: Header {
+            transcript: lsp_transcript::FORMAT_VERSION,
+            name: "emacs/smoke".into(),
+            wolf_pin: "0".repeat(40),
+            profile: "emacs".into(),
+            workspace: "vendor/upstream/samples".into(),
+            recorded: "2026-09-02".into(),
+        },
+        records: vec![Record {
+            seq: 1,
+            dir: Dir::C2s,
+            kind: Kind::Request,
+            id: Some(Value::from(1)),
+            method: Some("initialize".into()),
+            params: Some(serde_json::json!({
+                "workspaceFolders": [{ "uri": format!("file://{repo}/", repo = repo.display()),
+                                       "name": "~/wolf-lsp/" }],
+            })),
+            error: None,
+            result: None,
+            matcher: None,
+            normalize: Vec::new(),
+            t_us: None,
+        }],
+    };
+
+    Normalizer::new(Some(repo.join("vendor/upstream/samples")))
+        .with_repo_root(repo)
+        .run(&mut t);
+
+    let params = t.records[0].params.clone().expect("params");
+    assert_eq!(params["workspaceFolders"][0]["name"], "$REPO/");
+    assert_eq!(params["workspaceFolders"][0]["uri"], "file://$REPO/");
+}
+
 #[test]
 fn ids_renumber_by_first_appearance_not_by_recorded_value() {
     let text = concat!(

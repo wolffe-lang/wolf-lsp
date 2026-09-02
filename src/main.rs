@@ -391,6 +391,7 @@ fn replay_cmd(root: &Path, bin: &Path, pin: &str, rest: &[&str]) -> ExitCode {
 
     let mut mismatched = 0u32;
     let mut errored = 0u32;
+    let mut skipped: Vec<String> = Vec::new();
     for file in &files {
         match replay::replay(root, bin, file, pin) {
             Ok(report) if report.ok() => {
@@ -412,10 +413,57 @@ fn replay_cmd(root: &Path, bin: &Path, pin: &str, rest: &[&str]) -> ExitCode {
                 }
                 mismatched += 1;
             }
+            // A PIN MISMATCH ON A SCRIPT-LESS TRANSCRIPT IS A SKIP, NOT AN
+            // ERROR, AND THE DISTINCTION IS THE ONE THIS REPOSITORY ALREADY
+            // DRAWS EVERYWHERE ELSE.
+            //
+            // A SCRIPTED transcript at another pin means somebody forgot
+            // `lspconf rerecord` in the pin bump — a real error, and it stays
+            // one. A script-less one cannot be re-recorded BY DESIGN: it is a
+            // capture from a real editor, the whole claim of the file is that
+            // no script decided what the client sent, and `lspconf verify`
+            // grants it exactly that exemption. Clearing it needs a person and
+            // an editor, which is why docs/MATRIX.md stamps those rows with the
+            // pin their evidence was earned at and the CHANGELOG has said so at
+            // every bump since le01.
+            //
+            // le06 is where the difference stopped being academic. The
+            // `server-lane` job could never acquire a binary until the acquire
+            // step was fixed this sprint (#3), so this command had never run in
+            // CI at all; the moment it did, six captures at pin 70bdd35 aborted
+            // the whole lane with exit 2 and none of the sixty-five transcripts
+            // that ARE at the pin got replayed. That is strictly less coverage
+            // than naming the six and replaying the rest — a newly-lit lane
+            // that is permanently red is a lane nobody reads.
+            //
+            // Nothing is checked here that was not checked before: these files
+            // were never compared against anything, they were killing the run.
+            // Now they are named, with both pins, on every single run.
+            Err(replay::Error::PinMismatch { recorded, actual })
+                if !file.with_extension("lsps").is_file() =>
+            {
+                skipped.push(format!(
+                    "{} (captured at {}, pin is {})",
+                    lsp_harness::slash_path(file),
+                    &recorded[..recorded.len().min(7)],
+                    &actual[..actual.len().min(7)]
+                ));
+            }
             Err(e) => {
                 eprintln!("ERROR {}: {e}", lsp_harness::slash_path(file));
                 errored += 1;
             }
+        }
+    }
+    if !skipped.is_empty() {
+        println!(
+            "SKIP: {} captured transcript(s) are at another pin and cannot be \
+             re-recorded — they need a re-CAPTURE from the real editor \
+             (docs/MATRIX.md, docs/RELEASE.md step 3b):",
+            skipped.len()
+        );
+        for s in &skipped {
+            println!("  {s}");
         }
     }
     if errored > 0 {

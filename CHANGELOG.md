@@ -1,6 +1,147 @@
 # Changelog
 
-## Unreleased — s134 transcripts (branch `s134-transcripts`; le06 re-pins)
+## le06 — 2026-09-02 — the generator tells the truth
+
+The tmLanguage generator stops saying two things the spec does not, the
+pin moves to wolf-lang **v0.2.3** (`3befc3e`), and a normalizer that had
+been leaking absolute paths for eight sprints is caught by the pin bump
+that re-recorded them.
+
+**The generator, and the two blocks that were the acceptance.**
+`raw-string` and `generalized-string` each carried `{ "include":
+"#interpolation" }` while `[gram.lex.str.raw]` and `[gram.lex.str.gen]`
+both say raw-mode — tree-sitter has always agreed, and the v0.2.3 EBNF
+this sprint vendors now says it in productions too (`RAW_TEXT ::=
+SCALAR*`, `GEN_TEXT ::= (SCALAR - ('"' | NL))*`; neither has an INTERP
+alternative). Both rules carry an empty pattern list now. Measured
+through wolf-book's own tmLanguage interpreter, before and after:
+
+| block | before | after |
+|---|---|---|
+| ch02 §2.2 `r"C:\logs\{today}\wolf.log"` | `{`, `today`, `}` in interpolation scopes | one `string.quoted.other.raw.wolf` run, `13..37` |
+| solutions `r"([{}])"` | `{`/`}` as hole punctuation | one raw run, `19..25` |
+| solutions `r"when (a, b) { c[0] }"` | hole punctuation **and `0` as a numeric literal** | one raw run, `19..39` |
+
+A fourth mover nobody had filed: `re"[a-z]+{2}"`'s regex quantifier
+stopped reading as an interpolation hole. **wolf-lsp#4 closes.**
+
+**The hole scans the literals (wolf-lsp#5), and the second half is a
+closed match on purpose.** `#chars` drops straight in, so `'a'` inside
+`"{(m + ('a' as int)) as char}"` paints as it does two lines above it.
+The nested string ships as `#interpolated-string`, a closed match, and
+**not** as `{ "include": "#strings" }` — that spelling is a reference
+cycle (strings -> quoted-string -> interpolation -> strings), and the
+one downstream consumer of this file that is not VS Code refuses it:
+wolf-book renders every code block through `xtask/src/tm.rs`, which
+expands includes eagerly and fails at LOAD with "include cycle through
+`#strings` — the interpreter does not support recursion". Not a wrong
+paint: no paint at all, book-wide. The closed form reads identically on
+both engines, paints `"total"` in `print("{"total":<10}")`, and refuses
+what it cannot prove — a nested literal carrying a brace or an escape
+still goes unpainted, which is the same argument `#chars` has made since
+le05. A generator test walks the emitted include graph and fails on any
+cycle, so nobody re-introduces this one by accident.
+
+**The pin, and two terminals the default was wrong about.** `vendor/
+upstream/PIN` records `wolf 0.2.3 (wolfgang, pin 3befc3e)` and `lspconf
+doctor` is **READY** here. The re-vendored data is one file:
+`spec/grammar.ebnf` gains twelve lines that answer **wolf-lang#215** —
+SCALAR, NL, STR_TEXT, the MULTILINE/RAW/GENERALIZED string productions
+and CHAR_TEXT, the ones le05 filed as named-and-undefined. Those
+productions are also the first to write `'"""'` and `'#'` as quoted
+terminals, and xtask's partition sends every unlisted symbol to
+`keyword.operator.wolf`. That default does not hold here: `#` in the
+operator scope paints the fence of every `r#"…"#` and, worse, paints a
+STRAY `#` — a stray byte by `[gram.lex.shebang]`, not language. Both
+join `DELIMITERS` as the literal-form fragments they are, so the emitted
+tmLanguage is unchanged by the bump.
+
+**wolf-lang#199 gets its cleanest evidence yet.** le05 measured why the
+pin clause's width belongs to the builder's clone; le06 shows two clones
+on ONE BOX at ONE COMMIT disagreeing. The installed binary prints `pin
+3befc3e` (seven); `git rev-parse --short` in this repo's `upstream/`
+submodule (22,590 objects) answers `3befc3e8` (eight). So a developer
+who follows `vendor/README.md`'s own pin-bump ritual gets a string this
+file would have to record as eight digits, and one who installs the
+published archive gets seven. PIN records what the ACQUIRED artifact
+prints, and says so.
+
+**Transcripts: 65 re-recorded, 60 header-only, and 5 that found a bug in
+this repo.** Every scripted transcript re-recorded at the new pin; sixty
+diffs are `@@ -1 +1 @@` with `wolf_pin` the only moved field. That is
+what s134 predicted for the eighteen `annotate/*` files, recorded
+against a branch binary with the pin unmoved — the caveat retires, and
+it is the second consecutive branch-recorded set to re-pin without
+moving.
+
+The other five are the normalizer's. `Stage::Paths` is unconditional
+because a machine-specific path in a committed artifact is the one thing
+no assertion may depend on, and it walked string VALUES only. LSP has
+exactly one map whose keys are data: `WorkspaceEdit.changes`,
+`{ [uri: DocumentUri]: TextEdit[] }`. A rename or a code-action edit
+answered to a client that does not declare `documentChanges` — nvim and
+helix — stores its URIs in KEY position and nowhere else, so eight
+records across six transcripts shipped a developer's home directory.
+The sprint contract named this the "astral-path defect" and predicted
+the fixtures root was missing from the elision list; measured, the
+fixtures root was never the problem (`workspace fixtures` already
+elides to `$WS`), the key-blindness was, and it reached
+`vendor/upstream/samples` URIs just as readily. `elide_paths` also
+learned the tilde form, because eglot names its workspace folder through
+`abbreviate-file-name` and no absolute-prefix match can see `~/…`.
+
+Six of the eight cleared on re-record. The two that did not are captured
+sessions predating the fix, one of them recorded on a linux box, and a
+script-less transcript cannot be re-recorded by design — they need a
+re-CAPTURE, filed as **wolf-lsp#7**.
+`tests/client_recorded.rs` now holds the property over every transcript
+and every field, with those two in a waiver that is exhaustive in both
+directions: a waived file that stops leaking fails the test too.
+
+**The clients.** The vscode extension contributes `semanticTokenScopes`,
+and the test that enforced their ABSENCE inverts to enforcing that the
+mapping covers the server's closed legend exactly, in both directions.
+This is not decoration: VS Code's fallback for a token type a theme has
+no rule for is *no rule*, so serving semantic tokens without a mapping
+would leave a file **less** coloured than the TextMate grammar left it.
+Inlay hints needed nothing — there is no contribution point, whether
+hints show is the user's `editor.inlayHints.enabled`, and nvim's and
+helix's stay off by those editors' own defaults. The README sentence
+"semantic tokens and inlay hints are absent, and a test enforces it"
+retires. compat rows earn **0.2.3** on measured evidence; Zed keeps its
+NO-SESSION caveat with the wasm component re-built locally today.
+
+**wolf-lsp#3 closes.** The acquire step asked for
+`wolf-<shortsha>-linux-x86_64.tar.gz`, a name `xtask dist` has never
+published at any tag this repo has pinned. Both fields come out of PIN
+now. Two more things would have failed the moment a download succeeded:
+the archive is a directory, so `--strip-components=1` is what makes
+`.wolf-bin/wolf` the path `lsp_harness::locate` looks for (and puts the
+runtime lib beside the binary), and the matrix is three OSes while the
+pattern named linux. v0.2.3 publishes an asset for every runner in the
+matrix — including the linux/aarch64 one le05 recorded as missing — so
+the triple is derived per host. Whether the lane LIGHTS is CI's to
+answer; docs/MATRIX.md is re-stamped from a CI result, never from an
+edit, so its rows do not yet claim green.
+
+**Gates.** `cargo xtask ci` is red on exactly one step, `release-check
+3b` — the six captured editor smokes keep their own pin (`70bdd35`;
+`67c977f` for fackr) and `lspconf replay` refuses them, which is the
+same single red le05 recorded. `replay` is 65 ok / 6 refused-by-pin,
+`onetruth` 10 samples x 9 profiles with zero divergences, `doctor`
+READY, `grammar-drift`, `config-check`, `compat-check`, `sync-pin`,
+`nvim-check` and `emacs-check` green, 87+ tests across the workspace.
+
+**A rig note that changed a verdict.** `/opt/homebrew/bin/cargo`
+precedes `~/.cargo/bin` on this box's PATH and is not a rustup shim, so
+it ignores `rust-toolchain.toml`: gates run through it were 1.98.0
+Homebrew, not the pinned 1.97.1, and a `collapsible_if` that is `-D
+warnings` under the pin passed silently under it. The same PATH is why
+`--target wasm32-wasip2` reported "can't find crate for core" — cargo
+1.97.1 spawning rustc 1.98.0, whose wasm std is not installed. Run the
+gates here as `env PATH="$HOME/.cargo/bin:$PATH" cargo …`.
+
+## s134 transcripts — 2026-09-02 — the server annotates (pinned at le06)
 
 **The server annotates — signature help, semantic tokens, inlay hints.**
 Recorded against the wolf-lang `s134` branch binary with the pin unmoved:

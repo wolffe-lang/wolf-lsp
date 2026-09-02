@@ -1,12 +1,19 @@
 # Compatibility — which `wolf` each client works with
 
-> **NOTHING HERE HAS BEEN PUBLISHED.** wolf is pre-release in private
-> repositories, the VS Code publisher identity is unregistered, and `wolf-lang`
-> has no tagged release. Every distribution channel in this repository is built,
-> dry-run proven and switched **off**; the steps that would cross a network are
-> human-gated and listed in [`DISTRIBUTION.md`](DISTRIBUTION.md). The table
-> below therefore describes what a client *would* declare at its first release,
-> and nobody has installed any of it from anywhere.
+> **NO CLIENT HERE HAS BEEN PUBLISHED.** The VS Code publisher identity is
+> unregistered and the nvim mirror does not exist, so every distribution
+> channel in this repository is built, dry-run proven and switched **off**; the
+> steps that would cross a network are human-gated and listed in
+> [`DISTRIBUTION.md`](DISTRIBUTION.md). The table below therefore describes
+> what a client *would* declare at its first release, and nobody has installed
+> any of it from anywhere.
+>
+> **`wolf-lang` itself is no longer the missing half.** That sentence read "and
+> `wolf-lang` has no tagged release" through le04; le05 retired the claim and
+> le06 measured the consequence. `v0.2.3` is published, Latest, with four
+> tier-1 archives, and this repository's CI now acquires one: the `server-lane`
+> job resolved a binary and reported `doctor` READY for the first time on
+> 2026-09-02.
 
 Editor tooling rots by drifting silently out of compatibility with its server.
 This file, `clients/*/compat.json` and the runtime check in the two clients that

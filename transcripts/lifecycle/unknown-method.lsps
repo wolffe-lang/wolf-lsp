@@ -1,16 +1,18 @@
 #! An unimplemented method yields MethodNotFound, never a hang. The server
 #! serves diagnostics, hover, documentSymbol, formatting, codeAction,
-#! completion and (s133) definition/references/rename; everything else —
-#! signature help, semantic tokens, inlay hints, the s134 rungs — must
-#! answer -32601 and leave the session usable, which the hover afterwards
-#! proves. (This script probed `definition` until s133 served it.)
+#! completion, (s133) definition/references/rename and (s134) signature
+#! help, semantic tokens full/range, inlay hints; everything else —
+#! semantic-token deltas, type definition, the pull-diagnostics model —
+#! must answer -32601 and leave the session usable, which the hover
+#! afterwards proves. (This script probed `definition` until s133 served
+#! it, and `signatureHelp`/`semanticTokens/full` until s134 did.)
 name      lifecycle/unknown-method
 profile   minimal
 
 initialize
 open      hello.lu
 wait      diagnostics hello.lu
-req       raw textDocument/signatureHelp {"textDocument":{"uri":"file://$WS/hello.lu"},"position":{"line":8,"character":3}}
-req       raw textDocument/semanticTokens/full {"textDocument":{"uri":"file://$WS/hello.lu"}}
+req       raw textDocument/typeDefinition {"textDocument":{"uri":"file://$WS/hello.lu"},"position":{"line":8,"character":3}}
+req       raw textDocument/semanticTokens/full/delta {"textDocument":{"uri":"file://$WS/hello.lu"},"previousResultId":"0"}
 req       hover hello.lu 8:7
 shutdown

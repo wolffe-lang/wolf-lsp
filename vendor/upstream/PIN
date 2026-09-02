@@ -66,7 +66,7 @@ version = "wolf 0.2.2 (wolfgang, pin 8cda3aa)"
 # THIS repo and not a fact about upstream. Recorded here, stated in
 # docs/MATRIX.md, and filed — le05 does not rewrite the CI lane it cannot
 # run, but it refuses to keep calling the lane dark for a reason that
-# stopped being true.
+# stopped being true. Filed as wolf-lsp#3.
 #
 # One real gap remains upstream: there is no linux/aarch64 archive at this
 # tag (wolf-lang trunk 4d9683d repairs it for the next one), so that host

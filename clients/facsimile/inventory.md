@@ -4,7 +4,7 @@
 of this document, not of anyone's memory of the language — which is what lets
 ls05's grammar-drift check cover a table that lives in another repo.
 
-**Source of truth**, at pin `70bdd35`:
+**Source of truth**, at pin `8cda3aa` (v0.2.2; re-read at le05, first read at `70bdd35`):
 
 - `vendor/upstream/spec/grammar.ebnf` — `reserved_kw`, for the keyword set.
 - `upstream/spec/01-grammar.md` §1.2, §1.5, §3.2, §6 — comments, string forms,
@@ -78,6 +78,16 @@ they are reserved keywords, so they are already in the set above.
 > is byte-identical across `83f83bb..v0.2.1`, so the set is still seventeen
 > names and the drift is neither wider nor narrower. The refresh still travels
 > with the series, not this ledger.
+>
+> **Re-checked at pin 8cda3aa (v0.2.2, le05):** unchanged again —
+> `crates/wolf_sema/src/prelude.rs`'s `BUILTIN_TYPES` is byte-identical across
+> `v0.2.1..v0.2.2` (seventeen names: `bool str byte char int uint i8 i16 i32
+> i64 u8 u16 u32 u64 f32 f64 wrapping`), and the editor's table is still the
+> same four. The drift is four wave-checks old and neither wider nor narrower.
+> Note that the series it was meant to travel with is now UPSTREAMED
+> (`patches/STATUS.md`), so "the next time the series is touched" no longer
+> names a pending event: closing this drift means a NEW patch to facsimile,
+> and that is the honest way to describe it from now on.
 
 ## Operators
 
@@ -111,6 +121,7 @@ only colours them does not have to tell them apart.
 | `string_delimiters` | `['""" ', '"   ']` | `[gram.lex.str]`; there is no character literal |
 | `case_sensitive` | `.true.` | |
 | `has_preprocessor` | `.false.` | |
+| `interpolated_strings` | `.true.` | **new at facsimile PR #5** (`syntax_highlighter_module.f90:57`, set for wolf at `:1172-1173`). Every wolf string is an f-string, both forms — see the token-class section below |
 
 **The `"""` entry must come first**, and this is a real constraint rather than
 a style preference. `process_string` takes the *first* delimiter that matches
@@ -119,25 +130,53 @@ three characters or longer (`is_multiline = (len(delimiter) >= 3)`). Listing
 `'"'` first would match the first quote of a `"""` fence and make wolf's block
 string form unreachable.
 
-This is not hypothetical: facsimile's **Python** table lists `"` before `"""`
-and has exactly that bug today. It is filed in `patches/STATUS.md` rather than
-fixed here, because it is a Python problem that this sprint merely noticed.
+This was not hypothetical: facsimile's **Python** table listed `"` before the
+triple form and had exactly that bug. **Fixed upstream** — `d9fafb3` ("List
+python triple-quote delimiters before the single forms", 2026-08-27, in trunk)
+puts the two triple delimiters first, so the Python table is now
+`['""" ', "''' ", '"   ', "'   "]` and the ordering constraint above is
+honoured by both languages. Its sibling `c6f8878` ("Exit multiline string mode
+at the closing delimiter") landed the same day — that pair is `patches/`'s
+unsubmitted PR6, and it is unsubmitted no longer.
+
+## The token classes, and `TOKEN_INTERP`
+
+The class list is `syntax_highlighter_module.f90:20-32`, and at le05 it has
+**ten** members, not nine: `TOKEN_PLAIN`, `TOKEN_KEYWORD`, `TOKEN_STRING`,
+`TOKEN_NUMBER`, `TOKEN_COMMENT`, `TOKEN_OPERATOR`, `TOKEN_TYPE`,
+`TOKEN_FUNCTION`, `TOKEN_PREPROCESSOR`, and — new at facsimile PR #5 —
+**`TOKEN_INTERP = 9`**. The source's own reason for it being a class rather
+than a shade of string: "the span is code, not text: the reader needs to see
+where the string stops being literal."
+
+It is wolf-driven. `load_wolf_syntax` sets `interpolated_strings = .true.`
+(`:1172-1173`, commented "Every wolf string is an f-string
+([gram.lex.str]), both forms"), which routes string bodies through
+`scan_interp_body` (`:688-746`). That splits a body into `TOKEN_STRING` literal
+runs and `TOKEN_INTERP` holes; `process_interp_span` (`:650-681`) emits one
+`TOKEN_INTERP` per `{expr}`, brace-balanced, and paints an unterminated hole to
+end of line. Both the opening line and a multiline continuation line route into
+it (`:534-537`, `:1529-1532`). It has a theme role of its own,
+`THEME_SYNTAX_INTERP = 49` / `syntax.interp` (`theme_module.f90:61`, `:80`,
+colours at `:495`/`:512`/`:530`, 256-colour fallback at `:570`) — it no longer
+borrows `THEME_SYNTAX_PREPROCESSOR`. Pinned by `test/test_syntax_wolf_string.f90`.
 
 ## What the table cannot express
 
-facsimile's tokenizer is a byte-indexed single pass, so three real parts of
-wolf lexical structure are out of reach. None is a reason to add a shim — they
-are the argument for semantic tokens whenever the compiler ships them
-(post-v1):
+facsimile's tokenizer is a byte-indexed single pass, so **two** real parts of
+wolf lexical structure are out of reach. (It was three; f-string interpolation
+was the first, and PR #5 closed it — see above. What remains out of reach even
+there is the expression INSIDE a hole, which is painted as one `TOKEN_INTERP`
+span rather than re-lexed as code; and `{{`/`}}` are now recognised as literal
+braces rather than invisible, `:721-723`.) Neither of the two is a reason to
+add a shim — they are the argument for semantic tokens whenever the compiler
+ships them (post-v1):
 
-1. **F-string interpolation.** Every string literal is an f-string, and `{x}`
-   re-enters token mode inside it (`[gram.lex.str]`). The whole literal colours
-   as a string, so the expression inside an interpolation is not highlighted,
-   and `{{`/`}}` escapes are invisible.
-2. **Generalized literals.** `re"[a-z]+"` and `path"/etc/hosts"` are an
+1. **Generalized literals.**
+ `re"[a-z]+"` and `path"/etc/hosts"` are an
    identifier fused to a string; the prefix colours as an identifier, which is
    not wrong, just not special.
-3. **Raw strings.** `r#"…"#` fences balance by count. The `r` colours as an
+2. **Raw strings.** `r#"…"#` fences balance by count. The `r` colours as an
    identifier and the body as a string only by luck of the delimiters.
 
 Attributes (`#[…]`) colour as `#` plus punctuation: `has_preprocessor` is

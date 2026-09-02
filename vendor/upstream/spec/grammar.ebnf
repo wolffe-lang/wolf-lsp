@@ -7,13 +7,14 @@ FLOAT ::= DEC_LIT '.' DEC_LIT EXPONENT? | DEC_LIT EXPONENT
 EXPONENT ::= ('e' | 'E') ('+' | '-')? DEC_LIT
 
 STRING     ::= '"' STR_PART* '"'
-STR_PART   ::= STR_TEXT | '{{' | '}}' | INTERP
+STR_PART   ::= STR_TEXT | STR_ESC | '{{' | '}}' | INTERP
+STR_ESC    ::= '\' ('n' | 't' | 'r' | '0' | '\' | '"') | '\x' HEX_DIGIT HEX_DIGIT | UNI_ESC
+UNI_ESC    ::= '\u{' HEX_DIGIT HEX_DIGIT? HEX_DIGIT? HEX_DIGIT? HEX_DIGIT? HEX_DIGIT? '}'
 INTERP     ::= '{' expr FORMAT_SPEC? '}'
 FORMAT_SPEC ::= ':' /* fill/align/sign/width/precision/type, spec §7.4 */
 
 CHAR_LIT  ::= "'" (CHAR_TEXT | CHAR_ESC) "'"
-CHAR_ESC  ::= '\' ('n' | 't' | 'r' | '0' | '\' | "'" | '"') | '\x' HEX_DIGIT HEX_DIGIT | UNI_ESC
-UNI_ESC   ::= '\u{' HEX_DIGIT HEX_DIGIT? HEX_DIGIT? HEX_DIGIT? HEX_DIGIT? HEX_DIGIT? '}'
+CHAR_ESC  ::= STR_ESC | '\' "'"
 
 unit  ::= inner_doc* inner_attribute* item*
 item  ::= attribute* visibility? bare_item
@@ -133,11 +134,15 @@ closure ::= 'fn' '(' params_untyped? ')' (block | expr)
 params_untyped ::= closure_param (',' closure_param)* ','?
 closure_param  ::= param_mode? IDENT (':' type)?
 
-region_expr ::= 'region' IDENT? (':' region_strategy)? block  /* sugar   */
-              | 'region' '(' region_strategy? ')'             /* value   */
-              | 'in' expr block                               /* into r  */
+region_expr ::= 'region' IDENT ('(' region_cap ')')?
+                         (':' region_strategy)? block          /* sugar   */
+              | 'region' (':' region_strategy)? block          /* anon    */
+              | 'region' '(' (region_strategy (',' region_cap)?
+                             | region_cap)? ')'                /* value   */
+              | 'in' expr block                                /* into r  */
               | 'freeze' prefix_operand
 region_strategy ::= 'rc' | 'pool' '(' type ')'
+region_cap      ::= 'cap' ':' expr
 
 scope_expr  ::= 'scope' IDENT? block
 spawn_expr  ::= 'spawn' 'proc' path call_args
@@ -176,7 +181,7 @@ row_entry ::= path ('(' type (',' type)* ')')?
 pattern ::= closed_pattern ('|' closed_pattern)*
 closed_pattern ::= '_' | literal | IDENT
           | path '(' pattern (',' pattern)* ','? ')'
-          | path '{' field_pat (',' field_pat)* ','? '..'? '}'
+          | path '{' field_pat (',' field_pat)* (',' '..'?)? '}'
           | '(' pattern (',' pattern)* ','? ')'
           | IDENT '@' closed_pattern
 field_pat ::= IDENT (':' pattern)?

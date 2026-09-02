@@ -1,53 +1,74 @@
 # The wolf-lang commit this repo is keyed to. A bump is its own commit, with
 # the re-vendored data, and nothing else (vendor/README.md).
 #
-# le04 pins the RELEASE TAG rather than a trunk commit: `v0.2.1` points at
-# this sha. Trunk has moved past it (r04 merged after the release), and the
-# next bump may well be a trunk sha again — nothing here requires a tag.
-commit = 75fd2d0b25b6ed995ec7293053bc32fb3497e272
+# le05 pins the RELEASE TAG `v0.2.2`, which points at this sha. le04 pinned
+# v0.2.1 the same way; nothing here requires a tag, and the next bump may be a
+# trunk sha again.
+commit = 8cda3aa41004775bb4a4c0a600d7fb673143b7d0
 # The exact `wolf --version` string that commit produces (first line; the
-# binary now prints a second line naming its lupin pairing). `lspconf doctor`
-# fails on a mismatch: a stale local `wolf` producing green transcripts is the
-# failure mode the pin exists to prevent.
+# binary also prints a second line naming its lupin pairing — 0.1.22 at this
+# pin). `lspconf doctor` fails on a mismatch: a stale local `wolf` producing
+# green transcripts is the failure mode the pin exists to prevent.
 #
-# D57 decides the shape, and the shape CHANGED at this bump. A build is a
-# release build only when the builder stamps BOTH `WOLF_COMMIT=<short sha>`
-# and `WOLF_RELEASE=v{crate version}`, and the second is granted only when
-# that exact tag points at HEAD. Every previous pin was an off-tag commit, so
-# every previous pinned string carried `+dev.<sha>`; this one is at v0.2.1, so
-# the release build prints the BARE version and the pin clause. An unstamped
-# build still prints `+dev.unknown` — the string any trunk build of the same
-# crate version prints, which is exactly the stale-binary hole — so the pinned
-# string remains a stamped build's, and `cargo xtask dist` in the submodule is
-# the builder that computes the stamp (README §Running the server lane
-# locally; its plain-cargo recipe cannot grant the release half).
+# D57 decides the shape. A build is a release build only when the builder
+# stamps BOTH `WOLF_COMMIT=<short sha>` and `WOLF_RELEASE=v{crate version}`,
+# and the second is granted only when that exact tag points at HEAD. This pin
+# is at v0.2.2, so a release build prints the BARE version and the pin clause.
+# An unstamped build still prints `+dev.unknown` — the string any trunk build
+# of the same crate version prints, which is exactly the stale-binary hole —
+# so the pinned string remains a stamped build's, and `cargo xtask dist` in
+# the submodule is the builder that computes the stamp (README §Running the
+# server lane locally; its plain-cargo recipe cannot grant the release half).
 #
 # `xtask compat`'s `version_number` reads the number out of this string; it
 # learned semver build metadata at le03 and takes the bare tag form
-# unchanged — `0.2.1`, no `+` to strip. Asserted in xtask/src/compat.rs.
+# unchanged — `0.2.2`, no `+` to strip. Asserted in xtask/src/compat.rs.
 #
-# The pin clause is EIGHT hex digits here, and that was measured, not chosen.
-# wolf-lang's `git_short_sha()` runs `git rev-parse --short HEAD` with git's
-# AUTO abbreviation, which has just grown from seven to eight in a full clone
-# of that repo. The README's old local recipe hard-coded `--short=7` and so
-# would print `pin 75fd2d0` — a string `doctor` refuses against this pin. The
-# recipe now mirrors upstream's own command instead of restating it. That the
-# identity string's width depends on how big the reader's clone is, is an
-# upstream finding, not a thing to paper over here.
-version = "wolf 0.2.1 (wolfgang, pin 75fd2d0b)"
+# THE PIN CLAUSE IS SEVEN HEX DIGITS HERE, AND THAT IS THE ANSWER TO
+# wolf-lang#199, NOT A CHOICE. le04 pinned an EIGHT-digit clause
+# (`pin 75fd2d0b`) and wrote down the suspicion; le05 measured it. The width
+# is `git rev-parse --short`'s AUTO abbreviation, and git sizes that to the
+# object count of the clone it is run in — so it is a property of the
+# BUILDER'S CLONE, not of the commit. Measured on nomad-1, 2026-09-02, in a
+# clone of 2086 objects: `git rev-parse --short 8cda3aa4…` -> `8cda3aa`, and
+# the installed binary prints `pin 8cda3aa` to match. The same commit built
+# from a full clone of wolf-lang would print `pin 8cda3aa4` and `doctor`
+# would refuse it against this line.
+#
+# That is not a defect in this file. This file's whole job is to record what
+# ONE binary prints and refuse anything else, and it does that correctly. The
+# defect is upstream, in D57's clause being clone-dependent at all, and it
+# stays filed as wolf-lang#199 rather than papered over here — see
+# docs/COMPAT.md, which states the consequence for anyone who builds their
+# own `wolf` instead of acquiring the pinned artifact.
+version = "wolf 0.2.2 (wolfgang, pin 8cda3aa)"
 # Does `wolf lsp` exist at this commit? YES — wolf-lang s52 landed it
-# (`wolf: the lsp subcommand`, 07e553d). This flip is what lights every
-# server-dependent lane: record, replay, onetruth, bench, and the encoding,
-# cancellation, and fuzz suites all reach `Availability::Ready` as soon as a
-# binary at this version resolves.
+# (`wolf: the lsp subcommand`, 07e553d), and s133 added definition, references
+# and rename on top. This flip is what lights every server-dependent lane:
+# record, replay, onetruth, bench, and the encoding, cancellation, navigation
+# and fuzz suites all reach `Availability::Ready` as soon as a binary at this
+# version resolves.
 #
-# The acquire step is dark for a NEW reason at this pin, and the change is
-# worth reading. Every earlier pin was an off-tag sha, so no published asset
-# could ever match it. This pin IS a release tag, and wolf-lang's v0.2.1
-# release does carry four tier-1 assets — but the release is a **DRAFT**
-# (`gh release list --repo wolffe-lang/wolf-lang`, 2026-09-01: v0.2.1 Draft,
-# v0.2.0 Draft, v0.1.0 Latest). A draft's assets sit behind an `untagged-…`
-# URL and need an authenticated request, so an unauthenticated acquire still
-# gets nothing. The gate moved from "no asset exists at this sha" to "the
-# asset exists and is unpublished" — reported upstream, not worked around.
+# The acquire step is dark for a THIRD distinct reason at this pin, and the
+# change is the good kind. wolf-lang#200 is resolved: measured 2026-09-02,
+# `gh release list --repo wolffe-lang/wolf-lang` shows v0.2.2 as **Latest**,
+# not Draft, carrying three tier-1 assets, and an unauthenticated HEAD of
+# the release download URL answers 200. The asset exists, it is published,
+# and anyone can fetch it.
+#
+# What does not match is the NAME. `.github/workflows/ci.yml`'s acquire step
+# asks for `wolf-<shortsha>-linux-x86_64.tar.gz`; wolf-lang's `xtask dist`
+# now publishes `wolf-<version>-<target-triple>.tar.gz` —
+# `wolf-0.2.2-x86_64-unknown-linux-gnu.tar.gz`,
+# `wolf-0.2.2-aarch64-apple-darwin.tar.gz`,
+# `wolf-0.2.2-x86_64-pc-windows-msvc.tar.gz`. So the lane is no longer dark
+# for want of an artifact; it is dark for a stale glob, which is a bug in
+# THIS repo and not a fact about upstream. Recorded here, stated in
+# docs/MATRIX.md, and filed — le05 does not rewrite the CI lane it cannot
+# run, but it refuses to keep calling the lane dark for a reason that
+# stopped being true.
+#
+# One real gap remains upstream: there is no linux/aarch64 archive at this
+# tag (wolf-lang trunk 4d9683d repairs it for the next one), so that host
+# would still acquire nothing.
 serves_lsp = true

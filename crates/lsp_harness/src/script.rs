@@ -79,6 +79,25 @@ pub enum Req {
         character: u32,
         new_name: String,
     },
+    /// s134 — the annotating trio. Signature help is a position
+    /// request; semantic tokens are `full` or a `range`; inlay hints
+    /// are always a range (the protocol has no whole-document form —
+    /// the script spells the range so the claim is about a set).
+    SignatureHelp {
+        file: String,
+        line: u32,
+        character: u32,
+    },
+    SemanticTokens {
+        file: String,
+        /// `None` = `semanticTokens/full`; `Some` = `/range`.
+        range: Option<((u32, u32), (u32, u32))>,
+    },
+    InlayHint {
+        file: String,
+        start: (u32, u32),
+        end: (u32, u32),
+    },
     /// Escape hatch: any method, params written inline as JSON. How the
     /// unknown-method and pre-`initialize` obligations get exercised without
     /// teaching the DSL a verb per protocol method.
@@ -101,6 +120,10 @@ impl Req {
             Req::References { .. } => "textDocument/references",
             Req::PrepareRename { .. } => "textDocument/prepareRename",
             Req::Rename { .. } => "textDocument/rename",
+            Req::SignatureHelp { .. } => "textDocument/signatureHelp",
+            Req::SemanticTokens { range: None, .. } => "textDocument/semanticTokens/full",
+            Req::SemanticTokens { range: Some(_), .. } => "textDocument/semanticTokens/range",
+            Req::InlayHint { .. } => "textDocument/inlayHint",
             Req::Raw { method, .. } => method,
         }
     }
@@ -116,7 +139,10 @@ impl Req {
             | Req::Definition { file, .. }
             | Req::References { file, .. }
             | Req::PrepareRename { file, .. }
-            | Req::Rename { file, .. } => Some(file),
+            | Req::Rename { file, .. }
+            | Req::SignatureHelp { file, .. }
+            | Req::SemanticTokens { file, .. }
+            | Req::InlayHint { file, .. } => Some(file),
             Req::Raw { .. } => None,
         }
     }
@@ -558,6 +584,44 @@ fn parse_req(rest: &str) -> Result<Req, String> {
                 new_name: new_name.to_string(),
             }
         }
+        "signatureHelp" => {
+            let (file, pos) = split_word(args);
+            let (line, character) = parse_pos(pos)?;
+            Req::SignatureHelp {
+                file: file.to_string(),
+                line,
+                character,
+            }
+        }
+        // `req semanticTokens <file> [l:c-l:c]` — a range means the
+        // `/range` method, its absence `/full`.
+        "semanticTokens" => {
+            let (file, range) = split_word(args);
+            let range = match range.trim() {
+                "" => None,
+                r => {
+                    let (s, e) = r
+                        .split_once('-')
+                        .ok_or_else(|| format!("expected `l:c-l:c`, got {r:?}"))?;
+                    Some((parse_pos(s)?, parse_pos(e)?))
+                }
+            };
+            Req::SemanticTokens {
+                file: file.to_string(),
+                range,
+            }
+        }
+        "inlayHint" => {
+            let (file, range) = split_word(args);
+            let (s, e) = range
+                .split_once('-')
+                .ok_or_else(|| format!("expected `l:c-l:c`, got {range:?}"))?;
+            Req::InlayHint {
+                file: file.to_string(),
+                start: parse_pos(s)?,
+                end: parse_pos(e)?,
+            }
+        }
         "raw" => {
             let (method, params) = split_word(args);
             let params: Value = serde_json::from_str(params.trim())
@@ -571,7 +635,7 @@ fn parse_req(rest: &str) -> Result<Req, String> {
             return Err(format!(
                 "unknown request kind `{other}` — expected hover, documentSymbol, \
                  formatting, codeAction, definition, references, prepareRename, \
-                 rename, or raw"
+                 rename, signatureHelp, semanticTokens, inlayHint, or raw"
             ));
         }
     })

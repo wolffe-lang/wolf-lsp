@@ -1,0 +1,18 @@
+#! Inlay hints (s134), under the helix profile: `side:` before the `3` of
+#! `geometry.area(3)` (a parameter name at a call the checker resolved to
+#! a declaration), and `: str` after `who` in `let who = "wolf"` (an
+#! inferred binder type). A range that covers no binder and no call
+#! answers the empty list. Both classes are on — nothing in this
+#! profile's `initializationOptions` turns one off.
+name      annotate/inlayHint-helix
+profile   helix
+
+initialize
+open      resolve/two_mod/main.lu
+wait      diagnostics resolve/two_mod/main.lu
+req       inlayHint resolve/two_mod/main.lu 11:0-12:0
+req       inlayHint resolve/two_mod/main.lu 0:0-9:0
+open      hello.lu
+wait      diagnostics hello.lu
+req       inlayHint hello.lu 9:0-11:0
+shutdown

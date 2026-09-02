@@ -1,0 +1,17 @@
+#! Semantic tokens (s134), under the helix profile: the whole of
+#! `resolve/two_mod/main.lu` (keywords; `geometry` a namespace; `area`
+#! a function reached across files; `main` a function declaration), then
+#! the one line with the call as a range request — the same stream,
+#! clipped. Columns are in the negotiated encoding's units.
+name      annotate/semanticTokens-helix
+profile   helix
+
+initialize
+open      resolve/two_mod/main.lu
+wait      diagnostics resolve/two_mod/main.lu
+req       semanticTokens resolve/two_mod/main.lu
+req       semanticTokens resolve/two_mod/main.lu 11:0-12:0
+open      hello.lu
+wait      diagnostics hello.lu
+req       semanticTokens hello.lu
+shutdown

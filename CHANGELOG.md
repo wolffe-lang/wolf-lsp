@@ -1,5 +1,30 @@
 # Changelog
 
+## Unreleased — s134 transcripts (branch `s134-transcripts`; le06 re-pins)
+
+**The server annotates — signature help, semantic tokens, inlay hints.**
+Recorded against the wolf-lang `s134` branch binary with the pin unmoved:
+eighteen new transcripts under `transcripts/annotate/` (one script per rung
+per maintained client — fackr, facsimile, nvim, vscode, helix, emacs), the
+forty-seven existing ones re-recorded with the `initialize` answer as their
+only diff (three providers gained), `lifecycle/unknown-method` re-targeted
+at what the server still refuses. `lspconf`'s script DSL learned `req
+signatureHelp <file> <l:c>`, `req semanticTokens <file> [l:c-l:c]` (a
+range means `/range`) and `req inlayHint <file> <l:c-l:c>`. The answers
+differ per profile by the profile's own declarations: the doc rides as
+markdown where `signatureHelp.signatureInformation.documentationFormat`
+lists it and plain text where the client declares nothing (facsimile
+issues the request without declaring it — answered on merit, s122's
+posture). `lspconf bench` before/after the s134 binary on the same
+machine: `diagnostics-after-edit` p95 110.6 → 110.8 ms (p50 107.7 →
+106.6), hover p95 0.2 → 0.1, cold 4.1 → 4.4 — every class inside its
+budget. **MATRIX** gains the three rows. Nothing in the clients moved:
+the vscode extension still contributes no `semanticTokenScopes` and its
+test still enforces that (a client packaging decision for le06, now that
+the server serves them), nvim's and helix's inlay hints stay off by their
+own defaults, and the extension's README sentence on the two absences
+is le06's to retire at the re-pin.
+
 ## le05 — 2026-09-02 — the editors navigate
 
 The pin moves to wolf-lang **v0.2.2** (`8cda3aa`), the transcripts move

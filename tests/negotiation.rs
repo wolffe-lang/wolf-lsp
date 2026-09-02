@@ -186,12 +186,15 @@ fn an_unknown_method_answers_method_not_found_and_never_hangs() {
     // any binary that actually serves the capability the MATRIX credits it
     // with. Caught by le05's gauntlet at the v0.2.2 re-pin; it was already red
     // at trunk's own pin, so this is a stale test being corrected, not a
-    // regression being papered over. `signatureHelp` takes its place as the
-    // real-but-unimplemented shape (docs/MATRIX.md's "not served" row), and the
-    // positive half is asserted below.
+    // regression being papered over. `signatureHelp` took its place as the
+    // real-but-unimplemented shape — and wolf-lang s134 served THAT too,
+    // with `semanticTokens/full` beside it, so this list moved again on the
+    // `s134-transcripts` branch: `typeDefinition` and the semantic-token
+    // DELTA are the "not served" row now (docs/MATRIX.md), and the positive
+    // half is asserted below. A probe of a served method proves nothing.
     for method in [
-        "textDocument/signatureHelp",
-        "textDocument/semanticTokens/full",
+        "textDocument/typeDefinition",
+        "textDocument/semanticTokens/full/delta",
         "$/somethingElse",
         "wolf/notARealExtension",
     ] {

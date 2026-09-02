@@ -1,0 +1,20 @@
+#! Signature help (s134), under the helix profile: inside `geometry.area(3)`
+#! — the cross-file callee's declared parameter, its return type and its
+#! `///` doc (markdown where this client's
+#! `signatureHelp.signatureInformation.documentationFormat` lists it,
+#! plain text otherwise), active parameter 0; on the `if` keyword — no
+#! argument list, null; inside `print("…")` — a prelude name, what the
+#! checker recorded for it. One per client because the documentation
+#! format is the profile's own claim.
+name      annotate/signatureHelp-helix
+profile   helix
+
+initialize
+open      resolve/two_mod/main.lu
+wait      diagnostics resolve/two_mod/main.lu
+req       signatureHelp resolve/two_mod/main.lu 11:21
+req       signatureHelp resolve/two_mod/main.lu 11:4
+open      hello.lu
+wait      diagnostics hello.lu
+req       signatureHelp hello.lu 10:10
+shutdown

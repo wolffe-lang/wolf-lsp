@@ -197,7 +197,22 @@ document to decide whether to answer, only to decide the SHAPE (`linkSupport`,
 | `textDocument/definition` | **served (s133)** — `LocationLink[]` to fackr, facsimile, nvim, vscode, emacs (they declare `linkSupport`), `Location[]` to helix | `transcripts/navigation/definition-<client>.jsonl` | `server-lane` |
 | `textDocument/references` | **served (s133)** — package-wide, `includeDeclaration` honored, (file, offset) order | `transcripts/navigation/references-<client>.jsonl` | `server-lane` |
 | `textDocument/rename` + `prepareRename` | **served (s133)** — `documentChanges` to fackr, facsimile, vscode, helix, emacs, the `changes` map to nvim; refusals by name as `-32803` (`docs/COMPAT.md`) | `transcripts/navigation/rename-<client>.jsonl` | `server-lane` |
-| signature help, semantic tokens, inlay hints, workspace symbols, range formatting, pull diagnostics | not served — s134's rungs and after | `transcripts/lifecycle/unknown-method.jsonl` | `server-lane` |
+| `textDocument/signatureHelp` | **served (s134, branch-recorded — see below)** — the declared parameters with label offsets, the active parameter by commas, the return type, the `///` doc as markdown to fackr, nvim, vscode, helix, emacs (they list it) and plain text to facsimile (declares no `signatureHelp` at all and asks anyway — answered on merit) | `transcripts/annotate/signatureHelp-<client>.jsonl` | `server-lane` |
+| `textDocument/semanticTokens/full` + `/range` | **served (s134, branch-recorded)** — a closed legend of eight types (`namespace type parameter variable property enumMember function keyword`) and two modifiers (`declaration readonly`), columns in the negotiated encoding; no delta (`-32601` by name) | `transcripts/annotate/semanticTokens-<client>.jsonl` | `server-lane` |
+| `textDocument/inlayHint` | **served (s134, branch-recorded)** — inferred binder types, parameter names at resolved calls; each class off through `initializationOptions.inlayHints.{types,parameterNames}`; whether hints SHOW is the client's toggle (off by default in nvim and helix, a setting in vscode) | `transcripts/annotate/inlayHint-<client>.jsonl` | `server-lane` |
+| semantic-token deltas, type definition, workspace symbols, range formatting, pull diagnostics | not served | `transcripts/lifecycle/unknown-method.jsonl` | `server-lane` |
+
+**The s134 rows are recorded against the wolf-lang `s134` BRANCH binary**
+(a stamped build printing the pinned string, via `WOLF_BIN`, the pin
+UNMOVED — the same posture le04 took for s133's navigation set). They
+become pinned evidence when le06 re-pins at the tag that carries s134,
+and the prediction is the same as last time: a header-only diff. Every
+one of the forty-seven existing transcripts re-recorded with exactly one
+changed line — the `initialize` answer, which now carries
+`signatureHelpProvider`, `semanticTokensProvider` and `inlayHintProvider`
+— and `lifecycle/unknown-method` was re-targeted at what is still absent
+(`typeDefinition`, `semanticTokens/full/delta`), because a probe of a
+served method proves nothing.
 
 The `server-lane` job is still dark in CI for the reason the header states
 (the acquire glob, now ours to fix). What CHANGED at le05 is the transcripts

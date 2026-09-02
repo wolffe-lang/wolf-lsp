@@ -6,27 +6,49 @@ run. Every row below names the tier it is verified at, the evidence for that
 tier, and — for T1 and T2 — the CI job that re-checks the evidence on every
 push. A row that claims a verification it does not have is a bug in this file.
 
-**Last reviewed against wolf pin `75fd2d0`, 2026-09-01** (le04) — the first
-pin that is a wolf-lang **release tag**, `v0.2.1`, so the pinned version
-string is the bare `wolf 0.2.1 (wolfgang, pin 75fd2d0b)` rather than a
-`+dev.<sha>` one. The scripted transcript library was re-recorded at that pin
-and `lspconf replay` + `onetruth` ran green under all nine derived profiles
-(10 samples, zero divergences); every re-recording is a one-line diff — only
-the header's date and `wolf_pin` move — so the server's wire behaviour is
-byte-identical across `83f83bb..v0.2.1`. The six **captured** editor smokes
-were NOT re-captured — the same posture le01 recorded: they keep the pin they
-were recorded at (`70bdd35`; `67c977f` for fackr) and `lspconf replay`
-refuses them against the new pin until someone drives each real editor again
-(release-check 3b stays red on exactly this until then). Their rows below stay
-stamped with the pin their evidence was actually earned at.
+**Last reviewed against wolf pin `8cda3aa`, 2026-09-02** (le05) — the
+wolf-lang release tag **`v0.2.2`**, so the pinned version string is the bare
+`wolf 0.2.2 (wolfgang, pin 8cda3aa)`. The scripted transcript library was
+re-recorded at that pin and `lspconf replay` + `onetruth` ran green under all
+nine derived profiles (47 transcripts, 10 samples, zero divergences). Every
+re-recording is a one-line diff and this time the line moved in exactly one
+field — `wolf_pin` — so the server's wire behaviour is byte-identical across
+`v0.2.1..v0.2.2`, capability answers included.
 
-**The acquire lane is dark for a new reason.** Every earlier pin was an
-off-tag sha no published asset could match. This one is a release tag, and
-wolf-lang's v0.2.1 release carries four tier-1 assets — but the release is a
-**DRAFT** (so is v0.2.0; only v0.1.0 is published). A draft's assets sit
-behind an `untagged-…` URL and need an authenticated request, so an
-unauthenticated acquire still gets nothing. Reported upstream; not worked
-around here.
+**s133's navigation transcripts are now recorded at the pin.** le04's note
+said they had been recorded and replayed locally against the wolf-lang `s133`
+**branch** binary with the pin unmoved, and predicted a header-only diff at
+the re-pin. That is what happened: all eighteen `navigation/*` files
+re-recorded with only `wolf_pin` changing, and the `initialize` answer still
+carries `definitionProvider`, `referencesProvider` and
+`renameProvider: {prepareProvider: true}`. The note is retired — the rungs
+below are pinned by transcripts recorded against a **tagged release build**,
+not a branch build.
+
+The six **captured** editor smokes were NOT re-captured — the same posture
+le01 recorded: they keep the pin they were recorded at (`70bdd35`; `67c977f`
+for fackr) and `lspconf replay` refuses them against the new pin until someone
+drives each real editor again (release-check 3b stays red on exactly this
+until then). Their rows below stay stamped with the pin their evidence was
+actually earned at.
+
+**The acquire lane is dark for a third reason, and this one is OURS.**
+Measured 2026-09-02: wolf-lang's `v0.2.2` release is **published** — `gh
+release list` shows it as Latest, not Draft, and an unauthenticated request
+for its download URL answers `200`. wolf-lang#200 is resolved; the asset
+exists and anyone can fetch it. What does not match is the NAME.
+`.github/workflows/ci.yml`'s acquire step asks for
+`wolf-<shortsha>-linux-x86_64.tar.gz`, and `xtask dist` now publishes
+`wolf-<version>-<target-triple>.tar.gz` —
+`wolf-0.2.2-x86_64-unknown-linux-gnu.tar.gz`,
+`wolf-0.2.2-aarch64-apple-darwin.tar.gz`,
+`wolf-0.2.2-x86_64-pc-windows-msvc.tar.gz`. So `server-lane` is no longer
+dark for want of an artifact; it is dark for a **stale glob in this repo**,
+which is a bug here and not a fact about upstream. le05 records it rather
+than rewriting a CI lane it cannot run — the rows below still say "dark", and
+now they say why truthfully. (One real upstream gap remains: there is no
+linux/aarch64 archive at this tag; wolf-lang trunk `4d9683d` repairs it for
+the next one.)
 
 ## The three tiers
 
@@ -40,8 +62,8 @@ around here.
 
 | editor | tier | CI job | evidence | last verified |
 |---|---|---|---|---|
-| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (dark: no pin-matched artifact) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | 2026-08-10, pin `67c977f` |
-| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (dark: no pin-matched artifact) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | 2026-08-10, pin `70bdd35` |
+| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (dark: acquire glob stale, see the header) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | 2026-08-10, pin `67c977f` |
+| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (dark: acquire glob stale, see the header) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | 2026-08-10, pin `70bdd35` |
 | [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.4`) | 2026-08-10, pin `70bdd35`, NVIM v0.12.4 |
 | [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 14 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | 2026-08-10, pin `70bdd35`, VS Code 1.132.0 |
 | [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | 2026-08-10, pin `70bdd35`, helix 25.07.1 |
@@ -177,18 +199,28 @@ document to decide whether to answer, only to decide the SHAPE (`linkSupport`,
 | `textDocument/rename` + `prepareRename` | **served (s133)** — `documentChanges` to fackr, facsimile, vscode, helix, emacs, the `changes` map to nvim; refusals by name as `-32803` (`docs/COMPAT.md`) | `transcripts/navigation/rename-<client>.jsonl` | `server-lane` |
 | signature help, semantic tokens, inlay hints, workspace symbols, range formatting, pull diagnostics | not served — s134's rungs and after | `transcripts/lifecycle/unknown-method.jsonl` | `server-lane` |
 
-The `server-lane` job is dark in CI for the reason the header states (no
-pin-matched artifact); the navigation transcripts were recorded and replayed
-locally against the wolf-lang `s133` branch binary (`WOLF_BIN`), with the pin
-UNMOVED — le05 re-pins at the tag that carries s133 and re-records, which is
-expected to be a header-only diff.
+The `server-lane` job is still dark in CI for the reason the header states
+(the acquire glob, now ours to fix). What CHANGED at le05 is the transcripts
+these rows cite: le04 recorded them locally against the wolf-lang `s133`
+**branch** binary (`WOLF_BIN`) with the pin unmoved, and predicted a
+header-only diff at the re-pin. Measured — all eighteen re-recorded with only
+`wolf_pin` moving, so every row above is now pinned by a transcript taken from
+a **tagged release build**. The branch-binary caveat is retired.
 
-**A client's own gate can still hide a served row.** facsimile's static
-capability table (`caps(CAP_…)`) declines definition/references/rename before
-asking the server, and it declares `linkSupport: true` while parsing only
-`Location[]` — both filed as FortranGoingOnForty/facsimile#4. The transcript
-shows what the server answers; the editor shows nothing until that patch
-lands.
+**A client's own gate can hide a served row — and facsimile's no longer
+does.** le04 recorded that facsimile's static capability table (`caps(CAP_…)`)
+declined definition/references/rename before asking the server, and that it
+declared `linkSupport: true` while parsing only `Location[]`; both were filed
+as FortranGoingOnForty/facsimile#4. **That issue is closed by facsimile PR #5**
+(merge `2f5d5f4`, in trunk `a121ab3` / v0.35.0). Routing now reads the
+server's own advertised capabilities — `lsp_server_manager_module.f90`'s
+`supports_*` fields, filled from the `initialize` reply and consulted by
+`server_serves()` — and the static table is demoted to the floor used before
+that reply arrives, so it can no longer gate off something the running server
+does serve. `definition_target()` parses `LocationLink` (preferring
+`targetSelectionRange`) as well as `Location`, and the completion popup reads
+a bare `CompletionItem[]` as well as a `CompletionList`. All three navigation
+rows are reachable in that editor now, not just answerable by the server.
 
 ## What no tier gets, on any editor
 

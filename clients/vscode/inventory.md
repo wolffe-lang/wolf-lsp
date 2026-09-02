@@ -212,8 +212,12 @@ in this editor.
 ## What the grammar still cannot express
 
 Two, down from ls04's three (raw-string fences being the one TextMate solves).
-Neither is a reason to add a shim; both are the argument for semantic tokens
-whenever the compiler ships them (post-v1):
+Neither is a reason to add a shim; both are the argument for **semantic
+tokens, which the compiler ships as of the `3befc3e` pin** — wolf-lang s134,
+`semanticTokensProvider` in the `initialize` answer — and which this
+extension maps to scopes as of le06. That sentence read "whenever the
+compiler ships them (post-v1)" until then; the two limits below are
+unchanged, but what closes them is no longer hypothetical:
 
 1. **Expressions inside interpolations.** `{x.method(1)}` gets an embedded
    scope and its keywords, numbers, types and operators are re-scanned, but it

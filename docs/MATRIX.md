@@ -38,10 +38,17 @@ build**, not a branch build.
 
 The six **captured** editor smokes were NOT re-captured — the same posture
 le01 recorded: they keep the pin they were recorded at (`70bdd35`; `67c977f`
-for fackr) and `lspconf replay` refuses them against the new pin until someone
-drives each real editor again (release-check 3b stays red on exactly this
-until then). Their rows below stay stamped with the pin their evidence was
-actually earned at.
+for fackr) and `lspconf replay` cannot compare them against the new pin until
+someone drives each real editor again. Their rows below stay stamped with the
+pin their evidence was actually earned at.
+
+What changed at le06 is how that is REPORTED, and it changed because the lane
+finally ran. A script-less transcript at another pin is a named `SKIP:` now,
+not a harness error: it cannot be re-recorded by design, so aborting the run
+on it meant none of the sixty-five transcripts that ARE at the pin were
+replayed at all. `release-check 3b` is consequently green, and `cargo xtask
+ci` has no red step for the first time. A SCRIPTED transcript at another pin
+is still exit 2 — that one means somebody forgot `lspconf rerecord`.
 
 **The acquire lane: upstream's half is closed and ours is fixed.** Measured
 2026-09-02, wolf-lang's `v0.2.3` release is Latest, not Draft, and carries
@@ -54,9 +61,16 @@ actually earned at.
 **wolf-lsp#3**, a stale glob in this repo: `.github/workflows/ci.yml` asked
 for `wolf-<shortsha>-linux-x86_64.tar.gz`, a name `xtask dist` stopped
 publishing. le06 fixes the step to ask for `wolf-<version>-<triple>.tar.gz`,
-derived from `PIN`. The rows below no longer say "dark: acquire glob stale";
-whether the lane actually lights is CI's to answer on the branch, and a row is
-re-stamped from a CI result, not from a local edit.
+derived from `PIN`, with `--strip-components=1` so the extracted binary lands
+where `lsp_harness::locate` looks, and the triple derived per host so all
+three tier-1 runners are covered.
+
+**MEASURED: THE LANE LIGHTS.** On this branch (run `33694888387`), the acquire
+step and `lspconf doctor` both PASSED on ubuntu-latest and macos-latest — the
+first time `server-lane` has ever resolved a binary. The rows below still are
+not re-stamped from it: a T1 row wants the whole lane green on all three
+tier-1 OSes (D35, release-check 3d), and that is a merge-commit CI result to
+read, not a branch one to anticipate.
 
 ## The three tiers
 

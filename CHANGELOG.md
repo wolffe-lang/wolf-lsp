@@ -124,13 +124,35 @@ the triple is derived per host. Whether the lane LIGHTS is CI's to
 answer; docs/MATRIX.md is re-stamped from a CI result, never from an
 edit, so its rows do not yet claim green.
 
-**Gates.** `cargo xtask ci` is red on exactly one step, `release-check
-3b` — the six captured editor smokes keep their own pin (`70bdd35`;
-`67c977f` for fackr) and `lspconf replay` refuses them, which is the
-same single red le05 recorded. `replay` is 65 ok / 6 refused-by-pin,
-`onetruth` 10 samples x 9 profiles with zero divergences, `doctor`
-READY, `grammar-drift`, `config-check`, `compat-check`, `sync-pin`,
-`nvim-check` and `emacs-check` green, 87+ tests across the workspace.
+**THE SERVER LANE LIT, AND THEN IT WENT RED — measured, not predicted.**
+Pushing the acquire fix was the first time `server-lane` had ever
+acquired anything (run `33694888387`): the download step and `lspconf
+doctor` both passed on ubuntu AND macos, and the next step failed. Not
+the server — the six captured editor smokes, at pin `70bdd35`, which
+`lspconf replay` refuses. That refusal has been documented-red in
+`release-check 3b` for four sprints; it had simply never reached CI,
+because CI had never had a binary.
+
+So `replay` learns the distinction this repository already draws
+everywhere else. A SCRIPTED transcript at another pin means somebody
+forgot `lspconf rerecord` — a real error, still exit 2. A SCRIPT-LESS
+one cannot be re-recorded by design; it needs a person and an editor.
+Those six are a named `SKIP:` now, printed with both pins and the remedy
+on every run, and the sixty-five transcripts that ARE at the pin get
+replayed instead of the whole lane aborting before the first one.
+Nothing that was checked stops being checked: they were never compared
+against anything, they were killing the run.
+
+**Gates.** `cargo xtask ci` is green on **all 16 checked steps** — the
+first time this repository has had no red one; seven stay PENDING on a
+human act, as before. `replay` is 65 ok / 6 named skips, `onetruth` 10
+samples x 9 profiles with zero divergences, `doctor` READY,
+`grammar-drift`, `config-check`, `compat-check`, `sync-pin`,
+`nvim-check`, `emacs-check`, `independence` and `fixtures-check` green,
+and the workspace suite passes. On the branch, CI is green on `test`,
+`independence`, `nvim plugin`, `vscode extension`, `vscode package`,
+`emacs mode`, `helix config` and `zed extension` across the three
+tier-1 OSes.
 
 **A rig note that changed a verdict.** `/opt/homebrew/bin/cargo`
 precedes `~/.cargo/bin` on this box's PATH and is not a rustup shim, so

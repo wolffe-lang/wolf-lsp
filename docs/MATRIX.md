@@ -65,12 +65,19 @@ derived from `PIN`, with `--strip-components=1` so the extracted binary lands
 where `lsp_harness::locate` looks, and the triple derived per host so all
 three tier-1 runners are covered.
 
-**MEASURED: THE LANE LIGHTS.** On this branch (run `33694888387`), the acquire
-step and `lspconf doctor` both PASSED on ubuntu-latest and macos-latest — the
-first time `server-lane` has ever resolved a binary. The rows below still are
-not re-stamped from it: a T1 row wants the whole lane green on all three
-tier-1 OSes (D35, release-check 3d), and that is a merge-commit CI result to
-read, not a branch one to anticipate.
+**MEASURED: THE LANE LIGHTS.** On this branch the acquire step and `lspconf
+doctor` PASSED — the first time `server-lane` has ever resolved a binary — and
+on ubuntu the whole lane went green: replay, one-truth, the five server-gated
+suites and the seeded fuzz. It found a bug on its first macos run, in a test
+that had existed for sprints and had never executed anywhere but a developer's
+laptop: `semantics`'s 10 s slow-session waited for the open's diagnostics on a
+deadline that knew nothing about the slowness the test itself had injected, and
+`didOpen` pays that knob once per query in the analysis pipeline. Fixed on this
+branch.
+
+The rows below are still NOT re-stamped from it. A T1 row wants the whole lane
+green on all three tier-1 OSes (D35, release-check 3d), and that is a
+merge-commit CI result to read, not a branch one to anticipate.
 
 ## The three tiers
 

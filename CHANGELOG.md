@@ -143,6 +143,34 @@ replayed instead of the whole lane aborting before the first one.
 Nothing that was checked stops being checked: they were never compared
 against anything, they were killing the run.
 
+**A LANE THAT RUNS FINDS THINGS, AND IT FOUND ONE IMMEDIATELY.** With
+the six captures skipped, `server-lane` went green on ubuntu — acquire,
+`doctor`, replay, one-truth, the five server-gated suites and the seeded
+fuzz, all of them for the first time in this repository's history — and
+red on **macos**, at `semantics::a_cancelled_request_completes_promptly_
+with_request_cancelled`: `Timeout { awaited: "a
+textDocument/publishDiagnostics notification for …/hello.lu", seen:
+["response id=1 …"] }`. The two sibling tests in the same file, at 800 ms
+and 1500 ms of injected slowness, passed; ubuntu passed all three.
+
+Nothing was wrong with the server, and the first fix was not enough,
+which is the interesting part. `slow_session` sets
+`WOLF_QUERY_TEST_SLOW_MS`, which adds that many milliseconds at every
+query checkpoint, and then waited on `DEFAULT_TIMEOUT` — a 20 s budget
+whose own comment says it exists to cover a COLD non-resident compiler.
+Adding one `ms` to it moved the failure from 20 s to 30 s and no
+further: `didOpen` -> the first `publishDiagnostics` is an analysis
+PIPELINE, not one query, so the setup wait pays the knob an unknown
+number of times. Setup now gets `DEFAULT_TIMEOUT + 6 * ms` and the
+caller gets `DEFAULT_TIMEOUT + ms` back, because every assertion past
+the setup is about one query and handing it the setup's headroom would
+let a slow server look prompt. Six is headroom, not a measured count.
+
+This is what a dark lane costs. The bug was reachable for as long as the
+suite has existed, it is a plain arithmetic error in a deadline, and it
+could not be seen from one 18-core laptop — it needs a 3-core host
+running eleven of these in parallel.
+
 **Gates.** `cargo xtask ci` is green on **all 16 checked steps** — the
 first time this repository has had no red one; seven stay PENDING on a
 human act, as before. `replay` is 65 ok / 6 named skips, `onetruth` 10

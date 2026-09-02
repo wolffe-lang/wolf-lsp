@@ -44,8 +44,8 @@ exists and anyone can fetch it. What does not match is the NAME.
 `wolf-0.2.2-aarch64-apple-darwin.tar.gz`,
 `wolf-0.2.2-x86_64-pc-windows-msvc.tar.gz`. So `server-lane` is no longer
 dark for want of an artifact; it is dark for a **stale glob in this repo**,
-which is a bug here and not a fact about upstream. le05 records it rather
-than rewriting a CI lane it cannot run — the rows below still say "dark", and
+which is a bug here and not a fact about upstream (**wolf-lsp#3**). le05
+records it rather than rewriting a CI lane it cannot run — the rows below still say "dark", and
 now they say why truthfully. (One real upstream gap remains: there is no
 linux/aarch64 archive at this tag; wolf-lang trunk `4d9683d` repairs it for
 the next one.)

@@ -68,8 +68,9 @@ reason had been rewritten twice as the world moved — is a PASS for the
 first time. What still keeps `server-lane` dark is a **stale glob in this
 repo**: `.github/workflows/ci.yml` asks for
 `wolf-<shortsha>-linux-x86_64.tar.gz` while `xtask dist` publishes
-`wolf-<version>-<target-triple>.tar.gz`. le05 records that rather than
-rewriting a CI lane it cannot run, and the matrix rows say "dark: acquire
+`wolf-<version>-<target-triple>.tar.gz` — filed as **wolf-lsp#3**, with the
+two things a fix has to get right. le05 records it rather than rewriting a
+CI lane it cannot run, and the matrix rows say "dark: acquire
 glob stale" instead of "no pin-matched artifact", which had stopped being
 true. (One real upstream gap remains: no linux/aarch64 archive at this
 tag; wolf-lang trunk `4d9683d` repairs it for the next.)

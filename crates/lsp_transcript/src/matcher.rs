@@ -222,6 +222,19 @@ fn compare_subset(expected: &Value, actual: &Value, path: &str) -> Result<(), Mi
 
 /// Multiset comparison: same elements, any order, duplicates counted.
 fn compare_multiset(expected: &Value, actual: &Value, path: &str) -> Result<(), Mismatch> {
+    // The array-valued methods (definition, references, symbols) may
+    // all answer `null` — "nothing here" — and a null is not a set of
+    // anything; it matches only itself.
+    if expected.is_null() || actual.is_null() {
+        return if expected == actual {
+            Ok(())
+        } else {
+            Err(Mismatch::at(
+                path,
+                format!("expected {expected}, got {actual}"),
+            ))
+        };
+    }
     let e = expected
         .as_array()
         .ok_or_else(|| Mismatch::at(path, "`set:` matcher needs an array in the transcript"))?;

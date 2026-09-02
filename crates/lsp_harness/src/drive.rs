@@ -418,6 +418,33 @@ impl<'a> Driver<'a> {
                           "end": {"line": end.0, "character": end.1}},
                 "context": {"diagnostics": []},
             }),
+            Req::Definition {
+                file,
+                line,
+                character,
+            }
+            | Req::PrepareRename {
+                file,
+                line,
+                character,
+            } => json!({"textDocument": {"uri": uri(file)?},
+                        "position": {"line": line, "character": character}}),
+            Req::References {
+                file,
+                line,
+                character,
+                include_declaration,
+            } => json!({"textDocument": {"uri": uri(file)?},
+                        "position": {"line": line, "character": character},
+                        "context": {"includeDeclaration": include_declaration}}),
+            Req::Rename {
+                file,
+                line,
+                character,
+                new_name,
+            } => json!({"textDocument": {"uri": uri(file)?},
+                        "position": {"line": line, "character": character},
+                        "newName": new_name}),
             // `$WS` is expanded here so a script can write a raw request
             // against a real document without hard-coding an absolute path
             // that would differ on every machine. The same placeholder the

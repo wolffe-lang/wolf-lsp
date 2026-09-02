@@ -56,10 +56,10 @@ Wired to keys and proven in `transcripts/fackr/smoke.jsonl`:
 |---------|-----|-------|
 | diagnostics | — | push, on open and on every change |
 | hover | `F1` | |
-| go to definition | `F12` | |
-| find references | `Shift+F12` | |
+| go to definition | `F12` | served since wolf-lang s133 — `LocationLink[]` (fackr declares `linkSupport`); `transcripts/navigation/definition-fackr.jsonl` |
+| find references | `Shift+F12` | served since s133; `transcripts/navigation/references-fackr.jsonl` |
 | completion | `Ctrl+N` | |
-| rename | `F2` | |
+| rename | `F2` | served since s133 — `documentChanges` (fackr declares it); refusals arrive as `RequestFailed` errors, see `docs/COMPAT.md`; `transcripts/navigation/rename-fackr.jsonl` |
 | syntax highlighting | — | independent of LSP; see `inventory.md` |
 
 `documentSymbol`, `formatting` and `codeAction` are *plumbed and parsed*, then

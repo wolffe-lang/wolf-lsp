@@ -158,13 +158,46 @@ without a lane is the exact artefact this file exists to prevent.
   `wolf-mode.el` turns `emacs-check` red; a live `[grammars.wolf]` table turns
   `config-check` red. All four reverted green.
 
+## What the server serves, and which transcript pins it per client (s133)
+
+The tier table says how each EDITOR is verified; this one says which
+CAPABILITIES the pinned server answers, and names the transcript that pins the
+answer's shape under each maintained client's own declarations. A row here is
+served on merit — the server does not consult the client's capability
+document to decide whether to answer, only to decide the SHAPE (`linkSupport`,
+`workspaceEdit.documentChanges`). "not served" rows answer `-32601` by name
+(`transcripts/lifecycle/unknown-method`).
+
+| capability | state | evidence per client | CI job |
+|---|---|---|---|
+| diagnostics, hover, documentSymbol, formatting, codeAction | served (s52) | `transcripts/{diagnostics,requests}/*` | `server-lane` |
+| completion | served (s122) | `transcripts/requests/*` | `server-lane` |
+| `textDocument/definition` | **served (s133)** — `LocationLink[]` to fackr, facsimile, nvim, vscode, emacs (they declare `linkSupport`), `Location[]` to helix | `transcripts/navigation/definition-<client>.jsonl` | `server-lane` |
+| `textDocument/references` | **served (s133)** — package-wide, `includeDeclaration` honored, (file, offset) order | `transcripts/navigation/references-<client>.jsonl` | `server-lane` |
+| `textDocument/rename` + `prepareRename` | **served (s133)** — `documentChanges` to fackr, facsimile, vscode, helix, emacs, the `changes` map to nvim; refusals by name as `-32803` (`docs/COMPAT.md`) | `transcripts/navigation/rename-<client>.jsonl` | `server-lane` |
+| signature help, semantic tokens, inlay hints, workspace symbols, range formatting, pull diagnostics | not served — s134's rungs and after | `transcripts/lifecycle/unknown-method.jsonl` | `server-lane` |
+
+The `server-lane` job is dark in CI for the reason the header states (no
+pin-matched artifact); the navigation transcripts were recorded and replayed
+locally against the wolf-lang `s133` branch binary (`WOLF_BIN`), with the pin
+UNMOVED — le05 re-pins at the tag that carries s133 and re-records, which is
+expected to be a header-only diff.
+
+**A client's own gate can still hide a served row.** facsimile's static
+capability table (`caps(CAP_…)`) declines definition/references/rename before
+asking the server, and it declares `linkSupport: true` while parsing only
+`Location[]` — both filed as FortranGoingOnForty/facsimile#4. The transcript
+shows what the server answers; the editor shows nothing until that patch
+lands.
+
 ## What no tier gets, on any editor
 
 Every row configures the same binary, `wolf lsp` (D34) — the uniformity is the
 point, and it is why a config tier is viable at all. So:
 
 - **Semantic tokens and inlay hints appear in no editor's config here.** Both
-  are post-v1 compiler work (s52 non-targets). A client contributing UI for a
+  are s134's rungs (definition, references and rename were s133's, and are
+  served — see the table above). A client contributing UI for a
   capability the server does not serve produces an editor that looks broken
   rather than one that looks early.
 - **No editor post-processes a diagnostic** (D22). The compiler's diagnostics

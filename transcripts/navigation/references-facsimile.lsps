@@ -1,0 +1,20 @@
+#! Find references (s133), under the facsimile profile: package-wide from the
+#! use side (`geometry.area` in the entry reaches the declaration in the
+#! sibling), with and without the declaration — the set is the claim, and
+#! `includeDeclaration` is in it or out of it — and a local's two mentions
+#! in one file. The order is (file, offset), deterministic; the matcher
+#! is the multiset LSP allows, so the order is not the claim, the members
+#! are.
+name      navigation/references-facsimile
+profile   facsimile
+
+initialize
+open      resolve/two_mod/main.lu
+wait      diagnostics resolve/two_mod/main.lu
+req       references resolve/two_mod/main.lu 11:16 nodecl
+req       references resolve/two_mod/main.lu 11:16 decl
+open      hello.lu
+wait      diagnostics hello.lu
+req       references hello.lu 9:8 decl
+req       references hello.lu 10:4 decl
+shutdown

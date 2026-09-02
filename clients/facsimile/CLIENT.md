@@ -138,7 +138,8 @@ here — facsimile never sends `exit` at all.
 | hover | `Ctrl+H` | request goes out, response arrives, tooltip renders |
 | code actions | `F10` / `Alt+.` | wired; wolf serves fully-resolved quickfixes |
 | completion | `Ctrl+Space` | wired; wolf does not serve it at v0 |
-| definition / references / rename / workspace symbols | `F12` / `F6` / `F2` | wired; wolf does not serve them at v0 |
+| definition / references / rename | `F12` / `Shift+F12` / `F2` | wired; **served since wolf-lang s133** (`transcripts/navigation/*-facsimile.jsonl`) — but the client's static capability table still gates the keys off (facsimile#4), and its definition parser reads `Location[]` while it declares `linkSupport: true`, so the `LocationLink[]` wolf answers to that declaration is dropped until facsimile fixes one side (see `docs/SERVER-CONSTRAINTS.md`) |
+| workspace symbols | `F6` | wired; wolf does not serve it |
 
 Absent entirely: semantic tokens (the string does not occur in the repo), pull
 diagnostics, `didClose` (the function exists with zero callers, so documents

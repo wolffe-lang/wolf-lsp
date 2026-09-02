@@ -1,0 +1,25 @@
+#! Rename (s133), under the helix profile: `prepareRename` answers the
+#! token and placeholder; `rename` answers the whole edit — the use in
+#! the entry AND the declaration in the sibling the client never opened —
+#! as `documentChanges` where the client declares it and the `changes`
+#! map where it does not. Then the refusal set, by name, each a
+#! `RequestFailed` ResponseError and never a partial edit: a prelude name
+#! (`print`), a module (`geometry`, a directory), a keyword position
+#! (`fn`), and a new name that is a keyword. A local renames in one file.
+name      navigation/rename-helix
+profile   helix
+
+initialize
+open      resolve/two_mod/main.lu
+wait      diagnostics resolve/two_mod/main.lu
+req       prepareRename resolve/two_mod/main.lu 11:16
+req       rename resolve/two_mod/main.lu 11:16 square
+req       rename resolve/two_mod/main.lu 11:7 geo
+req       rename resolve/two_mod/main.lu 10:0 g
+open      hello.lu
+wait      diagnostics hello.lu
+req       prepareRename hello.lu 10:4
+req       rename hello.lu 10:4 say
+req       rename hello.lu 10:19 let
+req       rename hello.lu 10:19 whom
+shutdown

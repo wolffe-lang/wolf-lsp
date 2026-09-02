@@ -427,8 +427,25 @@ impl<'a> Driver<'a> {
                 file,
                 line,
                 character,
+            }
+            | Req::SignatureHelp {
+                file,
+                line,
+                character,
             } => json!({"textDocument": {"uri": uri(file)?},
                         "position": {"line": line, "character": character}}),
+            Req::SemanticTokens { file, range: None } => {
+                json!({"textDocument": {"uri": uri(file)?}})
+            }
+            Req::SemanticTokens {
+                file,
+                range: Some((start, end)),
+            }
+            | Req::InlayHint { file, start, end } => json!({
+                "textDocument": {"uri": uri(file)?},
+                "range": {"start": {"line": start.0, "character": start.1},
+                          "end": {"line": end.0, "character": end.1}},
+            }),
             Req::References {
                 file,
                 line,

@@ -73,6 +73,57 @@
         "path": "./syntaxes/wolf-pkg.tmLanguage.json"
       }
     ],
+    "semanticTokenScopes": [
+      {
+        "language": "wolf",
+        "scopes": {
+          "namespace": [
+            "entity.name.namespace.wolf",
+            "entity.name.namespace"
+          ],
+          "type": [
+            "support.type.wolf",
+            "entity.name.type"
+          ],
+          "parameter": [
+            "variable.parameter.wolf",
+            "variable.parameter"
+          ],
+          "variable": [
+            "variable.other.wolf",
+            "variable.other.readwrite"
+          ],
+          "property": [
+            "variable.other.property.wolf",
+            "variable.other.property"
+          ],
+          "enumMember": [
+            "variable.other.enummember.wolf",
+            "variable.other.enummember"
+          ],
+          "function": [
+            "entity.name.function.wolf",
+            "entity.name.function"
+          ],
+          "keyword": [
+            "keyword.other.wolf",
+            "keyword"
+          ],
+          "variable.readonly": [
+            "variable.other.constant.wolf",
+            "variable.other.constant"
+          ],
+          "type.declaration": [
+            "entity.name.type.wolf",
+            "entity.name.type"
+          ],
+          "function.declaration": [
+            "entity.name.function.wolf",
+            "entity.name.function"
+          ]
+        }
+      }
+    ],
     "configuration": {
       "title": "Wolf",
       "properties": {

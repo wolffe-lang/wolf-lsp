@@ -178,10 +178,19 @@ would mean nothing picks the format up the day `build` lands; claiming it was
 tested against `wolf build` would be a lie about which command produced the
 bytes.
 
-**Semantic tokens and inlay hints are absent, and a test enforces it.** Both are
-post-v1 compiler work (s52 non-targets). An extension that contributes
-`semanticTokenScopes` for a server that serves none produces an editor that
-looks broken rather than one that looks early.
+**Semantic tokens and inlay hints arrive over the protocol as of the `3befc3e`
+pin (wolf-lang v0.2.3, s134), and this extension's part in each is different.**
+Semantic tokens needed a manifest entry and now have one: VS Code's fallback
+for a token type a theme has no rule for is *no rule*, so a served token type
+with no `semanticTokenScopes` mapping would leave the file LESS coloured than
+the TextMate grammar left it. `contributes.semanticTokenScopes` maps all eight
+types in the server's closed legend — `namespace type parameter variable
+property enumMember function keyword` — and the `declaration`/`readonly`
+modifier selectors, each ending in a standard TextMate scope every theme
+already styles. A test asserts the mapping covers the legend exactly, in both
+directions. Inlay hints needed nothing: there is no contribution point for
+them, and whether they show is the user's `editor.inlayHints.enabled`, which
+this extension does not set.
 
 **The "no toolchain" notification is not asserted by the harness.** VS Code
 exposes no API for reading its own notifications, so no test can claim the

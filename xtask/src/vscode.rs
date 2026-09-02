@@ -869,10 +869,10 @@ mod tests {
         fn walk(owner: &str, v: &Value, out: &mut Vec<(String, String)>) {
             match v {
                 Value::Object(map) => {
-                    if let Some(Value::String(inc)) = map.get("include") {
-                        if let Some(key) = inc.strip_prefix('#') {
-                            out.push((owner.to_string(), key.to_string()));
-                        }
+                    if let Some(Value::String(inc)) = map.get("include")
+                        && let Some(key) = inc.strip_prefix('#')
+                    {
+                        out.push((owner.to_string(), key.to_string()));
                     }
                     for (_, child) in map {
                         walk(owner, child, out);

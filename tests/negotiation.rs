@@ -177,10 +177,20 @@ fn an_unknown_method_answers_method_not_found_and_never_hangs() {
     let profile = server.profile("minimal");
     let mut session = server.session(&server.samples(), &profile);
 
-    // Three shapes: a real LSP method v0 does not implement, a `$/` method
-    // (which the spec singles out), and something entirely invented.
+    // Three shapes: a real LSP method this server does not implement, a `$/`
+    // method (which the spec singles out), and something entirely invented.
+    //
+    // `textDocument/rename` USED to head this list and no longer can: wolf-lang
+    // s133 implemented it (with `prepareRename`), so it answers a result rather
+    // than `-32601`, and asserting the refusal here made this test fail against
+    // any binary that actually serves the capability the MATRIX credits it
+    // with. Caught by le05's gauntlet at the v0.2.2 re-pin; it was already red
+    // at trunk's own pin, so this is a stale test being corrected, not a
+    // regression being papered over. `signatureHelp` takes its place as the
+    // real-but-unimplemented shape (docs/MATRIX.md's "not served" row), and the
+    // positive half is asserted below.
     for method in [
-        "textDocument/rename",
+        "textDocument/signatureHelp",
         "textDocument/semanticTokens/full",
         "$/somethingElse",
         "wolf/notARealExtension",
@@ -200,6 +210,29 @@ fn an_unknown_method_answers_method_not_found_and_never_hangs() {
         assert!(
             took < Duration::from_secs(5),
             "{method} took {took:?} to say it does not exist"
+        );
+    }
+
+    // The other half of the same claim: a method the server DOES implement must
+    // not answer `-32601`. Without this, moving a method off the list above
+    // could silently mean "we stopped testing it" rather than "it is served".
+    for method in [
+        "textDocument/rename",
+        "textDocument/definition",
+        "textDocument/references",
+    ] {
+        let started = Instant::now();
+        let id = session
+            .request(method, json!({}))
+            .unwrap_or_else(|e| panic!("send {method}: {e}"));
+        let (resp, _) = session
+            .response(id, started)
+            .unwrap_or_else(|e| panic!("{method} was never answered: {e}"));
+        assert_ne!(
+            resp.pointer("/error/code").and_then(Value::as_i64),
+            Some(-32601),
+            "{method} is served since wolf-lang s133 and must not answer \
+             MethodNotFound: {resp}"
         );
     }
     session.shutdown_exit().expect("clean shutdown");

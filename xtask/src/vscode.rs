@@ -70,14 +70,19 @@ use serde_json::{Value, json};
 /// rule, and colouring the letter `n` as a keyword would be wrong everywhere
 /// outside `'\n'`.
 ///
+/// `cap` joined at the 8cda3aa pin (v0.2.2): `region_cap ::= 'cap' ':' expr`
+/// gives a region a creation-time byte budget (s132, `[mem.region.cap.1]`),
+/// and `[gram.inv.ctx]` names it contextual beside `rc` and `pool` — which it
+/// has to be, since `cap` is an ordinary local in any code that measures one.
+///
 /// This list is **exhaustive over the pin**, and generation fails when a word
 /// terminal appears in neither it nor `reserved_kw`. That failure is the point:
 /// a contextual keyword added upstream (`sync`, say) forces a human decision
 /// about whether it is contextual or reserved, instead of silently becoming
 /// neither.
 const CONTEXTUAL: &[&str] = &[
-    "E", "_", "c", "e", "from", "inout", "lateout", "n", "noalias", "out", "pkg", "pool", "r",
-    "rc", "self", "t", "timeout",
+    "E", "_", "c", "cap", "e", "from", "inout", "lateout", "n", "noalias", "out", "pkg", "pool",
+    "r", "rc", "self", "t", "timeout",
 ];
 
 /// Symbolic terminals that are **delimiters or literal-form fragments**, not

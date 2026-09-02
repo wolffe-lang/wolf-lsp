@@ -72,7 +72,20 @@ commit message.
 | PR5 server-request replies | answer `workspace/configuration` etc. | `NOT SUBMITTED` | **offered, not written** — `handle_request` is still a TODO stub in trunk. wolf needs none of it; any other server does |
 | PR-test live smoke | — | `NOT SUBMITTED` | **offered, not written** |
 | PR-compat version check | the same one-shot comparison, into facsimile's log surface | `NOT SUBMITTED` | **offered, not written**, same reasoning as fackr's |
-| PR6 multiline-string exit fix | trim the blank-padded stored `"""` so multiline string mode exits; regression test; python triple-quote ordering | `NOT SUBMITTED` | found and fixed by le01 on facsimile branch `le01-wolf-multiline-string` (2 commits, suite green). The merged PR3 table shipped with this bug: every line after the first `"""` block rendered as string |
+| PR6 multiline-string exit fix | trim the blank-padded stored `"""` so multiline string mode exits; regression test; python triple-quote ordering | `MERGED` | **re-verified at le05:** both commits are in trunk — `c6f8878` ("Exit multiline string mode at the closing delimiter") and `d9fafb3` ("List python triple-quote delimiters before the single forms"), 2026-08-27. Found and fixed by le01 on branch `le01-wolf-multiline-string`; the merged PR3 table had shipped with the bug, and every line after the first block rendered as string |
+
+**A second facsimile change set landed that this repo did not write.** Its
+PR **#5** (merge `2f5d5f4`, the `wolf-fx01` lane, in trunk `a121ab3` /
+v0.35.0) closed FortranGoingOnForty/facsimile#4 — the issue le04 filed about
+the static capability table and the `linkSupport`/`Location[]` mismatch. It
+moved routing onto the server's advertised `supports_*` capabilities, taught
+the definition parser `LocationLink`, taught the completion popup a bare
+`CompletionItem[]`, and added a status channel (`note_lsp_error`) so a key
+that reaches no server says so. It is not in the table above because it is
+not ours; it is recorded here because three claims in
+`clients/facsimile/` were written on the assumption it would never happen.
+Note the number collision: `PR5` in the table above is this series' own fifth
+group, still unwritten, and unrelated.
 
 The fackr series (and facsimile's three unwritten offers) carry a **standing
 re-verification obligation**: each was written against one upstream commit,

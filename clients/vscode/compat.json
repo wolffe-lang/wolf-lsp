@@ -3,19 +3,19 @@
   "client_version": "0.0.1",
   "artifact": "vsix — clients/vscode/, packaged by @vscode/vsce",
   "wolf": {
-    "min": "0.2.1",
-    "max_tested": "0.2.1",
-    "pin": "75fd2d0b25b6ed995ec7293053bc32fb3497e272",
-    "pin_version_string": "wolf 0.2.1 (wolfgang, pin 75fd2d0b)"
+    "min": "0.2.2",
+    "max_tested": "0.2.2",
+    "pin": "8cda3aa41004775bb4a4c0a600d7fb673143b7d0",
+    "pin_version_string": "wolf 0.2.2 (wolfgang, pin 8cda3aa)"
   },
   "verified": {
-    "date": "2026-09-01",
+    "date": "2026-09-02",
     "host": "local (macos arm64)",
     "evidence": [
       "transcripts/vscode/smoke.jsonl",
       "profiles/vscode.json",
       "clients/vscode/src/test/suite/extension.test.ts",
-      "lspconf replay + onetruth under this client's derived profile at pin 75fd2d0 (v0.2.1), 2026-09-01 (the captured smoke keeps its recorded pin)"
+      "lspconf replay + onetruth under this client's derived profile at pin 8cda3aa (v0.2.2), 2026-09-02 (the captured smoke keeps its recorded pin)"
     ]
   },
   "warning_surface": "one notification at activation, plus `Wolf: Show Version`"

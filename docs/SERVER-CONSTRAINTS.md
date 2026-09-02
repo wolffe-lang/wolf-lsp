@@ -152,21 +152,42 @@ in message size and its `read_buffer` regrows by copy. A large completion list
 or a long markdown hover visibly stalls the editor. *Holds today — wolf's
 hover is a short code fence.*
 
-**Two response shapes, and where they landed.** facsimile's completion
-parser wants a `CompletionList` (`{"items": […]}`) — a bare array yields zero
-items — and its definition parser reads `Location`/`Location[]` only, while
-its `initialize` **declares `linkSupport: true`**. Both capabilities now
-exist (s122 completion; s133 definition/references/rename) and both follow
-the protocol rather than the parser: completion answers the bare array the
-spec allows, and definition answers `LocationLink[]` to any client that
-declares `linkSupport` — facsimile included, because the declaration is the
-client's own claim and a server that second-guessed it would be the
-workaround this file forbids. The fix is facsimile's, one line either way:
-declare `linkSupport: false`, or parse the link shape it asked for. Filed on
-FortranGoingOnForty/facsimile#4; the shapes are pinned per client in
-`transcripts/navigation/definition-*.jsonl` (facsimile's carries the links;
-helix's, which declares no `linkSupport`, carries plain locations).
-*Constraint satisfied by the protocol, not by the parser.*
+**Two response shapes, and how facsimile closed them.** facsimile's completion
+parser used to want a `CompletionList` (`{"items": […]}`) — a bare array
+yielded zero items — and its definition parser read `Location`/`Location[]`
+only, while its `initialize` **declared `linkSupport: true`**. Both
+capabilities exist (s122 completion; s133 definition/references/rename) and
+both follow the protocol rather than the parser: completion answers the bare
+array the spec allows, and definition answers `LocationLink[]` to any client
+that declares `linkSupport` — facsimile included, because the declaration is
+the client's own claim and a server that second-guessed it would be the
+workaround this file forbids.
+
+**facsimile has now taken the other half, and it is no longer Location-only.**
+FortranGoingOnForty/facsimile#4 is CLOSED by that repo's PR #5 (merge
+`2f5d5f4`, in trunk `a121ab3`). Of the two one-line fixes available — declare
+`linkSupport: false`, or parse the link shape it asked for — it took the
+second, and did the same for completion:
+
+- `lsp_protocol_module.f90:665-697` — a new public `definition_target()` reads
+  `targetUri` and prefers `targetSelectionRange` over `targetRange`, falling
+  back to the plain `Location`'s `uri`/`range`. `linkSupport: true` still
+  stands, and is now true.
+- `completion_popup_module.f90:102-108` — falls through to a bare `JSON_ARRAY`
+  when there is no `items` key, commented with the exact failure it repairs
+  ("a server answering the bare array -- which wolf 0.2.1 does -- produced
+  zero items and no popup, indistinguishable from a server that had nothing to
+  say").
+- `test/test_lsp_response_shapes.f90` pins both, including that the cursor
+  follows `targetSelectionRange` and not `targetRange`.
+
+**Nothing on the server changes, and that is the point.** The shapes are still
+pinned per client in `transcripts/navigation/definition-*.jsonl` (facsimile's
+carries the links; helix's, which declares no `linkSupport`, carries plain
+locations), and those transcripts were re-recorded byte-identical at pin
+`8cda3aa`. The constraint was satisfied by the protocol before the client
+caught up, and it is satisfied by both now.
+*Constraint satisfied by the protocol; the parser has since agreed.*
 
 ## From Neovim (ls04, `v0.12.4`)
 

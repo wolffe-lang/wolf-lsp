@@ -27,6 +27,12 @@ facsimile's CI is strict, and every one of these runs on push and PR:
   syntax-checked on Linux, and a helper defined for only one platform fails the
   gate. D35: the patch must not break this.
 - **`make check-render`** — nothing may draw past the frame buffer.
+- **`make check-deps`** — added after this series, at `daa258f`. `SOURCES` is
+  now a chain of real prerequisites (`Makefile:170-179`), not just recipe
+  order, and this gate dry-runs a change to `syntax_highlighter_module.f90` and
+  fails unless `renderer_module.f90` is in the rebuild plan. It exists because
+  a field added to `syntax_highlighter_t` once recompiled the module but not
+  `renderer_module.o`, flattening all highlighting.
 - **`fpm test`** and the `test/integration_*.py` shards.
 
 Run all of them before sending anything. The patch in `patches/` was verified
@@ -57,8 +63,14 @@ block strings unreachable — *that* sentence belongs next to the array, and
 **A new module means a Makefile edit.** `SOURCES` is explicit and
 **dependency-ordered** (`.NOTPARALLEL` enforces sequential builds, so a module
 must appear before anything that `use`s it), and new C files go in
-`C_SOURCES`. This series adds **no new files**, so `SOURCES` is untouched —
-which is also the cheapest way to keep the patch reviewable.
+`C_SOURCES`. This series added **no new files**, so `SOURCES` was untouched —
+which was also the cheapest way to keep the patch reviewable.
+
+Since `daa258f` that ordering is enforced rather than promised: each object is
+given its predecessor as an actual prerequisite (`Makefile:170-179`), so a
+module change rebuilds every consumer after it, and `make check-deps` fails if
+the chain is broken. A patch that adds a module in the wrong place now fails a
+gate instead of producing a stale binary.
 
 ## Things to leave alone
 

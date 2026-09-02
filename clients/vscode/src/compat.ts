@@ -12,7 +12,7 @@
 export const COMPAT = {
 	client: 'wolf (VS Code extension)',
 	clientVersion: '0.0.1',
-	min: '0.2.1',
-	maxTested: '0.2.1',
-	verified: '2026-09-01',
+	min: '0.2.2',
+	maxTested: '0.2.2',
+	verified: '2026-09-02',
 } as const;

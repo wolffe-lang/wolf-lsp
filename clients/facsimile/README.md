@@ -12,7 +12,7 @@ blocks on `workspace/configuration` hangs this editor forever, silently.
 Discovering that against a real client, early, is worth more than any amount of
 protocol reading.
 
-- Upstream: `FortranGoingOnForty/facsimile`, read at `1242ffa` (v0.32.8)
+- Upstream: `FortranGoingOnForty/facsimile`, read at `a121ab3` (trunk, v0.35.0) — re-read at le05; the patch series' base was `1242ffa` (v0.32.8)
 - Honest characterization: [`CLIENT.md`](CLIENT.md)
 - Capability profile: [`profiles/facsimile.json`](../../profiles/facsimile.json)
 - Recorded session: [`transcripts/facsimile/smoke.jsonl`](../../transcripts/facsimile/smoke.jsonl)
@@ -40,19 +40,30 @@ The command string is handed to `/bin/sh -c`, so `"wolf lsp"` works verbatim.
 There is no LSP config file — the hardcoded table is the design, and adding a
 config format to land one server would be scope theft (ls03 non-targets).
 
-**The capability flags are deliberately pessimistic.** Only `CAP_HOVER`,
-`CAP_FORMATTING`, `CAP_DOCUMENT_SYMBOLS` and `CAP_CODE_ACTIONS` are set,
-because those are the four things `wolf lsp` actually serves at the pin. These
-flags drive facsimile's request *routing*, not the server's advertised
-capabilities, so an optimistic entry produces requests the server answers with
-`MethodNotFound` and a user who concludes wolf is broken. Flags get added in
-the sprint that adds the capability, upstream.
+**The capability flags no longer drive routing — the server's own reply does.**
+This paragraph used to say the opposite, and it was true when written: only
+`CAP_HOVER`, `CAP_FORMATTING`, `CAP_DOCUMENT_SYMBOLS` and `CAP_CODE_ACTIONS`
+were set, those flags decided where requests went, and an optimistic entry
+produced `MethodNotFound` and a user who concluded wolf was broken.
 
-`CAP_DIAGNOSTICS` is deliberately **not** set: it gates nothing. Diagnostics
-arrive as notifications, and the flag is read by no routing code anywhere in
-the editor (only `CAP_HOVER`, `CAP_CODE_ACTIONS`, `CAP_FORMATTING` and
-`CAP_DOCUMENT_SYMBOLS` have call sites). Every other entry in the table sets
-it, which is a small piece of cargo cult this one declines to copy.
+facsimile PR #5 inverted it. `lsp_server_t` now carries nine `supports_*`
+fields filled from the `initialize` reply
+(`lsp_server_manager_module.f90:64-73`, `:736-783`), and `server_serves()`
+(`:1156-1181`) consults them for every key; the static `add_config` table
+(`:339-354`) is demoted in its own comment to "the floor used before that
+reply arrives", explicitly so that "it can no longer gate off something the
+running server does serve, which is what happened to completion at wolf
+0.2.1 (facsimile#4)". The wolf row still sets the same four flags, and that is
+now harmless rather than load-bearing — the pessimism costs nothing once the
+server has spoken.
+
+`CAP_DIAGNOSTICS` is still **not** set, but the old reason for it — "the flag
+is read by no routing code anywhere in the editor" — has expired:
+`server_serves` special-cases it by name at `:1170`, because diagnostics arrive
+as notifications and there is no advertised capability to consult. All nine
+capabilities have call sites now (`command_handler_module.f90`, nine
+`get_lsp_server_for_cap` sites), so the "only four have call sites" count is
+also retired.
 
 ## What works
 

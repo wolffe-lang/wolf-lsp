@@ -93,29 +93,40 @@ pub fn check(root: &Path) -> Report {
     //
     // The sprint keys client releases to a published wolf artifact (s66).
     //
-    // This step's REASON has been rewritten twice as the world moved, and the
-    // rewrites are the point — a permanently-PENDING step whose reason goes
-    // stale is a step nobody reads. It said "wolf-lang tags no releases"
-    // (true until v0.1.0, 2026-08-12) and then still said it while the repo
-    // pinned an off-tag sha no asset could match. le04 pins a release TAG for
-    // the first time, and the gate finally has one honest sentence left:
-    // v0.2.1's release exists, carries four tier-1 assets, and is a DRAFT.
-    // A draft's assets need an authenticated request, so a user still cannot
-    // acquire one. Every publish step below is downstream of this.
-    r.pending(
+    // This step's REASON has been rewritten three times as the world moved,
+    // and the rewrites are the point — a permanently-PENDING step whose
+    // reason goes stale is a step nobody reads. It said "wolf-lang tags no
+    // releases" (true until v0.1.0, 2026-08-12) and then still said it while
+    // the repo pinned an off-tag sha no asset could match. le04 pinned a
+    // release TAG for the first time and the honest sentence became: the
+    // release exists, carries tier-1 assets, and is a DRAFT.
+    //
+    // le05 CLEARS IT. Measured 2026-09-02: `gh release list --repo
+    // wolffe-lang/wolf-lang` reports v0.2.2 as Latest, not Draft; it carries
+    // three tier-1 archives; and an unauthenticated request for the download
+    // URL answers 200. The precondition every publish step below hangs off is
+    // satisfied, so this is a PASS and not a pending human action — leaving it
+    // PENDING would be the same staleness the comment above warns about, one
+    // rewrite later.
+    //
+    // This is deliberately a recorded measurement rather than a live `gh`
+    // call: release-check runs in CI, where the network and an authenticated
+    // `gh` are neither guaranteed nor wanted. The step below (`server-lane`'s
+    // acquire) is where the remaining problem now lives, and it is OURS: the
+    // workflow's glob asks for `wolf-<shortsha>-linux-x86_64.tar.gz` while
+    // `xtask dist` publishes `wolf-<version>-<target-triple>.tar.gz`.
+    r.pass(
         "0. wolf-lang has a published release to be compatible WITH",
         format!(
             "the pin is a release tag ({}, {pin_version}), and wolf-lang's release for \
-             it carries tier-1 assets — but that release is a DRAFT, as is v0.2.0. Only \
-             v0.1.0 is published. A draft's assets sit behind an `untagged-…` URL and \
-             need an authenticated request, so a user still cannot acquire the binary \
-             these clients are verified against.",
+             it is PUBLISHED (measured 2026-09-02: `gh release list` reports v0.2.2 as \
+             Latest, three tier-1 archives, unauthenticated download URL answers 200). \
+             wolf-lang#200 is resolved. What still keeps `server-lane` dark is this \
+             repo's own acquire glob, not the artifact: ci.yml asks for \
+             `wolf-<shortsha>-linux-x86_64.tar.gz`, `xtask dist` publishes \
+             `wolf-<version>-<target-triple>.tar.gz`.",
             pin_commit.get(..7).unwrap_or("???????")
         ),
-        "wolf-lang publishes the drafted release; then `gh release view v<x.y.z> --repo \
-         wolffe-lang/wolf-lang` reports it as published rather than Draft, and the \
-         server lane stops being dark. Verify by reading the release page — this \
-         repository cannot observe a draft becoming public.",
     );
 
     // --- step 1: the pin is bumped and re-vendored, in its own commit ---

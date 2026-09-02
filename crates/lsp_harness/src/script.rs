@@ -54,6 +54,31 @@ pub enum Req {
         start: (u32, u32),
         end: (u32, u32),
     },
+    /// s133 — the navigation trio, each a position request.
+    Definition {
+        file: String,
+        line: u32,
+        character: u32,
+    },
+    /// `includeDeclaration` is spelled: a references claim is a claim
+    /// about a SET, and the declaration is in or out of it.
+    References {
+        file: String,
+        line: u32,
+        character: u32,
+        include_declaration: bool,
+    },
+    PrepareRename {
+        file: String,
+        line: u32,
+        character: u32,
+    },
+    Rename {
+        file: String,
+        line: u32,
+        character: u32,
+        new_name: String,
+    },
     /// Escape hatch: any method, params written inline as JSON. How the
     /// unknown-method and pre-`initialize` obligations get exercised without
     /// teaching the DSL a verb per protocol method.
@@ -72,6 +97,10 @@ impl Req {
             Req::DocumentSymbol { .. } => "textDocument/documentSymbol",
             Req::Formatting { .. } => "textDocument/formatting",
             Req::CodeAction { .. } => "textDocument/codeAction",
+            Req::Definition { .. } => "textDocument/definition",
+            Req::References { .. } => "textDocument/references",
+            Req::PrepareRename { .. } => "textDocument/prepareRename",
+            Req::Rename { .. } => "textDocument/rename",
             Req::Raw { method, .. } => method,
         }
     }
@@ -83,7 +112,11 @@ impl Req {
             Req::Hover { file, .. }
             | Req::DocumentSymbol { file }
             | Req::Formatting { file }
-            | Req::CodeAction { file, .. } => Some(file),
+            | Req::CodeAction { file, .. }
+            | Req::Definition { file, .. }
+            | Req::References { file, .. }
+            | Req::PrepareRename { file, .. }
+            | Req::Rename { file, .. } => Some(file),
             Req::Raw { .. } => None,
         }
     }
@@ -469,6 +502,62 @@ fn parse_req(rest: &str) -> Result<Req, String> {
                 end: parse_pos(e)?,
             }
         }
+        "definition" => {
+            let (file, pos) = split_word(args);
+            let (line, character) = parse_pos(pos)?;
+            Req::Definition {
+                file: file.to_string(),
+                line,
+                character,
+            }
+        }
+        // `req references <file> <l:c> [decl|nodecl]` — the declaration's
+        // membership is part of the claim, so the script says it.
+        "references" => {
+            let (file, rest) = split_word(args);
+            let (pos, flag) = split_word(rest);
+            let (line, character) = parse_pos(pos)?;
+            let include_declaration = match flag.trim() {
+                "" | "nodecl" => false,
+                "decl" => true,
+                other => {
+                    return Err(format!(
+                        "expected `decl` or `nodecl` after the position, got {other:?}"
+                    ));
+                }
+            };
+            Req::References {
+                file: file.to_string(),
+                line,
+                character,
+                include_declaration,
+            }
+        }
+        "prepareRename" => {
+            let (file, pos) = split_word(args);
+            let (line, character) = parse_pos(pos)?;
+            Req::PrepareRename {
+                file: file.to_string(),
+                line,
+                character,
+            }
+        }
+        // `req rename <file> <l:c> <newName>`.
+        "rename" => {
+            let (file, rest) = split_word(args);
+            let (pos, new_name) = split_word(rest);
+            let (line, character) = parse_pos(pos)?;
+            let new_name = new_name.trim();
+            if new_name.is_empty() {
+                return Err("`req rename` needs a new name after the position".to_string());
+            }
+            Req::Rename {
+                file: file.to_string(),
+                line,
+                character,
+                new_name: new_name.to_string(),
+            }
+        }
         "raw" => {
             let (method, params) = split_word(args);
             let params: Value = serde_json::from_str(params.trim())
@@ -481,7 +570,8 @@ fn parse_req(rest: &str) -> Result<Req, String> {
         other => {
             return Err(format!(
                 "unknown request kind `{other}` — expected hover, documentSymbol, \
-                 formatting, codeAction, or raw"
+                 formatting, codeAction, definition, references, prepareRename, \
+                 rename, or raw"
             ));
         }
     })

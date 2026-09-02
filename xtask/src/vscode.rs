@@ -421,7 +421,14 @@ fn wolf_grammar(inv: &Inventory) -> Value {
                 "end": "\"\\1",
                 "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.wolf" } },
                 "endCaptures": { "0": { "name": "punctuation.definition.string.end.wolf" } },
-                "patterns": [ { "include": "#interpolation" } ]
+                // NO `patterns`. A raw body is string content end to end —
+                // `[gram.lex.str.raw]` says "no escapes, NO INTERPOLATION", and
+                // the fence is the only thing that can close it. Through the
+                // c97b81c pin this rule included `#interpolation` and painted
+                // `r"C:\\logs\\{today}\\wolf.log"` as if `{today}` were a hole
+                // (wolf-lsp#4) — a sample whose measured stdout is that literal
+                // text and which would not compile if the braces opened one.
+                "patterns": []
             },
 
             // `re"…"` — an identifier FUSED to a string. The prefix is part of
@@ -437,7 +444,12 @@ fn wolf_grammar(inv: &Inventory) -> Value {
                     "2": { "name": "punctuation.definition.string.begin.wolf" }
                 },
                 "endCaptures": { "0": { "name": "punctuation.definition.string.end.wolf" } },
-                "patterns": [ { "include": "#interpolation" } ]
+                // Raw-mode body, same as `#raw-string` and for the same reason
+                // — `[gram.lex.str.gen]` spells it out ("Raw-mode body (no
+                // escapes/interpolation)"), and tree-sitter has always agreed:
+                // `generalized_string_literal`'s body is one flat immediate
+                // token with no `interpolation` child. wolf-lsp#4.
+                "patterns": []
             },
 
             "quoted-string": {
@@ -449,10 +461,24 @@ fn wolf_grammar(inv: &Inventory) -> Value {
                 "patterns": [ { "include": "#interpolation" } ]
             },
 
-            // EVERY string literal is an f-string (D26/X9), which is why this
-            // rule is included from all four forms rather than from the plain
-            // one. The doubled-brace escapes are matched FIRST, so `{{` never
-            // opens an interpolation.
+            // EVERY *escaped* string literal is an f-string (D26/X9), which is
+            // why this rule is included from `#quoted-string` AND
+            // `#block-string` rather than from the plain one — and from those
+            // TWO ONLY. The raw pair (`#raw-string`, `#generalized-string`) is
+            // raw-mode by `[gram.lex.str.raw]`/`[gram.lex.str.gen]`, so a brace
+            // there is a brace. The doubled-brace escapes are matched FIRST, so
+            // `{{` never opens an interpolation.
+            //
+            // A hole holds an EXPRESSION, so its pattern list is the expression
+            // set, and the literals belong in it: through c97b81c a hole scanned
+            // no char and no string, so `"{(m + ('a' as int)) as char}"` painted
+            // `as` and `char` and left `'a'` as ink two lines under an `'a'`
+            // that painted (wolf-lsp#5). tree-sitter gets this free from
+            // `$._expression`; a regex grammar has to list it.
+            //
+            // `#format-spec` stays FIRST so a `:`-lead spec wins a tie, though
+            // the literals cannot tie with it: TextMate takes the EARLIEST
+            // match, and `:`, `'` and `"` cannot start at one position.
             "interpolation": {
                 "patterns": [
                     {
@@ -467,6 +493,8 @@ fn wolf_grammar(inv: &Inventory) -> Value {
                         "endCaptures": { "0": { "name": "punctuation.section.interpolation.end.wolf" } },
                         "patterns": [
                             { "include": "#format-spec" },
+                            { "include": "#chars" },
+                            { "include": "#interpolated-string" },
                             { "include": "#numbers" },
                             { "include": "#keywords" },
                             { "include": "#types" },
@@ -480,6 +508,38 @@ fn wolf_grammar(inv: &Inventory) -> Value {
             "format-spec": {
                 "name": "constant.other.format-spec.wolf",
                 "match": ":[^{}\"]*(?=\\})"
+            },
+
+            // A STRING LITERAL INSIDE A HOLE — `print("{"total":<10}")`, the
+            // spelling ch01 §1.1 and ch03/ch04 all use.
+            //
+            // THIS IS NOT `{ "include": "#strings" }`, AND THE REASON IS
+            // MEASURED, NOT AESTHETIC. `#strings` reaches `#quoted-string`,
+            // which includes `#interpolation`, which would reach `#strings` —
+            // a reference cycle. Engines differ on cycles, and the ONE
+            // downstream consumer of this file that is not vscode refuses:
+            // wolf-book renders every code block through its own tmLanguage
+            // interpreter (`xtask/src/tm.rs`), which expands includes eagerly
+            // and, on the `#strings` spelling, fails at LOAD with "include
+            // cycle through `#strings` — the interpreter does not support
+            // recursion". Not a wrong paint: no paint at all, book-wide. So
+            // the recursive spelling is refused here and the fix ships as the
+            // closed form, which both engines read identically.
+            //
+            // A CLOSED MATCH is how this grammar already says the thing
+            // TextMate has no other word for — see `#chars`, same shape, same
+            // argument. `{` and `}` are excluded from the body, so this rule
+            // can never run past the hole's own terminator, and a nested
+            // literal that carries a brace or an escape simply goes unpainted
+            // the way it did before. That is the honest half: it paints what
+            // it can prove and refuses the rest, rather than painting a guess.
+            //
+            // The remaining half of wolf-lsp#5 — a FULLY nested string, with
+            // its own escapes and its own holes — is not this repo's to close;
+            // it needs the consumer to support recursion, filed as wolf-book#4.
+            "interpolated-string": {
+                "name": "string.quoted.double.wolf",
+                "match": "\"[^\"{}\\r\\n]*\""
             },
 
             // `[gram.lex.char]` (D58, the 75fd2d0 pin): one scalar or one
@@ -784,5 +844,152 @@ mod tests {
     fn generation_is_deterministic() {
         let inv = inventory(&pinned_ebnf()).unwrap();
         assert_eq!(render(&wolf_grammar(&inv)), render(&wolf_grammar(&inv)));
+    }
+
+    /// Every `#include` this grammar emits, as `(rule, target)` edges.
+    ///
+    /// Walks the emitted JSON rather than the source, because the source is
+    /// where the mistake is easy to make and the JSON is what a tokenizer
+    /// reads.
+    fn include_edges(g: &Value) -> Vec<(String, String)> {
+        fn walk(owner: &str, v: &Value, out: &mut Vec<(String, String)>) {
+            match v {
+                Value::Object(map) => {
+                    if let Some(Value::String(inc)) = map.get("include") {
+                        if let Some(key) = inc.strip_prefix('#') {
+                            out.push((owner.to_string(), key.to_string()));
+                        }
+                    }
+                    for (_, child) in map {
+                        walk(owner, child, out);
+                    }
+                }
+                Value::Array(items) => {
+                    for child in items {
+                        walk(owner, child, out);
+                    }
+                }
+                _ => {}
+            }
+        }
+        let mut out = Vec::new();
+        walk("", &g["patterns"], &mut out);
+        if let Value::Object(repo) = &g["repository"] {
+            for (name, rule) in repo {
+                walk(name, rule, &mut out);
+            }
+        }
+        out
+    }
+
+    /// `[gram.lex.str.raw]` / `[gram.lex.str.gen]`: raw-mode bodies do not
+    /// interpolate. wolf-lsp#4 — the two rules included `#interpolation`
+    /// through the c97b81c pin, which painted `r"C:\logs\{today}\wolf.log"`
+    /// as if `{today}` opened a hole.
+    #[test]
+    fn the_raw_string_forms_do_not_interpolate() {
+        let inv = inventory(&pinned_ebnf()).unwrap();
+        let g = wolf_grammar(&inv);
+        for rule in ["raw-string", "generalized-string"] {
+            let patterns = &g["repository"][rule]["patterns"];
+            assert_eq!(
+                patterns.as_array().map(Vec::len),
+                Some(0),
+                "`{rule}` is a RAW-mode body — it carries no subpatterns, and \
+                 above all not `#interpolation` (wolf-lsp#4)"
+            );
+        }
+        // And the two escaped forms still do: this is a narrowing, not a
+        // removal.
+        for rule in ["quoted-string", "block-string"] {
+            let patterns = &g["repository"][rule]["patterns"];
+            assert!(
+                patterns
+                    .as_array()
+                    .is_some_and(|a| a.iter().any(|p| p["include"] == "#interpolation")),
+                "every ESCAPED literal is an f-string (D26/X9) — `{rule}` keeps its hole"
+            );
+        }
+    }
+
+    /// wolf-lsp#5: a hole holds an expression, so the literals paint in it.
+    #[test]
+    fn a_hole_scans_the_literal_forms() {
+        let inv = inventory(&pinned_ebnf()).unwrap();
+        let g = wolf_grammar(&inv);
+        let hole = g["repository"]["interpolation"]["patterns"]
+            .as_array()
+            .expect("the interpolation rule is a pattern list")
+            .iter()
+            .find(|p| p.get("begin").is_some())
+            .expect("one of them is the `{`…`}` span");
+        let includes: Vec<&str> = hole["patterns"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|p| p["include"].as_str())
+            .collect();
+        for want in ["#format-spec", "#chars", "#interpolated-string"] {
+            assert!(
+                includes.contains(&want),
+                "a hole scans {want} (wolf-lsp#5); it scans {includes:?}"
+            );
+        }
+        assert_eq!(
+            includes.first(),
+            Some(&"#format-spec"),
+            "`#format-spec` is listed first so a `:`-lead spec wins a tie"
+        );
+    }
+
+    /// THE INCLUDE GRAPH IS ACYCLIC, and that is a hard requirement rather
+    /// than a tidiness one.
+    ///
+    /// wolf-book renders every code block in the book through its own
+    /// tmLanguage interpreter (`xtask/src/tm.rs`), which expands includes
+    /// eagerly and fails at LOAD on a cycle — "the interpreter does not
+    /// support recursion". So the obvious spelling of wolf-lsp#5's second
+    /// half, `{ "include": "#strings" }` inside `#interpolation`, does not
+    /// merely tokenize differently downstream: it takes the book's
+    /// highlighting out entirely. `#interpolated-string` is the closed form
+    /// that both engines read the same way, and this test is why nobody
+    /// re-introduces the cycle by accident.
+    #[test]
+    fn the_include_graph_has_no_cycles() {
+        let inv = inventory(&pinned_ebnf()).unwrap();
+        let g = wolf_grammar(&inv);
+        let edges = include_edges(&g);
+        assert!(!edges.is_empty(), "the grammar does use includes");
+
+        fn visit(
+            node: &str,
+            edges: &[(String, String)],
+            stack: &mut Vec<String>,
+            done: &mut std::collections::HashSet<String>,
+        ) {
+            if done.contains(node) {
+                return;
+            }
+            assert!(
+                !stack.iter().any(|s| s == node),
+                "include cycle: {} -> #{node}. wolf-book's interpreter refuses \
+                 this at load and the whole book stops painting.",
+                stack.join(" -> #")
+            );
+            stack.push(node.to_string());
+            for (from, to) in edges {
+                if from == node {
+                    visit(to, edges, stack, done);
+                }
+            }
+            stack.pop();
+            done.insert(node.to_string());
+        }
+
+        let mut done = std::collections::HashSet::new();
+        let roots: Vec<String> = edges.iter().map(|(_, to)| to.clone()).collect();
+        for root in roots {
+            visit(&root, &edges, &mut Vec::new(), &mut done);
+        }
     }
 }

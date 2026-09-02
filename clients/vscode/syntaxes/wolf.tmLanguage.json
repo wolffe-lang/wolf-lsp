@@ -120,11 +120,11 @@
         }
       },
       "name": "string.quoted.other.generalized.wolf",
-      "patterns": [
-        {
-          "include": "#interpolation"
-        }
-      ]
+      "patterns": []
+    },
+    "interpolated-string": {
+      "match": "\"[^\"{}\\r\\n]*\"",
+      "name": "string.quoted.double.wolf"
     },
     "interpolation": {
       "patterns": [
@@ -149,6 +149,12 @@
           "patterns": [
             {
               "include": "#format-spec"
+            },
+            {
+              "include": "#chars"
+            },
+            {
+              "include": "#interpolated-string"
             },
             {
               "include": "#numbers"
@@ -268,11 +274,7 @@
         }
       },
       "name": "string.quoted.other.raw.wolf",
-      "patterns": [
-        {
-          "include": "#interpolation"
-        }
-      ]
+      "patterns": []
     },
     "strings": {
       "patterns": [

@@ -33,8 +33,20 @@ which is where they are.
   both directions, and the code-action quickfix round-trip.
 - `cancel/` — `$/cancelRequest` honored into the query layer, superseded
   requests, and a cancel for an id nobody is waiting on.
+- `navigation/` — s133: one script per rung per maintained client profile
+  (`definition-`, `references-`, `rename-` × fackr, facsimile, nvim, vscode,
+  helix, emacs). They are NOT copies: the request lines are identical and the
+  answers differ by the profile's own declarations — `LocationLink[]` where
+  the client declares `linkSupport`, `Location[]` where not;
+  `documentChanges` where it declares `workspaceEdit.documentChanges`, the
+  `changes` map where not. The subjects are `resolve/two_mod` (a cross-file
+  item and a module name) and `hello.lu` (a local, a prelude name); rename's
+  refusal set rides every profile's transcript as `-32803` errors.
 - `encoding/` — the astral fixture under each negotiated encoding, and CRLF as
-  `didChange` content. The three `astral-*` files are **not copies**: the same
+  `didChange` content, plus (s133) the three `astral-navigate-*` files: one
+  `bmp` use past astral, BMP, combining and ZWJ text on its line, requested
+  (definition, rename) and answered (references from the declaration) in each
+  encoding's units. The three `astral-*` files are **not copies**: the same
   semantic targets sit at different `character` numbers in each, and a shim
   that treated all encodings alike would produce three identical transcripts.
 

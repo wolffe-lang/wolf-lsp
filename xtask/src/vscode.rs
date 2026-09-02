@@ -96,6 +96,20 @@ const DELIMITERS: &[&str] = &[
     "\"", "#![", "#[", "(", ")", ",", ".", ":", "[", "]", "{", "}", // punctuation
     "{{", "}}", // the f-string brace escapes, matched inside strings
     "0b", "0o", "0x", // integer radix prefixes, matched by the numeric rules
+    // STRING-FENCE fragments, new at the 3befc3e pin (v0.2.3). wolf-lang#215
+    // gave the four literal forms real productions, and two of their fences
+    // are quoted terminals that had never appeared in the extracted EBNF
+    // before: `'"""'` (MULTILINE_STRING) and `'#'` (HASH_FENCE, the raw
+    // literal's balancing fence). The default this list documents — "a symbol
+    // added upstream highlights immediately" — is the WRONG default for both,
+    // and le06 caught it in the bump rather than shipping it. `"""` already
+    // belongs to `#block-string`, which wins the tie at the top level; but a
+    // `#` in `keyword.operator.wolf` would paint the fences of every
+    // `r#"…"#` and, worse, paint a STRAY `#` — which `[gram.lex.shebang]`
+    // calls a stray byte, not an operator — as language. `#[`/`#![` stay
+    // listed above because they are the attribute openers, matched by
+    // `#attributes`.
+    "\"\"\"", "#",
     // char-literal fragments ([gram.lex.char], the 83f83bb pin): the quote,
     // the backslash and the `\x`/`\u{` escape openers, and the bare `0` of
     // `'\0'` — matched inside the hand-written char rule, never operators.

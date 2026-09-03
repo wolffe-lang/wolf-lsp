@@ -504,6 +504,31 @@ fn elide_paths(s: &str, workspace: Option<&Path>, repo_root: Option<&Path>, tmp:
         if root.is_empty() {
             continue;
         }
+        // THE URI FORM FIRST, AND IT IS ONLY DISTINCT ON WINDOWS.
+        //
+        // A `file:` URI needs three slashes before an absolute path, and on
+        // unix the workspace root supplies the third itself: `/Users/…` is
+        // both the path and the URI tail, so `file:///Users/…/samples/x`
+        // elides to `file://$WS/x` and every transcript in the library is
+        // written that way. A Windows root is `D:/a/…` with no leading slash,
+        // so the live URI is `file:///D:/a/…/samples/x` and eliding only the
+        // plain form would leave `file:///$WS/x` — one slash more than every
+        // recorded transcript, and a mismatch on the URI of every
+        // `publishDiagnostics` in the library.
+        //
+        // So the slash-prefixed root is elided FIRST, to the same placeholder.
+        // On unix the two strings are identical and this is a no-op; on
+        // Windows it is what makes a transcript recorded on one platform
+        // comparable on the other, which is the entire promise of this stage
+        // (`two_machines_normalize_to_the_same_transcript`).
+        //
+        // Measured on the first windows-latest `server-lane` run to get past
+        // the URI-expansion half of this bug (le06): 59 transcripts, three
+        // records each, every one `/uri: expected "file://$WS/…", got
+        // "file:///$WS/…"`.
+        if !root.starts_with('/') {
+            out = out.replace(&format!("/{root}"), placeholder);
+        }
         out = out.replace(root, placeholder);
         // THE TILDE FORM, which is a real spelling and not a courtesy. eglot
         // names its workspace folder with emacs's `abbreviate-file-name`, so

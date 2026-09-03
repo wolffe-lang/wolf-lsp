@@ -259,7 +259,7 @@ fn denormalize(value: &mut Value, workspace: &str) {
     match value {
         Value::String(s) => {
             if s.contains(normalize::WS) {
-                *s = s.replace(normalize::WS, workspace);
+                *s = crate::expand_workspace(s, workspace);
             }
         }
         Value::Array(items) => {
@@ -317,7 +317,7 @@ fn expect(
                 .as_ref()
                 .and_then(|p| p.get("uri"))
                 .and_then(Value::as_str)
-                .map(|u| u.replace(normalize::WS, workspace));
+                .map(|u| crate::expand_workspace(u, workspace));
             session.notification(want, uri.as_deref(), since)?.0
         }
     };

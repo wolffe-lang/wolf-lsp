@@ -544,7 +544,7 @@ fn expand_ws(value: &mut Value, workspace: &str) {
     match value {
         Value::String(s) => {
             if s.contains(lsp_transcript::normalize::WS) {
-                *s = s.replace(lsp_transcript::normalize::WS, workspace);
+                *s = crate::expand_workspace(s, workspace);
             }
         }
         Value::Array(items) => {

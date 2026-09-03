@@ -197,12 +197,21 @@ building its windows twin by a blunt substring swap — `file://C:/…`, a
 URI in which `C:` is the authority and which no windows run emits — so
 it agreed about a shape that does not exist. It builds the real one now.
 
+**AND THEN IT WAS GREEN ON ALL THREE.** Measured at head `8df0f03`:
+`server-lane` passes on ubuntu-latest, macos-latest and windows-latest,
+every step run and none skipped — acquire, `doctor`, conformance replay,
+one-truth, the five server-gated suites and the seeded fuzz. This
+repository has never had that before; the lane had never resolved a
+binary on any platform.
+
 This is what a dark lane costs. Both bugs were reachable for as long as
 the code has existed. One is a plain arithmetic error in a deadline that
-needs a 3-core host to see; the other is a missing slash that needs a
-Windows host. Neither is visible from one 18-core laptop, and CI could
-not see either until the acquire step stopped asking for a filename
-nobody publishes.
+needs a 3-core host to see; the other is a missing slash, in both
+directions, that needs a Windows host. Neither is visible from one
+18-core unix laptop, and CI could not see either until the acquire step
+stopped asking for a filename nobody publishes. The MATRIX rows are not
+re-stamped from this: a three-OS claim is the release commit's to make
+(D35), and `server-lane` drives `lspconf`, not an editor.
 
 **Gates.** `cargo xtask ci` is green on **all 16 checked steps** — the
 first time this repository has had no red one; seven stay PENDING on a

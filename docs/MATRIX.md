@@ -65,10 +65,12 @@ derived from `PIN`, with `--strip-components=1` so the extracted binary lands
 where `lsp_harness::locate` looks, and the triple derived per host so all
 three tier-1 runners are covered.
 
-**MEASURED: THE LANE LIGHTS.** On this branch the acquire step and `lspconf
-doctor` PASSED — the first time `server-lane` has ever resolved a binary — and
-on ubuntu the whole lane went green: replay, one-truth, the five server-gated
-suites and the seeded fuzz. It found two bugs in its first three runs, both
+**MEASURED: THE LANE LIGHTS, ON ALL THREE TIER-1 OSes.** On this branch
+(run against head `8df0f03`), `server-lane` is green on ubuntu-latest,
+macos-latest AND windows-latest, with every step run and none skipped: acquire,
+`lspconf doctor`, conformance replay, one-truth, the five server-gated suites
+and the seeded fuzz. `server-lane` had never resolved a binary on any platform
+before this sprint. It found two bugs in its first three runs, both
 in code that had existed for sprints and had never executed anywhere but a
 developer's laptop. On **macos**: `semantics`'s 10 s slow-session waited for the
 open's diagnostics on a deadline that knew nothing about the slowness the test
@@ -81,9 +83,13 @@ every recorded transcript says `file://$WS/…` (the same 59, mismatching once
 the timeouts cleared). All fixed on this branch, with unix unchanged —
 re-recording all 65 transcripts moves nothing but the date.
 
-The rows below are still NOT re-stamped from it. A T1 row wants the whole lane
-green on all three tier-1 OSes (D35, release-check 3d), and that is a
-merge-commit CI result to read, not a branch one to anticipate.
+**The rows below are still NOT re-stamped from it**, and the restraint is
+deliberate. D35 and release-check 3d want the three-OS claim made from CI, and
+a branch run is not the release commit's run; a T1 row also wants the CLIENT
+exercised, which `server-lane` does not do — it drives `lspconf`, not an
+editor. What this measurement earns is the retirement of "dark", not a new
+stamp. The row to re-stamp from is the merge commit's, and the six captured
+smokes still owe a re-capture before their own rows move.
 
 ## The three tiers
 

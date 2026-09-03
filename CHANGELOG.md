@@ -183,6 +183,20 @@ calling it, so the knowledge never reached them. `expand_workspace` puts
 it in one place; on unix the two forms are the same string and nothing
 moves.
 
+That fix bought the other half of the same fact. With the URIs
+expanding correctly, windows stopped timing out and started
+MISMATCHING: `/uri: expected "file://$WS/…", got "file:///$WS/…"`, three
+records in each of 59 transcripts. Record and replay are mirrors — on
+unix the workspace root supplies the third slash, so the whole library
+is written `file://$WS/…`; on windows `file:///D:/a/…` elides to
+`file:///$WS/…` unless the slash-prefixed root is elided too.
+`elide_paths` now does. Unix is untouched, measured: re-recording all 65
+transcripts moves nothing but the `recorded` date. The test that has
+asserted "two machines normalize to the same transcript" since ls01 was
+building its windows twin by a blunt substring swap — `file://C:/…`, a
+URI in which `C:` is the authority and which no windows run emits — so
+it agreed about a shape that does not exist. It builds the real one now.
+
 This is what a dark lane costs. Both bugs were reachable for as long as
 the code has existed. One is a plain arithmetic error in a deadline that
 needs a 3-core host to see; the other is a missing slash that needs a

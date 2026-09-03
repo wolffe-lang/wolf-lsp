@@ -73,10 +73,13 @@ in code that had existed for sprints and had never executed anywhere but a
 developer's laptop. On **macos**: `semantics`'s 10 s slow-session waited for the
 open's diagnostics on a deadline that knew nothing about the slowness the test
 itself had injected, and `didOpen` pays that knob once per query in the analysis
-pipeline. On **windows**: `$WS` expanded inside `file://$WS/…` dropped the third
-slash a `file:` URI needs on a drive-letter path, so 59 of 65 transcripts waited
-out their timeout against `file://D:/a/…` while the server published
-`file:///D:/a/…`. Both fixed on this branch.
+pipeline. On **windows**: the third slash a `file:`
+URI needs before a drive-letter path was lost in BOTH directions — expanding
+`$WS` produced `file://D:/a/…` where the server published `file:///D:/a/…` (59
+of 65 transcripts timed out), and eliding it produced `file:///$WS/…` where
+every recorded transcript says `file://$WS/…` (the same 59, mismatching once
+the timeouts cleared). All fixed on this branch, with unix unchanged —
+re-recording all 65 transcripts moves nothing but the date.
 
 The rows below are still NOT re-stamped from it. A T1 row wants the whole lane
 green on all three tier-1 OSes (D35, release-check 3d), and that is a

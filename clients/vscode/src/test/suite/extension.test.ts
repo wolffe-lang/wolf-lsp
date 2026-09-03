@@ -154,18 +154,81 @@ suite('wolf: contributions and activation (no toolchain needed)', () => {
 		}
 	});
 
-	test('no UI is enabled for capabilities the server does not serve', () => {
+	// THE INVERSE OF THE TEST THAT STOOD HERE UNTIL le06, AND FOR THE SAME
+	// REASON.
+	//
+	// It used to assert that `semanticTokenScopes` was ABSENT: semantic tokens
+	// were an s52 non-target, and an extension that advertises what its server
+	// does not serve produces an editor that looks broken rather than one that
+	// looks early. wolf-lang s134 serves them — `semanticTokensProvider` is in
+	// the `initialize` answer at the v0.2.3 pin, with a closed legend of eight
+	// types and two modifiers (`transcripts/annotate/semanticTokens-*.jsonl`)
+	// — so the honest assertion inverts rather than disappearing.
+	//
+	// Scopes matter because VS Code's fallback is nothing. A semantic token
+	// type a theme has no rule for is painted by NO rule, so the server's
+	// answer would make the file LESS coloured than the TextMate grammar left
+	// it. Each mapping therefore ends in a standard TextMate scope every theme
+	// already styles, with the `.wolf` specialization first for a theme that
+	// wants to differ.
+	//
+	// The legend is closed and this list must cover it exactly: a type the
+	// server sends and this file does not map is an uncoloured token, and a
+	// type mapped here that the server never sends is a claim about a
+	// capability nobody has.
+	test('every semantic token type the server sends has a scope', () => {
+		const ext = vscode.extensions.getExtension(EXTENSION_ID);
+		assert.ok(ext);
+		const contributed = ext.packageJSON.contributes.semanticTokenScopes as Array<{
+			language: string;
+			scopes: Record<string, string[]>;
+		}>;
+		assert.strictEqual(contributed.length, 1);
+		assert.strictEqual(contributed[0]!.language, 'wolf');
+		const scopes = contributed[0]!.scopes;
+
+		// `semanticTokensProvider.legend.tokenTypes` at pin 3befc3e.
+		const LEGEND = [
+			'namespace',
+			'type',
+			'parameter',
+			'variable',
+			'property',
+			'enumMember',
+			'function',
+			'keyword',
+		];
+		for (const type of LEGEND) {
+			const mapped = scopes[type];
+			assert.ok(mapped !== undefined, `the server sends \`${type}\` and no scope maps it`);
+			assert.ok(mapped.length > 0, `\`${type}\` maps to an empty scope list`);
+		}
+		for (const key of Object.keys(scopes)) {
+			// A modifier selector is `<type>.<modifier>`; its type half must
+			// still be in the legend.
+			const type = key.split('.')[0]!;
+			assert.ok(
+				LEGEND.includes(type),
+				`\`${key}\` maps a token type the server does not send`,
+			);
+		}
+	});
+
+	// INLAY HINTS STAY UNCONTRIBUTED, and that is not the same statement.
+	//
+	// `contributes.inlayHint` is not a VS Code contribution point at all — the
+	// hints arrive over the protocol and are shown or hidden by the user's
+	// `editor.inlayHints.enabled`, which this extension does not set. So there
+	// is nothing to add and nothing to turn on for a user, and the assertion
+	// that the manifest mentions no such thing keeps its meaning.
+	test('the manifest turns nothing on for the user', () => {
 		const ext = vscode.extensions.getExtension(EXTENSION_ID);
 		assert.ok(ext);
 		const contributes = JSON.stringify(ext.packageJSON.contributes);
-		// s52 non-targets, restated as a test: semantic tokens and inlay hints
-		// are post-v1 compiler work, and an extension that advertises them
-		// produces an editor that looks broken rather than one that looks
-		// early.
-		for (const forbidden of ['semanticTokenScopes', 'semanticTokenTypes', 'inlayHint']) {
+		for (const forbidden of ['inlayHint', 'editor.inlayHints']) {
 			assert.ok(
 				!contributes.includes(forbidden),
-				`package.json contributes \`${forbidden}\`, which the server does not serve`,
+				`package.json contributes \`${forbidden}\` — whether hints SHOW is the user's setting, not ours`,
 			);
 		}
 	});

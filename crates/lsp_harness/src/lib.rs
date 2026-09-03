@@ -156,9 +156,79 @@ pub fn slash_path(path: &std::path::Path) -> String {
     out
 }
 
+/// Expand `$WS` in one string, in BOTH the path form and the URI form.
+///
+/// THE THIRD SLASH, AND WHY THIS IS NOT A UNIX-SHAPED PROBLEM. A transcript
+/// records document URIs as `file://$WS/…`. That spelling is correct on unix
+/// by accident of shape: the workspace path there starts with `/`, so
+/// `file://` + `/Users/…` is the three-slash form a `file:` URI requires, and
+/// eliding the workspace to `$WS` takes the slash with it. On Windows the
+/// workspace is `D:/a/…` with NO leading slash, so a naive substitution
+/// produces `file://D:/a/…` — two slashes, in which `D:` parses as the URI's
+/// AUTHORITY and the path is `/a/…`. The server normalizes what it was sent
+/// and publishes `file:///D:/a/…`, the harness waits for the string it built,
+/// and every transcript that opens a document times out with an empty server
+/// stderr.
+///
+/// [`crate::session::file_uri`] has always known this — "a Windows path
+/// starts `C:/…` with no leading slash; the URI needs one" — but the REPLAY
+/// side rebuilds URIs by substitution rather than by calling it, so the
+/// knowledge did not reach here. Measured on the first windows-latest run of
+/// `server-lane` that ever acquired a binary (le06): 59 of 65 transcripts
+/// ERRORed, every one of them `timed out waiting for a
+/// textDocument/publishDiagnostics notification for file://D:/a/…`.
+///
+/// So: a `$WS` that sits immediately after `file://` gets the slash-prefixed
+/// form, and every other `$WS` gets the plain path. On unix the two are the
+/// same string and this function is the identity on the old behaviour.
+#[must_use]
+pub fn expand_workspace(text: &str, workspace: &str) -> String {
+    const WS: &str = lsp_transcript::normalize::WS;
+    if !text.contains(WS) {
+        return text.to_string();
+    }
+    let uri_form = if workspace.starts_with('/') {
+        workspace.to_string()
+    } else {
+        format!("/{workspace}")
+    };
+    text.replace(&format!("file://{WS}"), &format!("file://{uri_form}"))
+        .replace(WS, workspace)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The windows form is the whole point; the unix form must not move.
+    #[test]
+    fn a_workspace_placeholder_inside_a_file_uri_keeps_the_third_slash() {
+        // Windows: the drive letter needs the slash the placeholder ate.
+        assert_eq!(
+            expand_workspace("file://$WS/hello.lu", "D:/a/wolf-lsp/samples"),
+            "file:///D:/a/wolf-lsp/samples/hello.lu"
+        );
+        // …and a `$WS` that is NOT in a URI stays a plain path.
+        assert_eq!(
+            expand_workspace("$WS/hello.lu", "D:/a/wolf-lsp/samples"),
+            "D:/a/wolf-lsp/samples/hello.lu"
+        );
+        // Unix: unchanged, in both positions.
+        assert_eq!(
+            expand_workspace("file://$WS/hello.lu", "/home/dev/samples"),
+            "file:///home/dev/samples/hello.lu"
+        );
+        assert_eq!(
+            expand_workspace("$WS/hello.lu", "/home/dev/samples"),
+            "/home/dev/samples/hello.lu"
+        );
+        // Both forms in one string, and a string with no placeholder at all.
+        assert_eq!(
+            expand_workspace("root=$WS uri=file://$WS/a.lu", "D:/w"),
+            "root=D:/w uri=file:///D:/w/a.lu"
+        );
+        assert_eq!(expand_workspace("nothing here", "D:/w"), "nothing here");
+    }
 
     #[test]
     fn repo_root_is_findable_from_the_crate() {

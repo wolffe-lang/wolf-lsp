@@ -3,10 +3,10 @@
   "client_version": "0.0.1",
   "artifact": "TOML fragment — clients/helix/languages.toml, copied into the user's config",
   "wolf": {
-    "min": "0.2.2",
-    "max_tested": "0.2.2",
-    "pin": "8cda3aa41004775bb4a4c0a600d7fb673143b7d0",
-    "pin_version_string": "wolf 0.2.2 (wolfgang, pin 8cda3aa)"
+    "min": "0.2.3",
+    "max_tested": "0.2.3",
+    "pin": "3befc3e85ca1f2c602f603f6f610d518c44530fd",
+    "pin_version_string": "wolf 0.2.3 (wolfgang, pin 3befc3e)"
   },
   "verified": {
     "date": "2026-09-02",
@@ -15,7 +15,7 @@
       "transcripts/helix/smoke.jsonl",
       "profiles/helix.json",
       "cargo xtask helix-health",
-      "lspconf replay + onetruth under this client's derived profile at pin 8cda3aa (v0.2.2), 2026-09-02 (the captured smoke keeps its recorded pin)"
+      "lspconf replay + onetruth under this client's derived profile at pin 3befc3e (v0.2.3), 2026-09-02 (the captured smoke keeps its recorded pin)"
     ]
   },
   "warning_surface": "none — a TOML fragment cannot run code; docs/COMPAT.md is the whole statement"

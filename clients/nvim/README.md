@@ -184,7 +184,12 @@ story today.
 **The syntax file cannot express three real parts of wolf lexical structure**:
 expressions inside `{}` interpolations, the identifier/string fusion in
 `re"…"`, and raw-string fences balanced by count past three `#`. All three are
-arguments for semantic tokens, which are post-v1 compiler work.
+arguments for semantic tokens — **which the compiler ships as of the
+`3befc3e` pin** (wolf-lang s134), not post-v1 work any more. This plugin does
+not consume them yet: `vim.lsp.semantic_tokens` needs the server's legend
+wired through, and inlay hints are off by Neovim's own default
+(`vim.lsp.inlay_hint.enable()` is opt-in). Neither is turned on for a user
+here.
 
 **`.wolfi` gets a filetype and highlighting but no server.** `wolf lsp` does
 not parse interface files at this pin, and attaching a client that answers

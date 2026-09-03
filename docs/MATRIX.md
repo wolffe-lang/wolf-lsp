@@ -6,49 +6,90 @@ run. Every row below names the tier it is verified at, the evidence for that
 tier, and — for T1 and T2 — the CI job that re-checks the evidence on every
 push. A row that claims a verification it does not have is a bug in this file.
 
-**Last reviewed against wolf pin `8cda3aa`, 2026-09-02** (le05) — the
-wolf-lang release tag **`v0.2.2`**, so the pinned version string is the bare
-`wolf 0.2.2 (wolfgang, pin 8cda3aa)`. The scripted transcript library was
+**Last reviewed against wolf pin `3befc3e`, 2026-09-02** (le06) — the
+wolf-lang release tag **`v0.2.3`**, so the pinned version string is the bare
+`wolf 0.2.3 (wolfgang, pin 3befc3e)`. The scripted transcript library was
 re-recorded at that pin and `lspconf replay` + `onetruth` ran green under all
-nine derived profiles (47 transcripts, 10 samples, zero divergences). Every
-re-recording is a one-line diff and this time the line moved in exactly one
-field — `wolf_pin` — so the server's wire behaviour is byte-identical across
-`v0.2.1..v0.2.2`, capability answers included.
+nine derived profiles (**65** transcripts, 10 samples, zero divergences).
+Sixty of the sixty-five diffs are a one-line header whose only moved field is
+`wolf_pin`, so the server's wire behaviour is byte-identical across
+`v0.2.2..v0.2.3`, capability answers included.
 
-**s133's navigation transcripts are now recorded at the pin.** le04's note
-said they had been recorded and replayed locally against the wolf-lang `s133`
-**branch** binary with the pin unmoved, and predicted a header-only diff at
-the re-pin. That is what happened: all eighteen `navigation/*` files
-re-recorded with only `wolf_pin` changing, and the `initialize` answer still
-carries `definitionProvider`, `referencesProvider` and
-`renameProvider: {prepareProvider: true}`. The note is retired — the rungs
-below are pinned by transcripts recorded against a **tagged release build**,
-not a branch build.
+**Five transcripts carry a second diff, and it is this repository's bug, not
+the server's.** `Stage::Paths` — the unconditional normalization that keeps a
+machine-specific path out of a committed artifact — walked string VALUES only,
+and `WorkspaceEdit.changes` is `{ [uri: DocumentUri]: TextEdit[] }`: a rename
+or a code-action edit answered to a client that does not declare
+`documentChanges` stores its URIs in KEY position and nowhere else. Eight
+records across six files shipped a developer's home directory.
+`encoding/astral-navigate-{utf8,utf16,utf32}`, `navigation/rename-nvim` and
+`requests/code-action-quickfix` are clean at this re-record; the two that are
+not are captured sessions that need a re-CAPTURE (**wolf-lsp#7**), and
+`tests/client_recorded.rs` now holds the property over every transcript and
+every field with those two named in an exhaustive waiver.
+
+**s134's annotating rungs are now recorded at the pin.** The rows below said
+"branch-recorded" and predicted a header-only diff at the re-pin. That is what
+happened: all eighteen `annotate/*` files re-recorded with only `wolf_pin`
+changing, and the `initialize` answer still carries `signatureHelpProvider`,
+`semanticTokensProvider` and `inlayHintProvider`. The caveat is retired — the
+three rungs are pinned by transcripts recorded against a **tagged release
+build**, not a branch build.
 
 The six **captured** editor smokes were NOT re-captured — the same posture
 le01 recorded: they keep the pin they were recorded at (`70bdd35`; `67c977f`
-for fackr) and `lspconf replay` refuses them against the new pin until someone
-drives each real editor again (release-check 3b stays red on exactly this
-until then). Their rows below stay stamped with the pin their evidence was
-actually earned at.
+for fackr) and `lspconf replay` cannot compare them against the new pin until
+someone drives each real editor again. Their rows below stay stamped with the
+pin their evidence was actually earned at.
 
-**The acquire lane is dark for a third reason, and this one is OURS.**
-Measured 2026-09-02: wolf-lang's `v0.2.2` release is **published** — `gh
-release list` shows it as Latest, not Draft, and an unauthenticated request
-for its download URL answers `200`. wolf-lang#200 is resolved; the asset
-exists and anyone can fetch it. What does not match is the NAME.
-`.github/workflows/ci.yml`'s acquire step asks for
-`wolf-<shortsha>-linux-x86_64.tar.gz`, and `xtask dist` now publishes
-`wolf-<version>-<target-triple>.tar.gz` —
-`wolf-0.2.2-x86_64-unknown-linux-gnu.tar.gz`,
-`wolf-0.2.2-aarch64-apple-darwin.tar.gz`,
-`wolf-0.2.2-x86_64-pc-windows-msvc.tar.gz`. So `server-lane` is no longer
-dark for want of an artifact; it is dark for a **stale glob in this repo**,
-which is a bug here and not a fact about upstream (**wolf-lsp#3**). le05
-records it rather than rewriting a CI lane it cannot run — the rows below still say "dark", and
-now they say why truthfully. (One real upstream gap remains: there is no
-linux/aarch64 archive at this tag; wolf-lang trunk `4d9683d` repairs it for
-the next one.)
+What changed at le06 is how that is REPORTED, and it changed because the lane
+finally ran. A script-less transcript at another pin is a named `SKIP:` now,
+not a harness error: it cannot be re-recorded by design, so aborting the run
+on it meant none of the sixty-five transcripts that ARE at the pin were
+replayed at all. `release-check 3b` is consequently green, and `cargo xtask
+ci` has no red step for the first time. A SCRIPTED transcript at another pin
+is still exit 2 — that one means somebody forgot `lspconf rerecord`.
+
+**The acquire lane: upstream's half is closed and ours is fixed.** Measured
+2026-09-02, wolf-lang's `v0.2.3` release is Latest, not Draft, and carries
+**four** assets where `v0.2.2` carried three —
+`wolf-0.2.3-x86_64-unknown-linux-gnu.tar.gz`,
+`wolf-0.2.3-aarch64-unknown-linux-gnu.tar.gz`,
+`wolf-0.2.3-aarch64-apple-darwin.tar.gz` and
+`wolf-0.2.3-x86_64-pc-windows-msvc.tar.gz`. le05's last open upstream gap
+("no linux/aarch64 archive at this tag") is repaired. The remaining half was
+**wolf-lsp#3**, a stale glob in this repo: `.github/workflows/ci.yml` asked
+for `wolf-<shortsha>-linux-x86_64.tar.gz`, a name `xtask dist` stopped
+publishing. le06 fixes the step to ask for `wolf-<version>-<triple>.tar.gz`,
+derived from `PIN`, with `--strip-components=1` so the extracted binary lands
+where `lsp_harness::locate` looks, and the triple derived per host so all
+three tier-1 runners are covered.
+
+**MEASURED: THE LANE LIGHTS, ON ALL THREE TIER-1 OSes.** On this branch
+(run against head `8df0f03`), `server-lane` is green on ubuntu-latest,
+macos-latest AND windows-latest, with every step run and none skipped: acquire,
+`lspconf doctor`, conformance replay, one-truth, the five server-gated suites
+and the seeded fuzz. `server-lane` had never resolved a binary on any platform
+before this sprint. It found two bugs in its first three runs, both
+in code that had existed for sprints and had never executed anywhere but a
+developer's laptop. On **macos**: `semantics`'s 10 s slow-session waited for the
+open's diagnostics on a deadline that knew nothing about the slowness the test
+itself had injected, and `didOpen` pays that knob once per query in the analysis
+pipeline. On **windows**: the third slash a `file:`
+URI needs before a drive-letter path was lost in BOTH directions — expanding
+`$WS` produced `file://D:/a/…` where the server published `file:///D:/a/…` (59
+of 65 transcripts timed out), and eliding it produced `file:///$WS/…` where
+every recorded transcript says `file://$WS/…` (the same 59, mismatching once
+the timeouts cleared). All fixed on this branch, with unix unchanged —
+re-recording all 65 transcripts moves nothing but the date.
+
+**The rows below are still NOT re-stamped from it**, and the restraint is
+deliberate. D35 and release-check 3d want the three-OS claim made from CI, and
+a branch run is not the release commit's run; a T1 row also wants the CLIENT
+exercised, which `server-lane` does not do — it drives `lspconf`, not an
+editor. What this measurement earns is the retirement of "dark", not a new
+stamp. The row to re-stamp from is the merge commit's, and the six captured
+smokes still owe a re-capture before their own rows move.
 
 ## The three tiers
 
@@ -62,8 +103,8 @@ the next one.)
 
 | editor | tier | CI job | evidence | last verified |
 |---|---|---|---|---|
-| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (dark: acquire glob stale, see the header) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | 2026-08-10, pin `67c977f` |
-| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (dark: acquire glob stale, see the header) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | 2026-08-10, pin `70bdd35` |
+| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (glob fixed at le06 — see the header) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | 2026-08-10, pin `67c977f` |
+| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (glob fixed at le06 — see the header) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | 2026-08-10, pin `70bdd35` |
 | [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.4`) | 2026-08-10, pin `70bdd35`, NVIM v0.12.4 |
 | [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 14 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | 2026-08-10, pin `70bdd35`, VS Code 1.132.0 |
 | [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | 2026-08-10, pin `70bdd35`, helix 25.07.1 |
@@ -197,30 +238,32 @@ document to decide whether to answer, only to decide the SHAPE (`linkSupport`,
 | `textDocument/definition` | **served (s133)** — `LocationLink[]` to fackr, facsimile, nvim, vscode, emacs (they declare `linkSupport`), `Location[]` to helix | `transcripts/navigation/definition-<client>.jsonl` | `server-lane` |
 | `textDocument/references` | **served (s133)** — package-wide, `includeDeclaration` honored, (file, offset) order | `transcripts/navigation/references-<client>.jsonl` | `server-lane` |
 | `textDocument/rename` + `prepareRename` | **served (s133)** — `documentChanges` to fackr, facsimile, vscode, helix, emacs, the `changes` map to nvim; refusals by name as `-32803` (`docs/COMPAT.md`) | `transcripts/navigation/rename-<client>.jsonl` | `server-lane` |
-| `textDocument/signatureHelp` | **served (s134, branch-recorded — see below)** — the declared parameters with label offsets, the active parameter by commas, the return type, the `///` doc as markdown to fackr, nvim, vscode, helix, emacs (they list it) and plain text to facsimile (declares no `signatureHelp` at all and asks anyway — answered on merit) | `transcripts/annotate/signatureHelp-<client>.jsonl` | `server-lane` |
-| `textDocument/semanticTokens/full` + `/range` | **served (s134, branch-recorded)** — a closed legend of eight types (`namespace type parameter variable property enumMember function keyword`) and two modifiers (`declaration readonly`), columns in the negotiated encoding; no delta (`-32601` by name) | `transcripts/annotate/semanticTokens-<client>.jsonl` | `server-lane` |
-| `textDocument/inlayHint` | **served (s134, branch-recorded)** — inferred binder types, parameter names at resolved calls; each class off through `initializationOptions.inlayHints.{types,parameterNames}`; whether hints SHOW is the client's toggle (off by default in nvim and helix, a setting in vscode) | `transcripts/annotate/inlayHint-<client>.jsonl` | `server-lane` |
+| `textDocument/signatureHelp` | **served (s134, at the pin since le06)** — the declared parameters with label offsets, the active parameter by commas, the return type, the `///` doc as markdown to fackr, nvim, vscode, helix, emacs (they list it) and plain text to facsimile (declares no `signatureHelp` at all and asks anyway — answered on merit) | `transcripts/annotate/signatureHelp-<client>.jsonl` | `server-lane` |
+| `textDocument/semanticTokens/full` + `/range` | **served (s134, at the pin since le06)** — a closed legend of eight types (`namespace type parameter variable property enumMember function keyword`) and two modifiers (`declaration readonly`), columns in the negotiated encoding; no delta (`-32601` by name) | `transcripts/annotate/semanticTokens-<client>.jsonl` | `server-lane` |
+| `textDocument/inlayHint` | **served (s134, at the pin since le06)** — inferred binder types, parameter names at resolved calls; each class off through `initializationOptions.inlayHints.{types,parameterNames}`; whether hints SHOW is the client's toggle (off by default in nvim and helix, a setting in vscode) | `transcripts/annotate/inlayHint-<client>.jsonl` | `server-lane` |
 | semantic-token deltas, type definition, workspace symbols, range formatting, pull diagnostics | not served | `transcripts/lifecycle/unknown-method.jsonl` | `server-lane` |
 
-**The s134 rows are recorded against the wolf-lang `s134` BRANCH binary**
-(a stamped build printing the pinned string, via `WOLF_BIN`, the pin
-UNMOVED — the same posture le04 took for s133's navigation set). They
-become pinned evidence when le06 re-pins at the tag that carries s134,
-and the prediction is the same as last time: a header-only diff. Every
-one of the forty-seven existing transcripts re-recorded with exactly one
-changed line — the `initialize` answer, which now carries
-`signatureHelpProvider`, `semanticTokensProvider` and `inlayHintProvider`
-— and `lifecycle/unknown-method` was re-targeted at what is still absent
-(`typeDefinition`, `semanticTokens/full/delta`), because a probe of a
-served method proves nothing.
+**The s134 rows are pinned evidence as of le06.** They were recorded against
+the wolf-lang `s134` BRANCH binary (a stamped build printing the pinned
+string, via `WOLF_BIN`, the pin UNMOVED — the same posture le04 took for
+s133's navigation set), and they predicted a header-only diff at the re-pin.
+Measured: all eighteen `annotate/*` files re-recorded at `3befc3e` with
+exactly one changed line, and the `initialize` answer still carries
+`signatureHelpProvider`, `semanticTokensProvider` and `inlayHintProvider`.
+`lifecycle/unknown-method` stays targeted at what is still absent
+(`typeDefinition`, `semanticTokens/full/delta`), because a probe of a served
+method proves nothing. The same held for s133's eighteen `navigation/*` files
+at le05, which is now two consecutive branch-recorded sets that re-pinned
+without moving.
 
-The `server-lane` job is still dark in CI for the reason the header states
-(the acquire glob, now ours to fix). What CHANGED at le05 is the transcripts
-these rows cite: le04 recorded them locally against the wolf-lang `s133`
-**branch** binary (`WOLF_BIN`) with the pin unmoved, and predicted a
-header-only diff at the re-pin. Measured — all eighteen re-recorded with only
-`wolf_pin` moving, so every row above is now pinned by a transcript taken from
-a **tagged release build**. The branch-binary caveat is retired.
+**Where the annotations stop is the CLIENT, and that is stated rather than
+implied.** The vscode extension contributes `semanticTokenScopes` as of le06,
+so the server's eight token types and two modifiers fall back to scopes a
+theme already colours instead of to nothing. nvim's and helix's inlay hints
+stay **off by default** — that is each editor's own default
+(`vim.lsp.inlay_hint.enable()` is opt-in; helix's `inlay-hints` display
+setting is off), not a gap in this repository, and neither is turned on for a
+user here.
 
 **A client's own gate can hide a served row — and facsimile's no longer
 does.** le04 recorded that facsimile's static capability table (`caps(CAP_…)`)

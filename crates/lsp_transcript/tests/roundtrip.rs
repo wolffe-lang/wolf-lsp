@@ -70,17 +70,190 @@ fn two_machines_normalize_to_the_same_transcript() {
     let raw = fixture("diagnostics.jsonl");
     let unix_ws = "/home/dev/wolf-lsp/vendor/upstream/samples";
     let win_ws = r"C:\actions\wolf-lsp\vendor\upstream\samples";
+    let win_slashed = win_ws.replace('\\', "/");
 
     let mut a = jsonl::parse(&raw).unwrap();
     Normalizer::new(Some(unix_ws.into())).run(&mut a);
 
-    let mut b = jsonl::parse(&raw.replace(unix_ws, &win_ws.replace('\\', "\\\\"))).unwrap();
+    // The windows twin is built the way a windows RUN builds it, not by a
+    // blunt substring swap. A `file:` URI takes three slashes before an
+    // absolute path: the unix root supplies the third itself, the drive-letter
+    // root does not, and a naive replace produces `file://C:/…` — a URI in
+    // which `C:` is the AUTHORITY. Writing the malformed form here would make
+    // this test assert that two machines agree about a string neither of them
+    // emits. le06 found the real shape on the first windows CI run.
+    let win_raw = raw
+        .replace(
+            &format!("file://{unix_ws}"),
+            &format!("file:///{win_slashed}"),
+        )
+        .replace(unix_ws, &win_ws.replace('\\', "\\\\"));
+    let mut b = jsonl::parse(&win_raw).unwrap();
     Normalizer::new(Some(win_ws.into())).run(&mut b);
 
     assert_eq!(jsonl::to_string(&a), jsonl::to_string(&b));
     assert!(
         jsonl::to_string(&a).contains("$WS"),
         "the workspace was never elided"
+    );
+}
+
+/// `WorkspaceEdit.changes` is the one LSP map whose KEYS are data.
+///
+/// A `rename` (or a `codeAction` edit) answered to a client that does not
+/// declare `workspaceEdit.documentChanges` — nvim and helix, of the maintained
+/// profiles — puts its document URIs in key position and nowhere else. The
+/// `paths` stage walked values only, so those URIs shipped **absolute** in six
+/// committed transcripts, and any checkout with a different name failed to
+/// replay them. le06.
+#[test]
+fn a_workspace_edit_changes_map_has_its_keys_elided_too() {
+    let repo = std::path::PathBuf::from("/home/dev/wolf-lsp");
+    let workspace = repo.join("fixtures");
+
+    let mut t = Transcript {
+        header: Header {
+            transcript: lsp_transcript::FORMAT_VERSION,
+            name: "encoding/astral-navigate-utf8".into(),
+            wolf_pin: "0".repeat(40),
+            profile: "utf8-first".into(),
+            workspace: "fixtures".into(),
+            recorded: "2026-09-02".into(),
+        },
+        records: vec![Record {
+            seq: 1,
+            dir: Dir::S2c,
+            kind: Kind::Response,
+            id: Some(Value::from(1)),
+            method: None,
+            params: None,
+            result: Some(serde_json::json!({
+                "changes": {
+                    "file:///home/dev/wolf-lsp/fixtures/astral.lu": [{ "newText": "base" }],
+                    "file:///home/dev/wolf-lsp/vendor/upstream/samples/hello.lu": [],
+                }
+            })),
+            error: None,
+            matcher: None,
+            normalize: Vec::new(),
+            t_us: None,
+        }],
+    };
+
+    Normalizer::new(Some(workspace))
+        .with_repo_root(repo)
+        .run(&mut t);
+
+    let changes = t.records[0].result.clone().expect("result")["changes"].clone();
+    assert!(
+        changes.get("file://$WS/astral.lu").is_some(),
+        "the workspace key was not elided: {changes}"
+    );
+    // Two distinct keys stay two: only a prefix is replaced, so nothing can
+    // collide and no edit list can be lost.
+    assert!(
+        changes
+            .get("file://$REPO/vendor/upstream/samples/hello.lu")
+            .is_some(),
+        "the second key was lost or mangled: {changes}"
+    );
+    assert_eq!(changes.as_object().map(serde_json::Map::len), Some(2));
+
+    let text = jsonl::to_string(&t);
+    assert!(
+        !text.contains("/home/"),
+        "an absolute path survived in a key:\n{text}"
+    );
+}
+
+/// The tilde form is a real spelling, not a courtesy.
+///
+/// eglot names its workspace folder through emacs's `abbreviate-file-name`, so
+/// `transcripts/emacs/smoke.jsonl` carries `"~/…/wolf-lsp/"` — a home directory
+/// in a committed artifact that absolute-prefix matching cannot see, because
+/// the absolute prefix is not in the string.
+#[test]
+fn a_tilde_abbreviated_root_is_elided_too() {
+    let Ok(home) = std::env::var("HOME") else {
+        return; // no HOME: the stage elides no tilde form, by design.
+    };
+    let home = home.trim_end_matches('/').to_string();
+    let repo = std::path::PathBuf::from(format!("{home}/wolf-lsp"));
+
+    let mut t = Transcript {
+        header: Header {
+            transcript: lsp_transcript::FORMAT_VERSION,
+            name: "emacs/smoke".into(),
+            wolf_pin: "0".repeat(40),
+            profile: "emacs".into(),
+            workspace: "vendor/upstream/samples".into(),
+            recorded: "2026-09-02".into(),
+        },
+        records: vec![Record {
+            seq: 1,
+            dir: Dir::C2s,
+            kind: Kind::Request,
+            id: Some(Value::from(1)),
+            method: Some("initialize".into()),
+            params: Some(serde_json::json!({
+                "workspaceFolders": [{ "uri": format!("file://{repo}/", repo = repo.display()),
+                                       "name": "~/wolf-lsp/" }],
+            })),
+            error: None,
+            result: None,
+            matcher: None,
+            normalize: Vec::new(),
+            t_us: None,
+        }],
+    };
+
+    Normalizer::new(Some(repo.join("vendor/upstream/samples")))
+        .with_repo_root(repo)
+        .run(&mut t);
+
+    let params = t.records[0].params.clone().expect("params");
+    assert_eq!(params["workspaceFolders"][0]["name"], "$REPO/");
+    assert_eq!(params["workspaceFolders"][0]["uri"], "file://$REPO/");
+}
+
+/// A windows URI elides to the SAME placeholder shape a unix one does.
+///
+/// `file:` needs three slashes before an absolute path. On unix the workspace
+/// root supplies the third itself (`/home/dev/…`), so the whole library is
+/// written `file://$WS/…`. A windows root is `D:/a/…` with no leading slash,
+/// so the live URI is `file:///D:/a/…` and eliding only the plain form leaves
+/// `file:///$WS/…` — one slash more than every recorded transcript, and a
+/// mismatch on the URI of every `publishDiagnostics`. le06, measured on the
+/// first windows `server-lane` run that ever reached a comparison.
+#[test]
+fn a_windows_drive_uri_elides_to_the_same_placeholder_as_a_unix_one() {
+    let unix = jsonl::parse(&format!(
+        "{}\n{}\n",
+        r#"{"name":"t/uri","profile":"minimal","recorded":"2026-09-02","transcript":1,"wolf_pin":"0000000000000000000000000000000000000000","workspace":"vendor/upstream/samples"}"#,
+        r#"{"dir":"s2c","kind":"notification","method":"textDocument/publishDiagnostics","params":{"uri":"file:///home/dev/wolf-lsp/vendor/upstream/samples/hello.lu","diagnostics":[]},"seq":1}"#
+    ))
+    .unwrap();
+    let win = jsonl::parse(&format!(
+        "{}\n{}\n",
+        r#"{"name":"t/uri","profile":"minimal","recorded":"2026-09-02","transcript":1,"wolf_pin":"0000000000000000000000000000000000000000","workspace":"vendor/upstream/samples"}"#,
+        r#"{"dir":"s2c","kind":"notification","method":"textDocument/publishDiagnostics","params":{"uri":"file:///D:/a/wolf-lsp/wolf-lsp/vendor/upstream/samples/hello.lu","diagnostics":[]},"seq":1}"#
+    ))
+    .unwrap();
+
+    let mut a = unix;
+    Normalizer::new(Some("/home/dev/wolf-lsp/vendor/upstream/samples".into())).run(&mut a);
+    let mut b = win;
+    Normalizer::new(Some(
+        r"D:\a\wolf-lsp\wolf-lsp\vendor\upstream\samples".into(),
+    ))
+    .run(&mut b);
+
+    let uri_a = a.records[0].params.clone().unwrap()["uri"].clone();
+    let uri_b = b.records[0].params.clone().unwrap()["uri"].clone();
+    assert_eq!(uri_a, serde_json::json!("file://$WS/hello.lu"));
+    assert_eq!(
+        uri_b, uri_a,
+        "a windows recording and a unix one must normalize to one string"
     );
 }
 

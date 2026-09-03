@@ -30,6 +30,38 @@ fn slow_session(
         &[(SLOW.to_string(), ms.to_string())],
     )
     .expect("spawn");
+    // THE BUDGET HAS TO KNOW ABOUT THE SLOWNESS THIS SESSION ASKED FOR, AND
+    // THE SETUP WAIT PAYS IT MORE THAN ONCE.
+    //
+    // `DEFAULT_TIMEOUT` is 20 s and its comment says what it is for: a cold,
+    // non-resident compiler answering its first query, report 09's 5 s budget
+    // with headroom. This session then injects `ms` at every query
+    // checkpoint — including the ones behind `didOpen` -> the first
+    // `publishDiagnostics`, which is an analysis pipeline and not one query.
+    // So the setup wait below is racing a fixed deadline against an unknown
+    // MULTIPLE of the knob, and it loses on a host with fewer cores than the
+    // suite has tests.
+    //
+    // Six is headroom, not a measured count. How many queries an open runs is
+    // the compiler's business and this test asserts nothing about it; what the
+    // number has to be is "large enough that a slow host finishes and small
+    // enough that a hung server still fails". At `ms = 10000` that is 80 s.
+    //
+    // Measured, and findable only once the lane lit: `server-lane` had never
+    // acquired a binary until le06 fixed the acquire step (#3), so this suite
+    // had never run anywhere but a developer's laptop. Its first two
+    // macos-latest runs failed here — at 20 s, then at 30 s after the budget
+    // first learned about `ms` — with
+    // `Timeout { awaited: "a textDocument/publishDiagnostics notification for
+    // …/hello.lu", seen: ["response id=1 …"] }`, while the 800 ms and 1500 ms
+    // sessions in this same file passed and ubuntu passed all three. Nothing
+    // was wrong with the server: a 3-core runner running eleven of these in
+    // parallel simply takes longer than a deadline that had never met one.
+    let dawdle = Duration::from_millis(
+        ms.parse::<u64>()
+            .expect("the slow knob is a millisecond count"),
+    );
+    session.set_timeout(lsp_harness::session::DEFAULT_TIMEOUT + 6 * dawdle);
     session
         .initialize(&profile.capabilities)
         .expect("initialize");
@@ -49,6 +81,12 @@ fn slow_session(
             Instant::now(),
         )
         .expect("publish");
+    // Setup done. Hand the caller back the ordinary budget plus one dawdle —
+    // every assertion past this point is about ONE query, and giving them the
+    // setup's headroom would let a server that answers slowly look prompt.
+    // (The promptness claim has its own `took < 5 s` assertion regardless;
+    // this keeps the deadline honest as well.)
+    session.set_timeout(lsp_harness::session::DEFAULT_TIMEOUT + dawdle);
     (session, uri)
 }
 

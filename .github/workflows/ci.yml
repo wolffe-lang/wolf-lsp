@@ -391,16 +391,32 @@ jobs:
         run: rustup show active-toolchain
 
       # ACQUISITION. The design (ls00 §3) is: download the tier-1 artifact
-      # wolf-lang's `xtask dist` publishes, keyed by the sha in PIN, into
-      # `.wolf-bin/`. That artifact still does not exist — wolf-lang has no tags
-      # and no releases — so this step honestly reports SERVER UNAVAILABLE
-      # instead of pretending.
+      # wolf-lang's `xtask dist` publishes, keyed by PIN, into `.wolf-bin/`.
+      #
+      # THE ASSET NAME, AND WHY THIS STEP WAS WRONG FOR THREE PINS (wolf-lsp#3).
+      # It asked for `wolf-<shortsha>-linux-x86_64.tar.gz`. `xtask dist` has
+      # never published that name at any tag this repo has pinned: it writes
+      # `wolf-<version>-<target-triple>.tar.gz`, keyed by the RELEASE VERSION
+      # and the rust target triple, not by a sha and not by a hand-written
+      # platform word. So every "SERVER UNAVAILABLE: releases exist but none
+      # carries an asset at pin …" this lane has ever printed was this file
+      # being wrong about a name, and the message blamed upstream for it.
+      # Both fields now come out of PIN, which is the file that knows.
+      #
+      # TWO SMALLER THINGS THAT WOULD HAVE FAILED RIGHT AFTER THE DOWNLOAD.
+      # The archive is a DIRECTORY (`tar -C target/dist -czf … <name>`), so a
+      # plain extract lands the binary at `.wolf-bin/wolf-<v>-<triple>/wolf`
+      # and `lsp_harness::locate` looks for `.wolf-bin/wolf` —
+      # `--strip-components=1` is what makes those the same path, and it also
+      # puts the runtime lib and the importer worker BESIDE the binary, which
+      # the archive requires. And the lane runs on three OSes while the old
+      # step named linux in the pattern, so two thirds of the matrix could
+      # only ever report SERVER UNAVAILABLE. v0.2.3 publishes an asset for
+      # every runner this matrix uses, so the triple is derived per host.
       #
       # NOTE ON WHAT CHANGED AT ls01. `wolf lsp` now EXISTS (wolf-lang s52), and
       # `serves_lsp = true` in PIN. Every server-dependent target in this repo
-      # is live and green *locally*. What is still missing is the acquisition
-      # path, not the server — so this lane is dark for a narrower reason than
-      # before, and the skip text says which.
+      # is live and green *locally*.
       #
       # What this step must NEVER become: a `cargo build` of the compiler. The
       # interpreter track paid for that lesson (private submodule, no deploy
@@ -415,6 +431,28 @@ jobs:
           pin=$(grep '^commit' vendor/upstream/PIN | cut -d= -f2 | tr -d ' "')
           echo "pin=$pin" >> "$GITHUB_OUTPUT"
           mkdir -p .wolf-bin
+          # The version out of PIN's `version` line — `wolf 0.2.3 (wolfgang,
+          # pin 3befc3e)` -> `0.2.3`. Same field `xtask compat` reads, so the
+          # asset name and the version doctor enforces cannot drift apart.
+          version=$(grep '^version' vendor/upstream/PIN \
+            | sed -E 's/.*"wolf ([^ ]+).*/\1/')
+          # The rust target triple for THIS runner. v0.2.3 publishes one asset
+          # for each of the four, so no host in this matrix is nameless.
+          case "${RUNNER_OS}-${RUNNER_ARCH}" in
+            Linux-X64)    triple=x86_64-unknown-linux-gnu ;;
+            Linux-ARM64)  triple=aarch64-unknown-linux-gnu ;;
+            macOS-ARM64)  triple=aarch64-apple-darwin ;;
+            macOS-X64)    triple=x86_64-apple-darwin ;;
+            Windows-X64)  triple=x86_64-pc-windows-msvc ;;
+            *)            triple="" ;;
+          esac
+          if [ -z "$triple" ]; then
+            echo "SERVER UNAVAILABLE: no target triple mapped for ${RUNNER_OS}-${RUNNER_ARCH}"
+            echo "server=none" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          asset="wolf-$version-$triple.tar.gz"
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
           # Capture, then inspect. Never pipe a program's stdout straight into
           # `grep -q`: grep exits at the first match and closes the pipe, the
           # producer's exit-time flush hits EPIPE, and Rust's default
@@ -425,17 +463,21 @@ jobs:
           n_rel=$(gh release list --repo wolffe-lang/wolf-lang --limit 1 \
             --json tagName --jq 'length' 2>/dev/null || echo 0)
           if [ "$n_rel" -gt 0 ]; then
-            # A release exists — try the asset at OUR pin. Assets are named
-            # wolf-<shortsha>-linux-x86_64.tar.gz per xtask dist; the release
-            # may be at a different sha than this repo's pin, in which case
-            # the lane stays dark honestly (ls-next owns pin-matched assets).
-            short=$(echo "$pin" | cut -c1-7)
+            # A release exists — try the asset for OUR pinned version. A
+            # release at a different version than this repo's pin carries no
+            # matching asset, and the lane stays dark honestly.
             if gh release download --repo wolffe-lang/wolf-lang \
-                 --pattern "wolf-$short-linux-x86_64.tar.gz" -D .wolf-bin 2>/dev/null; then
-              tar -xzf .wolf-bin/wolf-$short-linux-x86_64.tar.gz -C .wolf-bin
+                 --pattern "$asset" -D .wolf-bin 2>/dev/null; then
+              # --strip-components=1: the archive is a directory named for the
+              # version and the triple, and `lsp_harness::locate` looks for
+              # `.wolf-bin/wolf`. Stripping also puts the runtime lib and the
+              # importer worker beside the binary, which it needs to run.
+              tar -xzf ".wolf-bin/$asset" -C .wolf-bin --strip-components=1
               echo "server=downloaded" >> "$GITHUB_OUTPUT"
             else
-              echo "SERVER UNAVAILABLE: releases exist but none carries an asset at pin $short"
+              echo "SERVER UNAVAILABLE: releases exist but none carries $asset"
+              echo "  (this repo pins wolf $version at $pin; the asset name is"
+              echo "   xtask dist's, wolf-<version>-<triple>.tar.gz)"
               echo "server=none" >> "$GITHUB_OUTPUT"
             fi
           else

@@ -166,10 +166,29 @@ caller gets `DEFAULT_TIMEOUT + ms` back, because every assertion past
 the setup is about one query and handing it the setup's headroom would
 let a slow server look prompt. Six is headroom, not a measured count.
 
-This is what a dark lane costs. The bug was reachable for as long as the
-suite has existed, it is a plain arithmetic error in a deadline, and it
-could not be seen from one 18-core laptop — it needs a 3-core host
-running eleven of these in parallel.
+Then windows acquired a binary too, `doctor` said READY, and **59 of the
+65 transcripts ERRORed** — every one of them `timed out waiting for a
+textDocument/publishDiagnostics notification for file://D:/a/…`, with an
+empty server stderr. The two slashes are the whole bug. A transcript
+records document URIs as `file://$WS/…`, which is correct on unix by
+accident of SHAPE: the workspace path there starts with `/`, so
+`file://` + `/Users/…` is the three-slash form a `file:` URI requires and
+eliding the workspace to `$WS` takes the slash with it. On Windows the
+workspace is `D:/a/…`, so substitution yields `file://D:/a/…`, in which
+`D:` parses as the URI's AUTHORITY. The server normalized what it was
+sent and published `file:///D:/a/…`; the harness waited for the string it
+had built. `session::file_uri` has always known this — its comment says
+so — but replay and drive rebuild URIs by substitution rather than by
+calling it, so the knowledge never reached them. `expand_workspace` puts
+it in one place; on unix the two forms are the same string and nothing
+moves.
+
+This is what a dark lane costs. Both bugs were reachable for as long as
+the code has existed. One is a plain arithmetic error in a deadline that
+needs a 3-core host to see; the other is a missing slash that needs a
+Windows host. Neither is visible from one 18-core laptop, and CI could
+not see either until the acquire step stopped asking for a filename
+nobody publishes.
 
 **Gates.** `cargo xtask ci` is green on **all 16 checked steps** — the
 first time this repository has had no red one; seven stay PENDING on a

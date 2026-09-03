@@ -68,12 +68,15 @@ three tier-1 runners are covered.
 **MEASURED: THE LANE LIGHTS.** On this branch the acquire step and `lspconf
 doctor` PASSED — the first time `server-lane` has ever resolved a binary — and
 on ubuntu the whole lane went green: replay, one-truth, the five server-gated
-suites and the seeded fuzz. It found a bug on its first macos run, in a test
-that had existed for sprints and had never executed anywhere but a developer's
-laptop: `semantics`'s 10 s slow-session waited for the open's diagnostics on a
-deadline that knew nothing about the slowness the test itself had injected, and
-`didOpen` pays that knob once per query in the analysis pipeline. Fixed on this
-branch.
+suites and the seeded fuzz. It found two bugs in its first three runs, both
+in code that had existed for sprints and had never executed anywhere but a
+developer's laptop. On **macos**: `semantics`'s 10 s slow-session waited for the
+open's diagnostics on a deadline that knew nothing about the slowness the test
+itself had injected, and `didOpen` pays that knob once per query in the analysis
+pipeline. On **windows**: `$WS` expanded inside `file://$WS/…` dropped the third
+slash a `file:` URI needs on a drive-letter path, so 59 of 65 transcripts waited
+out their timeout against `file://D:/a/…` while the server published
+`file:///D:/a/…`. Both fixed on this branch.
 
 The rows below are still NOT re-stamped from it. A T1 row wants the whole lane
 green on all three tier-1 OSes (D35, release-check 3d), and that is a

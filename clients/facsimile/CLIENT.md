@@ -1,8 +1,18 @@
 # What facsimile's LSP client actually is
 
-Read from the source at `a121ab3` (trunk, v0.35.0 — re-read at le05; first
-read at `1242ffa`), not from `docs/LSP_GUIDE.md`, which documents gutter
-markers that are commented out. Every bullet here is either an ls01 transcript
+Read from the source at `a121ab3` (trunk, v0.35.0 — re-read at le05 and at
+**le07**, which found trunk unmoved: `a121ab3` is still the tip; first read at
+`1242ffa`), not from `docs/LSP_GUIDE.md`, which documents gutter markers that
+are commented out.
+
+**A version-site drift worth reporting back, found at le07's re-read.** The
+commit `a121ab3` is subject-lined "Bump to 0.35.0" and touches exactly two
+files — `VERSION` and `src/version_module.f90` (`VERSION = '0.35.0'`). It does
+NOT touch `fpm.toml`, which still declares `version = "0.34.0"`. So facsimile
+has three version sites and a bump that moves two of them, and a package built
+by `fpm` reports a different version than the editor prints. This mirror keeps
+citing v0.35.0 because that is what the binary says, and the discrepancy is
+reported upstream rather than papered over here. Every bullet here is either an ls01 transcript
 case or a stated server constraint, and **none of them becomes a workaround
 inside `wolf lsp`**.
 
@@ -185,8 +195,11 @@ diagnostics (the code is commented out, though `docs/LSP_GUIDE.md` claims
 otherwise), `$/cancelRequest` (absent from `src/`), `shutdown`/`exit` (neither
 string appears in `src/lsp/`), `\uXXXX` decoding in `json_module.f90`, and
 server→client request handling (`handle_request` is still the empty stub —
-now at `lsp_server_manager_module.f90:853`, not `:847`). `didChange` still
-sends `"version": 1` on every notification. None of these moved at PR #5; the
+re-read at le07 and still a `TODO: Handle server requests` with a `.false.`
+guard to silence the unused arguments, at `lsp_server_manager_module.f90:853`).
+`didChange` still sends `"version": 1` on every notification — see the
+re-recorded bullet in `README.md`: an optional `version` argument and a live
+counter both exist now, and neither of the two call sites connects them. None of these moved at PR #5; the
 things that DID move are the three struck rows above.
 
 **The two response-shape traps are closed.** They were: completion had to be a

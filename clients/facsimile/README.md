@@ -12,7 +12,7 @@ blocks on `workspace/configuration` hangs this editor forever, silently.
 Discovering that against a real client, early, is worth more than any amount of
 protocol reading.
 
-- Upstream: `FortranGoingOnForty/facsimile`, read at `a121ab3` (trunk, v0.35.0) — re-read at le05; the patch series' base was `1242ffa` (v0.32.8)
+- Upstream: `FortranGoingOnForty/facsimile`, read at `a121ab3` (trunk, v0.35.0) — re-read at le05 and again at **le07**, where trunk had not moved: `a121ab3` is still the tip. The patch series' base was `1242ffa` (v0.32.8), **38** commits back (`git rev-list --count 1242ffa..a121ab3`)
 - Honest characterization: [`CLIENT.md`](CLIENT.md)
 - Capability profile: [`profiles/facsimile.json`](../../profiles/facsimile.json)
 - Recorded session: [`transcripts/facsimile/smoke.jsonl`](../../transcripts/facsimile/smoke.jsonl)
@@ -93,7 +93,16 @@ The short version, none of which is worked around in this repo:
 - **No `shutdown`/`exit`.** SIGTERM, then SIGKILL 100 ms later.
 - **No `didClose`.** `notify_file_closed` exists, is exported, is imported by
   two modules — and has zero call sites. Documents accumulate for the session.
-- **`didChange` version is hardcoded to 1**, so it carries no ordering signal.
+- **`didChange` version is still 1 on the wire**, so it carries no ordering
+  signal — but the shape of that changed at `a121ab3` and le07 re-recorded it.
+  `notify_file_changed` now takes an OPTIONAL `version` argument and defaults
+  `doc_version = 1` only when it is absent, and `document_sync_module` keeps a
+  real counter beside it (`sync%version = sync%version + 1`, incremented on
+  every flush). **Neither of the two call sites passes it** —
+  `document_sync_module.f90:103` increments the counter on the line above and
+  then omits the argument, and `command_handler_module.f90:12612` never had
+  one. So the plumbing to fix this exists and is one argument away at each
+  site, which is a better bug report than "hardcoded" was.
 - **O(n²) JSON**, so large responses visibly stall the editor.
 - **No gutter markers.** Diagnostics render in a panel; the gutter code is
   commented out, and `docs/LSP_GUIDE.md` documents behaviour that does not

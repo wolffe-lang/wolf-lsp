@@ -9,6 +9,12 @@
       ]
     },
     "textDocument": {
+      "$streamingDiagnostics": {
+        "dynamicRegistration": false
+      },
+      "callHierarchy": {
+        "dynamicRegistration": false
+      },
       "codeAction": {
         "codeActionLiteralSupport": {
           "codeActionKind": {
@@ -36,6 +42,10 @@
       "completion": {
         "completionItem": {
           "deprecatedSupport": true,
+          "documentationFormat": [
+            "plaintext"
+          ],
+          "insertReplaceSupport": true,
           "resolveSupport": {
             "properties": [
               "documentation",
@@ -60,6 +70,9 @@
       "definition": {
         "dynamicRegistration": false,
         "linkSupport": true
+      },
+      "diagnostic": {
+        "dynamicRegistration": false
       },
       "documentHighlight": {
         "dynamicRegistration": false
@@ -122,7 +135,8 @@
             1,
             2
           ]
-        }
+        },
+        "versionSupport": true
       },
       "rangeFormatting": {
         "dynamicRegistration": false
@@ -131,7 +145,58 @@
         "dynamicRegistration": false
       },
       "rename": {
-        "dynamicRegistration": false
+        "dynamicRegistration": false,
+        "prepareSupport": true
+      },
+      "semanticTokens": {
+        "dynamicRegistration": false,
+        "formats": [
+          "relative"
+        ],
+        "multilineTokenSupport": true,
+        "overlappingTokenSupport": true,
+        "requests": {
+          "full": {
+            "delta": true
+          }
+        },
+        "tokenModifiers": [
+          "declaration",
+          "definition",
+          "readonly",
+          "static",
+          "deprecated",
+          "abstract",
+          "async",
+          "modification",
+          "documentation",
+          "defaultLibrary"
+        ],
+        "tokenTypes": [
+          "namespace",
+          "type",
+          "class",
+          "enum",
+          "interface",
+          "struct",
+          "typeParameter",
+          "parameter",
+          "variable",
+          "property",
+          "enumMember",
+          "event",
+          "function",
+          "method",
+          "macro",
+          "keyword",
+          "modifier",
+          "comment",
+          "string",
+          "number",
+          "regexp",
+          "operator",
+          "decorator"
+        ]
       },
       "signatureHelp": {
         "dynamicRegistration": false,
@@ -154,11 +219,19 @@
       "typeDefinition": {
         "dynamicRegistration": false,
         "linkSupport": true
+      },
+      "typeHierarchy": {
+        "dynamicRegistration": false
       }
     },
     "window": {
       "showDocument": {
         "support": true
+      },
+      "showMessage": {
+        "messageActionItem": {
+          "additionalPropertiesSupport": true
+        }
       },
       "workDoneProgress": true
     },
@@ -166,16 +239,26 @@
       "applyEdit": true,
       "configuration": true,
       "didChangeWatchedFiles": {
-        "dynamicRegistration": true
+        "dynamicRegistration": true,
+        "relativePatternSupport": true
       },
       "executeCommand": {
         "dynamicRegistration": false
+      },
+      "semanticTokens": {
+        "refreshSupport": true
       },
       "symbol": {
         "dynamicRegistration": false
       },
       "workspaceEdit": {
-        "documentChanges": true
+        "documentChanges": true,
+        "failureHandling": "abort",
+        "resourceOperations": [
+          "create",
+          "delete",
+          "rename"
+        ]
       },
       "workspaceFolders": true
     }
@@ -184,12 +267,12 @@
   "profile": "emacs",
   "provenance": {
     "client": "emacs",
-    "commit": "30.2",
+    "commit": "31.1",
     "kind": "derived",
-    "read_on": "2026-08-10",
+    "read_on": "2026-09-03",
     "repository": "https://git.savannah.gnu.org/git/emacs.git",
     "source": [
-      "GNU Emacs 30.2 with bundled eglot 1.17.30 (Arch Linux extra/emacs-nox 30.2-3); lisp/progmodes/eglot.el:eglot-client-capabilities",
+      "lisp/progmodes/eglot.el:eglot-client-capabilities (GNU Emacs 31.1, eglot 1.24.31 built in)",
       "transcripts/emacs/smoke.jsonl"
     ]
   }

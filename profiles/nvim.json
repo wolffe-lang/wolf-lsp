@@ -4,10 +4,10 @@
     "kind": "derived",
     "client": "nvim",
     "repository": "https://github.com/neovim/neovim",
-    "commit": "v0.12.4",
-    "read_on": "2026-08-10",
+    "commit": "v0.12.5",
+    "read_on": "2026-09-03",
     "source": [
-      "runtime/lua/vim/lsp/protocol.lua:make_client_capabilities (NVIM v0.12.4, RelWithDebInfo, LuaJIT 2.1.1785192264)",
+      "runtime/lua/vim/lsp/protocol.lua:make_client_capabilities (NVIM v0.12.5, Release, LuaJIT 2.1.1787165859)",
       "transcripts/nvim/smoke.jsonl"
     ]
   },
@@ -225,8 +225,10 @@
           "properties": [
             "textEdits",
             "tooltip",
-            "location",
-            "command"
+            "command",
+            "label.location",
+            "label.tooltip",
+            "label.command"
           ]
         }
       },
@@ -365,7 +367,7 @@
         "dynamicRegistration": false
       },
       "didChangeWatchedFiles": {
-        "dynamicRegistration": false,
+        "dynamicRegistration": true,
         "relativePatternSupport": true
       },
       "fileOperations": {

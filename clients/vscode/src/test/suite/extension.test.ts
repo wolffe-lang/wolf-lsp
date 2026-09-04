@@ -66,7 +66,17 @@ async function waitFor(what: string, predicate: () => boolean, ms = 20_000): Pro
 function server(): { ok: true; version: string } | { ok: false; reason: string } {
 	let version: string;
 	try {
-		version = execFileSync('wolf', ['--version'], { encoding: 'utf8', timeout: 5000 }).trim();
+		// **The FIRST LINE only.** `wolf --version` prints two: the version
+		// and pin clause, then a line naming the lupin pairing
+		// ("paired with lupin 0.1.24 (reference interpreter), pin 3befc3e").
+		// `vendor/upstream/PIN` records the first line by definition — it says
+		// so in its own comment — so comparing the whole output can never
+		// match, and this lane skipped on EVERY pin from the day the second
+		// line was added rather than on a stale binary. Found at le07, where
+		// the skip reason printed two strings whose first lines were equal.
+		version = execFileSync('wolf', ['--version'], { encoding: 'utf8', timeout: 5000 })
+			.split('\n')[0]
+			.trim();
 	} catch {
 		return { ok: false, reason: 'no `wolf` on PATH in the test window' };
 	}

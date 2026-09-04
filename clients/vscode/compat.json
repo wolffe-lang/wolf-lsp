@@ -1,21 +1,21 @@
 {
   "client": "wolf (VS Code extension)",
   "client_version": "0.0.1",
-  "artifact": "vsix — clients/vscode/, packaged by @vscode/vsce",
+  "artifact": "vsix \u2014 clients/vscode/, packaged by @vscode/vsce",
   "wolf": {
-    "min": "0.2.3",
-    "max_tested": "0.2.3",
-    "pin": "3befc3e85ca1f2c602f603f6f610d518c44530fd",
-    "pin_version_string": "wolf 0.2.3 (wolfgang, pin 3befc3e)"
+    "min": "0.2.4",
+    "max_tested": "0.2.4",
+    "pin": "982f857885b991e686c6b045de213d10cab013c1",
+    "pin_version_string": "wolf 0.2.4 (wolfgang, pin 982f857)"
   },
   "verified": {
-    "date": "2026-09-02",
+    "date": "2026-09-03",
     "host": "local (macos arm64)",
     "evidence": [
-      "transcripts/vscode/smoke.jsonl",
+      "transcripts/vscode/smoke.jsonl (still at 70bdd35 \u2014 the extension test runner cannot launch a current VS Code on macOS; see clients/vscode/src/test/runTest.ts and docs/MATRIX.md)",
       "profiles/vscode.json",
-      "clients/vscode/src/test/suite/extension.test.ts",
-      "lspconf replay + onetruth under this client's derived profile at pin 3befc3e (v0.2.3), 2026-09-02 (the captured smoke keeps its recorded pin)"
+      "clients/vscode/src/test/suite/extension.test.ts (the no-toolchain half runs; the server half is what the runner blocks)",
+      "lspconf replay + onetruth under this client's derived profile at pin 982f857 (v0.2.4), 2026-09-03 (the captured smoke keeps its recorded pin)"
     ]
   },
   "warning_surface": "one notification at activation, plus `Wolf: Show Version`"

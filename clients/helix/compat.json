@@ -1,22 +1,22 @@
 {
   "client": "helix config fragment",
   "client_version": "0.0.1",
-  "artifact": "TOML fragment — clients/helix/languages.toml, copied into the user's config",
+  "artifact": "TOML fragment \u2014 clients/helix/languages.toml, copied into the user's config",
   "wolf": {
-    "min": "0.2.3",
-    "max_tested": "0.2.3",
-    "pin": "3befc3e85ca1f2c602f603f6f610d518c44530fd",
-    "pin_version_string": "wolf 0.2.3 (wolfgang, pin 3befc3e)"
+    "min": "0.2.4",
+    "max_tested": "0.2.4",
+    "pin": "982f857885b991e686c6b045de213d10cab013c1",
+    "pin_version_string": "wolf 0.2.4 (wolfgang, pin 982f857)"
   },
   "verified": {
-    "date": "2026-09-02",
+    "date": "2026-09-03",
     "host": "local (macos arm64)",
     "evidence": [
-      "transcripts/helix/smoke.jsonl",
-      "profiles/helix.json",
+      "transcripts/helix/smoke.jsonl (RE-CAPTURED at this pin, le07: helix 25.07.1 driven through a pty, every rung of the recorded session reproduced)",
+      "profiles/helix.json (re-read at 25.07.1 \u2014 byte-identical to the capture, no re-derivation needed)",
       "cargo xtask helix-health",
-      "lspconf replay + onetruth under this client's derived profile at pin 3befc3e (v0.2.3), 2026-09-02 (the captured smoke keeps its recorded pin)"
+      "lspconf replay + onetruth under this client's derived profile at pin 982f857 (v0.2.4), 2026-09-03"
     ]
   },
-  "warning_surface": "none — a TOML fragment cannot run code; docs/COMPAT.md is the whole statement"
+  "warning_surface": "none \u2014 a TOML fragment cannot run code; docs/COMPAT.md is the whole statement"
 }

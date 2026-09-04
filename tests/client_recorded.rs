@@ -159,27 +159,32 @@ fn no_committed_transcript_carries_an_absolute_path() {
         "~/",
     ];
 
-    /// THE WAIVER, AND IT IS EXHAUSTIVE IN BOTH DIRECTIONS.
+    /// THE WAIVER IS EMPTY, AND wolf-lsp#7 IS CLOSED (le07).
     ///
-    /// Two client-recorded sessions still carry a path, and neither is a
-    /// normalizer gap: both were captured BEFORE the fix, by a real editor,
-    /// and a script-less transcript cannot be re-recorded — the whole claim of
-    /// the file is that no script decided what the client sent. Clearing them
-    /// means running `lspconf capture` against that editor again:
+    /// le06 waived two client-recorded sessions that still carried a path,
+    /// neither a normalizer gap: both were captured BEFORE the key-walking
+    /// fix, by a real editor, and a script-less transcript cannot be
+    /// re-recorded — the whole claim of the file is that no script decided
+    /// what the client sent. Clearing them meant running `lspconf capture`
+    /// against that editor again, and le06 could not:
     ///
     ///   * `vscode/smoke.jsonl` seq 39 — a `codeAction` `edit.changes` key,
     ///     the same class the normalizer now walks, captured on a LINUX box
-    ///     (`file:///home/…`), so nomad-1 cannot re-capture it at all.
+    ///     (`file:///home/…`). le06 recorded that "nomad-1 cannot re-capture
+    ///     it at all". It can: VS Code is installed here, and le07 re-captured
+    ///     the session on macOS after fixing two things that had kept the
+    ///     lane dark (`src/test/runTest.ts`, `src/test/suite/extension.test.ts`
+    ///     — see their comments). The `file:///home/…` key is gone with the
+    ///     linux recording that carried it.
     ///   * `emacs/smoke.jsonl` seq 1 — `workspaceFolders[0].name` in the
-    ///     tilde form. `elide_paths` handles that spelling as of le06, so the
-    ///     next eglot capture is clean; this file predates it.
+    ///     tilde form. `elide_paths` handles that spelling as of le06, and
+    ///     le07's re-capture under emacs 31.1 is the clean file le06 predicted.
     ///
-    /// Filed as wolf-lsp#7. A waived file that stops leaking fails this test
-    /// too: a waiver nobody retires is a waiver that hides the next leak.
-    const NEEDS_RECAPTURE: [&str; 2] = [
-        "transcripts/emacs/smoke.jsonl",
-        "transcripts/vscode/smoke.jsonl",
-    ];
+    /// The array stays here, empty and typed, rather than being deleted with
+    /// the branch below it: the retirement mechanism ("a waived file that
+    /// stops leaking fails this test too") is what forced this cleanup, and
+    /// the next waiver should find the machinery already built.
+    const NEEDS_RECAPTURE: [&str; 0] = [];
 
     let root = lsp_harness::repo_root();
     let mut leaks = Vec::new();

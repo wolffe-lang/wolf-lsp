@@ -6,90 +6,134 @@ run. Every row below names the tier it is verified at, the evidence for that
 tier, and — for T1 and T2 — the CI job that re-checks the evidence on every
 push. A row that claims a verification it does not have is a bug in this file.
 
-**Last reviewed against wolf pin `3befc3e`, 2026-09-02** (le06) — the
-wolf-lang release tag **`v0.2.3`**, so the pinned version string is the bare
-`wolf 0.2.3 (wolfgang, pin 3befc3e)`. The scripted transcript library was
-re-recorded at that pin and `lspconf replay` + `onetruth` ran green under all
-nine derived profiles (**65** transcripts, 10 samples, zero divergences).
-Sixty of the sixty-five diffs are a one-line header whose only moved field is
-`wolf_pin`, so the server's wire behaviour is byte-identical across
-`v0.2.2..v0.2.3`, capability answers included.
+**Last reviewed against wolf pin `982f857`, 2026-09-03** (le07) — the wolf-lang
+release tag **`v0.2.4`**, so the pinned version string is the bare
+`wolf 0.2.4 (wolfgang, pin 982f857)`, and `lspconf doctor` reports **READY**
+here. The scripted transcript library was re-recorded at that pin and
+`lspconf replay` + `onetruth` ran green under all nine derived profiles
+(**67** transcripts, 11 samples, zero divergences).
 
-**Five transcripts carry a second diff, and it is this repository's bug, not
-the server's.** `Stage::Paths` — the unconditional normalization that keeps a
-machine-specific path out of a committed artifact — walked string VALUES only,
-and `WorkspaceEdit.changes` is `{ [uri: DocumentUri]: TextEdit[] }`: a rename
-or a code-action edit answered to a client that does not declare
-`documentChanges` stores its URIs in KEY position and nowhere else. Eight
-records across six files shipped a developer's home directory.
-`encoding/astral-navigate-{utf8,utf16,utf32}`, `navigation/rename-nvim` and
-`requests/code-action-quickfix` are clean at this re-record; the two that are
-not are captured sessions that need a re-CAPTURE (**wolf-lsp#7**), and
-`tests/client_recorded.rs` now holds the property over every transcript and
-every field with those two named in an exhaustive waiver.
+**Every one of the 65 inherited transcripts is a header-only diff**, and the
+only fields that moved are `wolf_pin` and `recorded` — asserted by walking the
+diff and comparing parsed records field by field, not by eyeballing line
+counts. So the server's wire behaviour is byte-identical across
+`v0.2.3..v0.2.4`, capability answers included.
 
-**s134's annotating rungs are now recorded at the pin.** The rows below said
-"branch-recorded" and predicted a header-only diff at the re-pin. That is what
-happened: all eighteen `annotate/*` files re-recorded with only `wolf_pin`
-changing, and the `initialize` answer still carries `signatureHelpProvider`,
-`semanticTokensProvider` and `inlayHintProvider`. The caveat is retired — the
-three rungs are pinned by transcripts recorded against a **tagged release
-build**, not a branch build.
+**That sweep is also why le07 wrote two NEW transcripts rather than trusting
+it.** A header-only sweep proves the wire did not move; it proves nothing about
+a type the library never bound. wolf-lang v0.2.4's one change this repository
+can see is the `byte` type ([type.byte], D72): `str.bytes()` and the eight
+byte-producing/consuming builtins answer `List[byte]` where they answered
+`List[int]` through v0.2.3 (s136, wolf-lang#231), and hover, inlay hints and
+completion detail are the three surfaces that print a type. No sample bound a
+byte at all, so the sweep could not have noticed:
 
-The six **captured** editor smokes were NOT re-captured — the same posture
-le01 recorded: they keep the pin they were recorded at (`70bdd35`; `67c977f`
-for fackr) and `lspconf replay` cannot compare them against the new pin until
-someone drives each real editor again. Their rows below stay stamped with the
-pin their evidence was actually earned at.
+- **`transcripts/requests/hover-byte`** — five positions in a new vendored
+  sample (`strings/bytes_roundtrip.lu`, the s136 witness): the changed binding
+  (`let bs = s.bytes()` hovers `List[byte]`), a BARE `byte` (`for b in bs`), the
+  type as WRITTEN rather than inferred (a `List[byte]` parameter),
+  [type.byte.cast]'s widening seen from outside (`bs[5] as int` hovers `int`),
+  and hover on the builtin type NAME itself, which answers `null`.
+- **`transcripts/requests/completion-byte`** — and it does not contain `byte`,
+  which is the finding. See the capability table below.
 
-What changed at le06 is how that is REPORTED, and it changed because the lane
-finally ran. A script-less transcript at another pin is a named `SKIP:` now,
-not a harness error: it cannot be re-recorded by design, so aborting the run
-on it meant none of the sixty-five transcripts that ARE at the pin were
-replayed at all. `release-check 3b` is consequently green, and `cargo xtask
-ci` has no red step for the first time. A SCRIPTED transcript at another pin
-is still exit 2 — that one means somebody forgot `lspconf rerecord`.
+**`lspconf doctor` is READY, and the archive is whole at this tag.** Release
+`v0.2.4` is published with the same four-triple asset set `v0.2.3` first
+carried, so le06's repaired acquire step needs no change. One upstream wart,
+measured and reported rather than worked around: the tag has FOUR releases
+behind it — the published one plus THREE empty drafts (wolf-lang#226's
+self-publishing release racing; `v0.2.3` has the identical shape). Acquisition
+resolves the published one; `gh release list` shows three Draft rows above it,
+which is exactly the shape a human misreads. Recorded in `vendor/upstream/PIN`.
 
-**The acquire lane: upstream's half is closed and ours is fixed.** Measured
-2026-09-02, wolf-lang's `v0.2.3` release is Latest, not Draft, and carries
-**four** assets where `v0.2.2` carried three —
-`wolf-0.2.3-x86_64-unknown-linux-gnu.tar.gz`,
-`wolf-0.2.3-aarch64-unknown-linux-gnu.tar.gz`,
-`wolf-0.2.3-aarch64-apple-darwin.tar.gz` and
-`wolf-0.2.3-x86_64-pc-windows-msvc.tar.gz`. le05's last open upstream gap
-("no linux/aarch64 archive at this tag") is repaired. The remaining half was
-**wolf-lsp#3**, a stale glob in this repo: `.github/workflows/ci.yml` asked
-for `wolf-<shortsha>-linux-x86_64.tar.gz`, a name `xtask dist` stopped
-publishing. le06 fixes the step to ask for `wolf-<version>-<triple>.tar.gz`,
-derived from `PIN`, with `--strip-components=1` so the extracted binary lands
-where `lsp_harness::locate` looks, and the triple derived per host so all
-three tier-1 runners are covered.
+## THE SIX CAPTURED SMOKES: FIVE RE-CAPTURED, ONE NARROWED
 
-**MEASURED: THE LANE LIGHTS, ON ALL THREE TIER-1 OSes.** On this branch
-(run against head `8df0f03`), `server-lane` is green on ubuntu-latest,
-macos-latest AND windows-latest, with every step run and none skipped: acquire,
-`lspconf doctor`, conformance replay, one-truth, the five server-gated suites
-and the seeded fuzz. `server-lane` had never resolved a binary on any platform
-before this sprint. It found two bugs in its first three runs, both
-in code that had existed for sprints and had never executed anywhere but a
-developer's laptop. On **macos**: `semantics`'s 10 s slow-session waited for the
-open's diagnostics on a deadline that knew nothing about the slowness the test
-itself had injected, and `didOpen` pays that knob once per query in the analysis
-pipeline. On **windows**: the third slash a `file:`
-URI needs before a drive-letter path was lost in BOTH directions — expanding
-`$WS` produced `file://D:/a/…` where the server published `file:///D:/a/…` (59
-of 65 transcripts timed out), and eliding it produced `file:///$WS/…` where
-every recorded transcript says `file://$WS/…` (the same 59, mismatching once
-the timeouts cleared). All fixed on this branch, with unix unchanged —
-re-recording all 65 transcripts moves nothing but the date.
+This obligation has been owed since **le01** and named by this file every
+sprint since. The captured smokes are the transcripts no script decided — a
+real editor's real traffic — so they cannot be re-recorded, only re-CAPTURED
+by driving that editor again. le06 left all six at pin `70bdd35`. le07 drove
+**five of the six** on this box and re-captured them at `982f857`. The
+`lspconf replay` SKIP list is **six entries shorter by five**.
 
-**The rows below are still NOT re-stamped from it**, and the restraint is
-deliberate. D35 and release-check 3d want the three-OS claim made from CI, and
-a branch run is not the release commit's run; a T1 row also wants the CLIENT
-exercised, which `server-lane` does not do — it drives `lspconf`, not an
-editor. What this measurement earns is the retirement of "dark", not a new
-stamp. The row to re-stamp from is the merge commit's, and the six captured
-smokes still owe a re-capture before their own rows move.
+| smoke | driven? | how, at le07 |
+|---|---|---|
+| **nvim** | **RE-CAPTURED** | `nvim --headless` with the documented shim, NVIM **v0.12.5**. All 7 `smoke.lua` assertions passed *while recording*. The old capture's `initialize` answer had **no `completionProvider`** — the transcript was materially wrong about what the server serves. Profile RE-DERIVED at v0.12.5: eglot-style drift found, `inlayHint.resolveSupport` moved from `location`/`command` to the dotted `label.location`/`label.tooltip`/`label.command`, and `didChangeWatchedFiles.dynamicRegistration` false → true. |
+| **fackr** | **RE-CAPTURED** | `cargo test lsp::smoke_wolf::wolf_lsp_corpus_session` in a clean clone at `496c7e2` with `patches/wolf-integration.diff` applied — which is how the patch series' own README says to reproduce it, and the series still applies cleanly. The user's own fackr worktree was never touched. |
+| **helix** | **RE-CAPTURED** | Driven through a pty with the stdlib `pty` module, helix **25.07.1** — the exact version `profiles/helix.json` was derived from, and the captured capability document is **byte-identical** to the profile, so no re-derivation was owed. Every rung of the recorded session reproduced, plus a NEW `textDocument/signatureHelp`: helix fires it on entering insert mode and the server has advertised `signatureHelpProvider` since s134. 9 records match on replay, up from 8. **The `[[grammar]]` and `languages.toml` fragment this repo ships is what made it work** — `hx --health wolf` resolves the server from it. |
+| **emacs** | **RE-CAPTURED** | `emacs --batch -l clients/emacs/tests/server-test.el`, GNU Emacs **31.1** with built-in eglot **1.24.31**. All eight `ert-info` sections asserted while recording; 24 records, rung for rung the old session. Profile RE-DERIVED at 31.1 — eglot grew a lot since 30.2: `$streamingDiagnostics`, `callHierarchy`, `diagnostic`, `semanticTokens`, `completion.insertReplaceSupport`, `publishDiagnostics.versionSupport` and — load-bearing for this repo — **`rename.prepareSupport: true`**. |
+| **vscode** | **RE-CAPTURED** | The extension's own test runner, against the installed VS Code. **16/16 passing, and the server half of that suite had never run.** Getting there needed two fixes, both in this repo and both described at their site — see the next section. |
+| **facsimile** | **NOT re-captured — and this is the one narrow red** | The editor CAN be driven here: `fac` v0.35.0 builds and runs, `pexpect`/`pyte` are present, and the read-only rungs all answer correctly at the new pin (hover → the type, documentSymbol → the one function, formatting → no edits, clean publish on open). What cannot be reproduced is the *recorded session*, for a measured client-side reason. See below. |
+
+### Why facsimile could not be re-captured, precisely
+
+Two independent findings, both in the client and neither in `wolf lsp`:
+
+1. **The documented key sequence is stale, because the server's capability set
+   moved under it.** At `70bdd35` the server did not advertise
+   `completionProvider`. At `982f857` it does, and facsimile PR #5 routes on
+   the `initialize` reply — so the editor now opens a completion popup on the
+   very keystroke (`x`) the recorded sequence uses to break the file, and every
+   key after it is interpreted against a popup that did not exist when the
+   sequence was written.
+2. **facsimile sends exactly one `didChange` per session, and then stops.**
+   This is the blocker, and it is not a timing artifact of the driver: a probe
+   that made **five** separate edits three seconds apart, pumping the input
+   loop between each, produced **zero** `didChange` notifications. The
+   break/fix round-trip — half the value of the smoke — therefore cannot be
+   recorded at all. A transcript missing it would replay green forever while
+   covering less than the one it replaced, and `clients/nvim/README.md` states
+   the rule this repo follows: *a transcript of a broken session is worse than
+   none*. The `70bdd35` capture is kept, and its row keeps the pin it earned.
+
+Both are reported to facsimile. The client mirror was re-read against the
+human's trunk at le07 and re-recorded where it had drifted — see
+`clients/facsimile/CLIENT.md` and `patches/STATUS.md`.
+
+### The two repairs that lit the VS Code lane
+
+`release-check 3b` has been green since le06, but the VS Code lane behind it
+was not: its server half skipped on every run, and the skip looked like an
+ordinary "no toolchain at the pin".
+
+1. **`src/test/suite/extension.test.ts` compared the wrong string.** It matched
+   the WHOLE of `wolf --version` against `PIN.version` — but `wolf --version`
+   prints two lines (the version, then the lupin pairing) and
+   `vendor/upstream/PIN` records the **first line**, by its own definition. So
+   the comparison could never succeed, and this lane had skipped on every pin
+   since the day the second line was added — not on a stale binary, which is
+   the only thing the check exists to catch. le07 found it because the skip
+   message printed two strings whose first lines were equal.
+2. **`@vscode/test-electron` 2.5.2 cannot launch a current VS Code on macOS.**
+   Its darwin branch hardcodes `Visual Studio Code.app/Contents/MacOS/Electron`
+   and VS Code stopped shipping that alias after 1.120 — the 1.136.1 bundle it
+   downloads today contains only `.../MacOS/Code`, so the spawn dies ENOENT
+   before a test runs. Symlinking the name back is not a fix: it invalidates
+   the bundle signature and macOS SIGKILLs the process. Linux resolves a `code`
+   script by a different branch, which is why CI never saw it. le07 adds a
+   `WOLF_VSCODE_EXECUTABLE` env override to `src/test/runTest.ts` so the lane
+   can run against an installed VS Code; the real repair is a dependency bump
+   once upstream handles the rename.
+
+A third detail is recording-only and not committed: VS Code recomputes `PATH`
+from the login shell on macOS, which drops the capture shim. `VSCODE_CLI=1` in
+the environment suppresses that, and is what let the proxy see the session.
+
+**wolf-lsp#7 is CLOSED.** le06 waived two captured transcripts that leaked a
+developer's home directory and could not be re-recorded — `vscode/smoke.jsonl`
+seq 39 (a `codeAction` `edit.changes` KEY, captured on a linux box, which le06
+recorded as un-re-capturable from nomad-1) and `emacs/smoke.jsonl` seq 1 (a
+`workspaceFolders[0].name` tilde). Both re-captures are clean, and the
+exhaustive waiver in `tests/client_recorded.rs` is now **empty** — the test's
+own retirement clause ("a waived file that stops leaking fails this test too")
+is what forced the cleanup, and it worked.
+
+### What the rows still do NOT claim
+
+The rows below are re-stamped from le07's **local** captures, and that is all
+they claim. D35 and `release-check 3d` want the three-OS claim made from CI,
+and a local run is not CI's. `server-lane` was measured green on all three
+tier-1 OSes on le06's branch; the row to re-stamp from is still a merge
+commit's run.
 
 ## The three tiers
 
@@ -103,12 +147,12 @@ smokes still owe a re-capture before their own rows move.
 
 | editor | tier | CI job | evidence | last verified |
 |---|---|---|---|---|
-| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (glob fixed at le06 — see the header) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | 2026-08-10, pin `67c977f` |
-| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (glob fixed at le06 — see the header) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | 2026-08-10, pin `70bdd35` |
-| [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.4`) | 2026-08-10, pin `70bdd35`, NVIM v0.12.4 |
-| [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 14 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | 2026-08-10, pin `70bdd35`, VS Code 1.132.0 |
-| [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | 2026-08-10, pin `70bdd35`, helix 25.07.1 |
-| [Emacs (eglot)](../clients/emacs/README.md) | **T2** | `emacs-mode` (3 OS, 9 cases) + `emacs-check` | `clients/emacs/wolf-mode.el` loaded by `emacs --batch`; `transcripts/emacs/smoke` · `profiles/emacs.json` (`emacs@30.2`, eglot 1.17.30) | 2026-08-10, pin `70bdd35`, GNU Emacs 30.2 |
+| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | **2026-09-03, pin `982f857`** — RE-CAPTURED at le07 |
+| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | 2026-08-10, pin `70bdd35` — **re-capture attempted and refused at le07; see the header** |
+| [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.5`) | **2026-09-03, pin `982f857`, NVIM v0.12.5** — RE-CAPTURED, profile re-derived |
+| [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 16 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | **2026-09-03, pin `982f857`, VS Code 1.120.0** — RE-CAPTURED; 16/16, the server half ran for the first time |
+| [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | **2026-09-03, pin `982f857`, helix 25.07.1** — RE-CAPTURED; profile byte-identical, no re-derivation owed |
+| [Emacs (eglot)](../clients/emacs/README.md) | **T2** | `emacs-mode` (3 OS, 9 cases) + `emacs-check` | `clients/emacs/wolf-mode.el` loaded by `emacs --batch`; `transcripts/emacs/smoke` · `profiles/emacs.json` (`emacs@31.1`, eglot 1.24.31) | **2026-09-03, pin `982f857`, GNU Emacs 31.1** — RE-CAPTURED, profile re-derived |
 | [Zed](../clients/zed/README.md) | **T2** | `zed-extension` (wasm build) + `config-check` | wasm component builds; config statically checked | **wasm build: 2026-08-10.** **Manual run: NEVER — see below** |
 | [JetBrains (LSP4IJ)](../clients/jetbrains/README.md) | **T3** | *(none, by design)* | a written recipe | **NEVER — see below** |
 | Emacs (lsp-mode) | **T3** | *(none)* | a three-line `lsp-register-client` snippet in `clients/emacs/README.md` | **NEVER — no `lsp-mode` on any machine this repo runs on** |
@@ -233,8 +277,8 @@ document to decide whether to answer, only to decide the SHAPE (`linkSupport`,
 
 | capability | state | evidence per client | CI job |
 |---|---|---|---|
-| diagnostics, hover, documentSymbol, formatting, codeAction | served (s52) | `transcripts/{diagnostics,requests}/*` | `server-lane` |
-| completion | served (s122) | `transcripts/requests/*` | `server-lane` |
+| diagnostics, hover, documentSymbol, formatting, codeAction | served (s52) | `transcripts/{diagnostics,requests}/*`; hover's TYPE DISPLAY additionally pinned at le07 by `transcripts/requests/hover-byte` — the surface v0.2.4's `byte` type actually moved | `server-lane` |
+| completion | **served (s122), and pinned by a transcript for the first time at le07** — with two findings. **(1) It offers no builtin TYPE name at all.** In type position (inside `List[byte]`'s argument, the one place a type is the only legal completion) the answer is the locals in scope, the file's functions, and all FIFTY reserved keywords — and not `byte`, `int`, `str` or `bool`. A user annotating a type in any editor is offered `while` and `spawn` and never the type they are annotating with. **(2) `.` is advertised and answers nothing.** The server declares `completionProvider.triggerCharacters: ["."]`, so every client fires a request on every dot, and member completion returns an EMPTY list. Both are upstream; the transcript records the item set whole so a fix shows as a diff. **And the row itself was the bug this file exists to prevent**: it cited `transcripts/requests/*` from s133 while NO transcript had ever sent `textDocument/completion` — the word appeared only inside `initialize` capability blocks. | `transcripts/requests/completion-byte` | `server-lane` |
 | `textDocument/definition` | **served (s133)** — `LocationLink[]` to fackr, facsimile, nvim, vscode, emacs (they declare `linkSupport`), `Location[]` to helix | `transcripts/navigation/definition-<client>.jsonl` | `server-lane` |
 | `textDocument/references` | **served (s133)** — package-wide, `includeDeclaration` honored, (file, offset) order | `transcripts/navigation/references-<client>.jsonl` | `server-lane` |
 | `textDocument/rename` + `prepareRename` | **served (s133)** — `documentChanges` to fackr, facsimile, vscode, helix, emacs, the `changes` map to nvim; refusals by name as `-32803` (`docs/COMPAT.md`) | `transcripts/navigation/rename-<client>.jsonl` | `server-lane` |

@@ -20,8 +20,10 @@
 The mirror exists so this integration is reproducible from *this* repo even if
 the upstream PRs sit unreviewed — which is no longer the situation, but the
 reproducibility is still worth keeping. `wolf-integration.diff` is the whole
-series against `facsimile@1242ffa`; trunk is now ~120 commits past that base,
-so the diff no longer applies cleanly. Per `../CONTRIBUTING-patch.md`, the
+series against `facsimile@1242ffa`; trunk is **38** commits past that base
+(`git rev-list --count 1242ffa..a121ab3`, measured at le07 — the earlier
+"~120" in this paragraph was an estimate nobody had run, and it was out by
+three times), so the diff no longer applies cleanly. Per `../CONTRIBUTING-patch.md`, the
 remedy when that happens is to re-cut it against the new base rather than let
 the mirror rot into fiction — but there is nothing left to re-cut it FOR,
 since the content is upstream. It is kept as the historical artifact the

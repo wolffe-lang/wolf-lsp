@@ -52,6 +52,10 @@ reason = "cross-file relatedInformation: `fail(E0302)` reports the duplicate in 
 path = "resolve/dupdef/twice.lu"
 reason = "cross-file relatedInformation: the `member: true` sibling that carries the duplicate definition; opened only as the *secondary* of `resolve/dupdef/main.lu`'s diagnostic, never as an entry point"
 
+[[sample]]
+path = "strings/bytes_roundtrip.lu"
+reason = "the byte tier's type display: the s136/#231 witness that `str.bytes()` answers `List[byte]` and not `List[int]`. Added at le07 because that is the ONE v0.2.4 change this repo can see on the wire — hover, inlay hints and completion detail are the three surfaces that print a type, and no other sample binds a byte at all. `let bs = s.bytes()` hovers `List[byte]`, `for b in bs` binds a bare `byte`, `bs[5] as int` shows [type.byte.cast]'s widening, and `fn dup(bs: List[byte]) -> List[byte]` puts `byte` in TYPE position for a completion subject. `phase: run`, so it is also a clean-diagnostics document."
+
 # --- Known gap, deliberately not papered over -------------------------------
 #
 # ls01 §5 requires **astral-plane** text (an emoji: one char, two UTF-16 units,

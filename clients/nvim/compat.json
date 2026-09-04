@@ -1,21 +1,21 @@
 {
   "client": "wolf.nvim",
   "client_version": "0.0.1",
-  "artifact": "plugin tree — clients/nvim/, published as the generated wolf.nvim mirror",
+  "artifact": "plugin tree \u2014 clients/nvim/, published as the generated wolf.nvim mirror",
   "wolf": {
-    "min": "0.2.3",
-    "max_tested": "0.2.3",
-    "pin": "3befc3e85ca1f2c602f603f6f610d518c44530fd",
-    "pin_version_string": "wolf 0.2.3 (wolfgang, pin 3befc3e)"
+    "min": "0.2.4",
+    "max_tested": "0.2.4",
+    "pin": "982f857885b991e686c6b045de213d10cab013c1",
+    "pin_version_string": "wolf 0.2.4 (wolfgang, pin 982f857)"
   },
   "verified": {
-    "date": "2026-09-02",
+    "date": "2026-09-03",
     "host": "local (macos arm64)",
     "evidence": [
-      "transcripts/nvim/smoke.jsonl",
-      "profiles/nvim.json",
+      "transcripts/nvim/smoke.jsonl (RE-CAPTURED at this pin, le07: NVIM v0.12.5 driven by `nvim --headless`, 7/7 assertions passing while recording)",
+      "profiles/nvim.json (RE-DERIVED at v0.12.5)",
       "clients/nvim/tests/plugin_spec.lua",
-      "lspconf replay + onetruth under this client's derived profile at pin 3befc3e (v0.2.3), 2026-09-02 (the captured smoke keeps its recorded pin)"
+      "lspconf replay + onetruth under this client's derived profile at pin 982f857 (v0.2.4), 2026-09-03"
     ]
   },
   "warning_surface": ":checkhealth wolf"

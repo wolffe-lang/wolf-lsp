@@ -1,0 +1,48 @@
+#! The `byte` type in the one surface an editor user reads it from (le07).
+#!
+#! This is the ONLY v0.2.4 change that reaches this repository's wire.
+#! wolf-lang s136 (#231, D72) moved `str.bytes()` and the eight byte
+#! producing/consuming builtins from `List[int]` to `List[byte]`
+#! ([type.byte]), and hover is where a type becomes prose a human sees.
+#! Every other transcript in this library re-recorded across
+#! `v0.2.3..v0.2.4` with a header-only diff, which is exactly why this
+#! one had to be written: a header-only sweep proves the wire did not
+#! move, and proves NOTHING about a type the library never bound.
+#!
+#! Five positions, one per shape the byte tier takes:
+#!   25:8   `let bs = s.bytes()`      — the changed binding. `List[byte]`
+#!                                      here, `List[int]` at every pin
+#!                                      through v0.2.3.
+#!   17:8   `for b in bs`             — a BARE `byte`. The element type
+#!                                      exists on its own, not only under
+#!                                      a `List`.
+#!   15:7   `fn dup(bs: List[byte])`  — a parameter, i.e. the type as
+#!                                      WRITTEN rather than as inferred;
+#!                                      both must print the same string.
+#!   32:8   `let lead = bs[5] as int` — [type.byte.cast]'s widening seen
+#!                                      from the outside: `int`, not
+#!                                      `byte`, because the cast is where
+#!                                      the octet leaves its domain.
+#!   15:16  the type NAME `byte`      — hover on the builtin type name
+#!                                      itself, which answers `null`.
+#!                                      Recorded on purpose: `byte` is a
+#!                                      builtin type NAME and not a
+#!                                      keyword ([type.byte] says so, and
+#!                                      `[gram.inv.kw]` stays at 50), and
+#!                                      a reader is entitled to know that
+#!                                      the server has nothing to say
+#!                                      about it. A future pin that
+#!                                      documents builtins flips this
+#!                                      record, which is the point.
+name      requests/hover-byte
+profile   minimal
+
+initialize
+open      strings/bytes_roundtrip.lu
+wait      diagnostics strings/bytes_roundtrip.lu
+req       hover strings/bytes_roundtrip.lu 25:8
+req       hover strings/bytes_roundtrip.lu 17:8
+req       hover strings/bytes_roundtrip.lu 15:7
+req       hover strings/bytes_roundtrip.lu 32:8
+req       hover strings/bytes_roundtrip.lu 15:16
+shutdown

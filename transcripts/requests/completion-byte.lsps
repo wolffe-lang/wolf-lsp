@@ -1,0 +1,44 @@
+#! Completion, pinned by a transcript for the FIRST TIME (le07), and it
+#! does not offer `byte`.
+#!
+#! docs/MATRIX.md has carried "completion | served (s122) | evidence:
+#! transcripts/requests/*" since s133. Measured at le07: no transcript in
+#! this library had ever sent `textDocument/completion` — the word only
+#! ever appeared inside `initialize` capability blocks. The row claimed
+#! evidence it did not have, which is the one failure that file exists to
+#! prevent. This script is that evidence, and it records what the server
+#! ACTUALLY answers rather than what the row implied.
+#!
+#! The le07 contract asked for "a completion transcript including
+#! `byte`". The server does not offer it, so this transcript pins the
+#! absence exhaustively instead of inventing the presence:
+#!
+#!   15:16  inside `List[byte]`'s type argument — TYPE position, the one
+#!          place a type name is the only legal completion. The answer is
+#!          the locals in scope, the file's functions, and all FIFTY
+#!          reserved keywords ([gram.inv.kw]'s closed set, checksum 50) —
+#!          and not one of the sixteen builtin type names. Not `byte`,
+#!          not `int`, not `str`, not `bool`. A user typing a type
+#!          annotation in any editor is offered `while` and `spawn`, and
+#!          never the type they are annotating with. The item list is
+#!          recorded whole, so the day builtins are added this record
+#!          moves. Filed upstream.
+#!
+#!   25:15 after `.` — the trigger character the server ADVERTISES in its
+#!          own `completionProvider.triggerCharacters: ["."]`. It answers
+#!          an EMPTY list: member completion is not served, while the
+#!          capability tells every client to fire a request on every dot.
+#!          A second finding, filed with the first.
+#!
+#! Both records are regression witnesses pointed the right way: they are
+#! red-flag shapes, committed so that fixing them is visible as a diff
+#! rather than silently absent.
+name      requests/completion-byte
+profile   minimal
+
+initialize
+open      strings/bytes_roundtrip.lu
+wait      diagnostics strings/bytes_roundtrip.lu
+req       completion strings/bytes_roundtrip.lu 15:16
+req       completion strings/bytes_roundtrip.lu 25:15 .
+shutdown

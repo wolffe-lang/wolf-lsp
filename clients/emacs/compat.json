@@ -1,22 +1,22 @@
 {
   "client": "wolf-mode.el",
   "client_version": "0.0.1",
-  "artifact": "elisp file — clients/emacs/wolf-mode.el, also quoted verbatim in its README",
+  "artifact": "elisp file \u2014 clients/emacs/wolf-mode.el, also quoted verbatim in its README",
   "wolf": {
-    "min": "0.2.3",
-    "max_tested": "0.2.3",
-    "pin": "3befc3e85ca1f2c602f603f6f610d518c44530fd",
-    "pin_version_string": "wolf 0.2.3 (wolfgang, pin 3befc3e)"
+    "min": "0.2.4",
+    "max_tested": "0.2.4",
+    "pin": "982f857885b991e686c6b045de213d10cab013c1",
+    "pin_version_string": "wolf 0.2.4 (wolfgang, pin 982f857)"
   },
   "verified": {
-    "date": "2026-09-02",
+    "date": "2026-09-03",
     "host": "local (macos arm64)",
     "evidence": [
-      "transcripts/emacs/smoke.jsonl",
-      "profiles/emacs.json",
-      "clients/emacs/tests/mode-test.el",
-      "lspconf replay + onetruth under this client's derived profile at pin 3befc3e (v0.2.3), 2026-09-02 (the captured smoke keeps its recorded pin)"
+      "transcripts/emacs/smoke.jsonl (RE-CAPTURED at this pin, le07: emacs 31.1 / eglot 1.24.31 driven by `emacs --batch`, all eight server-test.el sections asserted while recording)",
+      "profiles/emacs.json (RE-DERIVED at emacs 31.1)",
+      "clients/emacs/tests/mode-test.el (9/9)",
+      "lspconf replay + onetruth under this client's derived profile at pin 982f857 (v0.2.4), 2026-09-03"
     ]
   },
-  "warning_surface": "none — the mode is a copy-pasteable snippet, and a snippet that phones a version check is a snippet nobody pastes"
+  "warning_surface": "none \u2014 the mode is a copy-pasteable snippet, and a snippet that phones a version check is a snippet nobody pastes"
 }

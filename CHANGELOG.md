@@ -1,5 +1,158 @@
 # Changelog
 
+## le07 — 2026-09-03 — the byte in the editors, and five of the six
+
+The pin moves to wolf-lang **v0.2.4** (`982f857`, `lspconf doctor` READY),
+the transcript library re-records header-only, and the obligation this
+repository has carried since **le01** — the six captured editor smokes,
+stuck at pin `70bdd35` — comes down to **one**.
+
+### The byte is the only thing on the wire, and a sweep could not see it
+
+All 65 inherited transcripts re-recorded with a **header-only** diff, and
+the only fields that moved are `wolf_pin` and `recorded` — asserted by
+parsing every changed record and comparing field by field, not by counting
+lines. So `v0.2.3..v0.2.4` moved nothing about the server's wire
+behaviour, capability answers included.
+
+That is exactly why it was not the end of the work. v0.2.4's one change
+this repository can see is the `byte` type (`[type.byte]`, D72): `bytes()`
+and the eight byte builtins answer `List[byte]` where they answered
+`List[int]` (s136, wolf-lang#231), and **hover prints types**. No sample
+bound a byte, so the sweep had nothing to notice. le07 vendors
+`strings/bytes_roundtrip.lu` — s136's own witness — and writes two
+transcripts against it:
+
+**`requests/hover-byte`** takes five positions, one per shape: the changed
+binding (`let bs = s.bytes()` → `List[byte]`), a BARE `byte` (`for b in
+bs`), the type as WRITTEN rather than inferred (a `List[byte]` parameter),
+`[type.byte.cast]`'s widening from outside (`bs[5] as int` → `int`), and
+hover on the builtin type NAME, which answers `null` — recorded on purpose,
+so a pin that documents builtins moves this record.
+
+**`requests/completion-byte` does not contain `byte`, and that is the
+finding.** Two of them, both upstream:
+
+- **Completion offers no builtin TYPE name at all.** Asked in type position
+  — inside `List[byte]`'s argument, where a type is the only legal
+  completion — the server returns the locals in scope, the file's
+  functions, and all FIFTY reserved keywords, and not `byte`, `int`, `str`
+  or `bool`. Someone annotating a type in any editor is offered `while` and
+  `spawn` and never the type they are annotating with. Measured
+  context-free: the same set comes back everywhere.
+- **`.` is advertised and answers nothing.** The server declares
+  `completionProvider.triggerCharacters: ["."]`, so every client fires a
+  request on every dot — and member completion returns an EMPTY list.
+
+**And the MATRIX row was itself the bug that file exists to prevent.** It
+has cited `transcripts/requests/*` as completion's evidence since s133.
+Measured: no transcript had ever sent `textDocument/completion` — the word
+occurred only inside `initialize` capability blocks. The harness had no
+`completion` verb to send one with. Both are fixed here.
+
+### Five of the six captured smokes, re-captured
+
+A captured smoke is a real editor's real traffic, so it cannot be
+re-recorded — only re-CAPTURED by driving that editor again. le06 left all
+six at `70bdd35` and `lspconf replay` skipped all six. le07 drove five.
+
+- **nvim** — `nvim --headless`, NVIM **v0.12.5**, 7/7 assertions passing
+  while recording. The old capture's `initialize` answer had **no
+  `completionProvider`**: it was materially wrong about what the server
+  serves. Profile re-derived — `inlayHint.resolveSupport` moved to the
+  dotted `label.*` form and `didChangeWatchedFiles.dynamicRegistration`
+  flipped true.
+- **fackr** — a clean clone at `496c7e2` with `patches/wolf-integration.diff`
+  applied, which is what `patches/STATUS.md` says to do and which still
+  applies cleanly. (The smoke test lives in that diff, not upstream.)
+- **helix** — driven through a pty, helix **25.07.1**, the exact version the
+  profile was derived from, whose captured capability document is
+  byte-identical to it. Every rung reproduced plus a NEW `signatureHelp`,
+  which helix fires on entering insert mode now that s134's provider is
+  advertised. The `languages.toml` fragment this repo ships is what made
+  `hx` resolve the server at all.
+- **emacs** — `emacs --batch`, GNU Emacs **31.1** with built-in eglot
+  **1.24.31**, all eight `ert-info` sections asserted while recording.
+  Profile re-derived; eglot grew `$streamingDiagnostics`, `callHierarchy`,
+  `diagnostic`, `semanticTokens`, `completion.insertReplaceSupport`,
+  `publishDiagnostics.versionSupport` and `rename.prepareSupport`.
+- **vscode** — **16/16, and the server half of that suite had never run
+  anywhere.** Two repairs got it there, and both had been hiding as an
+  ordinary skip:
+  - `extension.test.ts` compared the **whole** of `wolf --version` against
+    `PIN.version`. The binary prints two lines and `PIN` records the first
+    by its own definition, so the comparison could never succeed — this
+    lane had skipped on every pin since the second line was added, rather
+    than on the stale binary the check exists to catch. Found because the
+    skip message printed two strings whose first lines were equal.
+  - `@vscode/test-electron` 2.5.2 **cannot launch a current VS Code on
+    macOS**: its darwin branch hardcodes `.../MacOS/Electron`, an alias VS
+    Code dropped after 1.120, so the 1.136.1 bundle it downloads dies
+    ENOENT. Symlinking the name back invalidates the signature and macOS
+    SIGKILLs it. Linux takes another branch, which is why CI never saw it.
+    `WOLF_VSCODE_EXECUTABLE` lets the lane run against an installed VS Code.
+
+**wolf-lsp#7 is CLOSED.** le06 waived two captures that leaked a home
+directory and could not be re-recorded, recording that nomad-1 could not
+re-capture the vscode one *at all*. It could. Both re-captures are clean and
+the exhaustive waiver in `tests/client_recorded.rs` is now empty — the
+test's own retirement clause is what forced the cleanup.
+
+### facsimile is the one narrow red, and the reason is measured
+
+The editor CAN be driven here — `fac` v0.35.0 runs, `pexpect`/`pyte` are
+present, and its read-only rungs all answer correctly at the new pin. The
+*recorded session* cannot be reproduced, for two client-side reasons:
+
+1. **The documented key sequence is stale, because the server's capabilities
+   moved under it.** At `70bdd35` the server did not advertise
+   `completionProvider`; at `982f857` it does, and facsimile PR #5 routes on
+   the `initialize` reply — so the editor now opens a completion popup on the
+   very keystroke the sequence uses to break the file.
+2. **facsimile sends exactly one `didChange` per session.** Not a driver
+   artifact: a probe making five separate edits three seconds apart, pumping
+   the input loop between each, produced **zero** `didChange`
+   notifications. The break/fix round-trip — half the smoke's value — cannot
+   be recorded at all.
+
+A transcript missing that rung would replay green forever while covering
+less than the one it replaced, so the `70bdd35` capture is kept and its row
+keeps the pin it earned. Both findings go to facsimile.
+
+### The mirror, re-read rather than re-asserted
+
+The human's facsimile trunk is unmoved at `a121ab3`, so the citation stands;
+three sentences did not, and were re-recorded:
+
+- "`didChange` version is **hardcoded** to 1" is now an optional `version`
+  argument and a live counter (`sync%version = sync%version + 1`) that
+  **neither of the two call sites connects** — the fix is one argument at
+  each site, which is a better bug report than "hardcoded" was.
+- `patches/STATUS.md`'s "~120 commits past that base" is **38**
+  (`git rev-list --count 1242ffa..a121ab3`) — an estimate nobody had run,
+  out by three times.
+- `a121ab3` is subject-lined "Bump to 0.35.0" and moves `VERSION` and
+  `src/version_module.f90`, leaving `fpm.toml` at `0.34.0`. Three version
+  sites, two bumped. Reported upstream; this mirror keeps citing 0.35.0
+  because that is what the binary prints.
+
+`handle_request` (still the empty `TODO` stub), `notify_file_closed`'s zero
+call sites, the absent `$/cancelRequest` and the absent `shutdown`/`exit`
+were all re-verified in the source rather than carried forward.
+
+### Counts, and one upstream wart
+
+67 transcripts (65 re-recorded header-only + 2 new), 11 samples, nine derived
+profiles, zero divergences; `cargo xtask ci` green. `release-check 3b` stays
+PASS and its SKIP list drops from six captured transcripts to **one**.
+
+`v0.2.4` has FOUR releases behind the tag: the published one with its four
+archives, plus **three empty drafts** (wolf-lang#226's self-publishing
+release racing; `v0.2.3` has the identical shape). Acquisition resolves the
+published one, but `gh release list` shows three Draft rows above it — the
+exact shape a human checking "did the release land?" misreads. Recorded in
+`vendor/upstream/PIN`, reported upstream, and not compensated for here.
+
 ## le06 — 2026-09-02 — the generator tells the truth
 
 The tmLanguage generator stops saying two things the spec does not, the

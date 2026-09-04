@@ -98,6 +98,17 @@ pub enum Req {
         start: (u32, u32),
         end: (u32, u32),
     },
+    /// s122's completion, first pinned by a transcript at le07. The
+    /// trigger is SPELLED rather than defaulted: LSP's `triggerKind` is
+    /// the difference between "the user asked" (1, Invoked) and "a
+    /// character fired it" (2), and a server may legitimately answer
+    /// different sets. `None` is Invoked; `Some(c)` is the character.
+    Completion {
+        file: String,
+        line: u32,
+        character: u32,
+        trigger: Option<char>,
+    },
     /// Escape hatch: any method, params written inline as JSON. How the
     /// unknown-method and pre-`initialize` obligations get exercised without
     /// teaching the DSL a verb per protocol method.
@@ -124,6 +135,7 @@ impl Req {
             Req::SemanticTokens { range: None, .. } => "textDocument/semanticTokens/full",
             Req::SemanticTokens { range: Some(_), .. } => "textDocument/semanticTokens/range",
             Req::InlayHint { .. } => "textDocument/inlayHint",
+            Req::Completion { .. } => "textDocument/completion",
             Req::Raw { method, .. } => method,
         }
     }
@@ -142,7 +154,8 @@ impl Req {
             | Req::Rename { file, .. }
             | Req::SignatureHelp { file, .. }
             | Req::SemanticTokens { file, .. }
-            | Req::InlayHint { file, .. } => Some(file),
+            | Req::InlayHint { file, .. }
+            | Req::Completion { file, .. } => Some(file),
             Req::Raw { .. } => None,
         }
     }
@@ -622,6 +635,31 @@ fn parse_req(rest: &str) -> Result<Req, String> {
                 end: parse_pos(e)?,
             }
         }
+        "completion" => {
+            // `req completion <file> <l:c>` is Invoked; a third word is
+            // the trigger character, spelled because the triggerKind it
+            // implies is part of the claim.
+            let (file, rest) = split_word(args);
+            let (pos, trig) = split_word(rest);
+            let (line, character) = parse_pos(pos)?;
+            let trig = trig.trim();
+            let trigger = if trig.is_empty() {
+                None
+            } else {
+                let mut cs = trig.chars();
+                let c = cs.next().ok_or("empty trigger character")?;
+                if cs.next().is_some() {
+                    return Err(format!("trigger must be one character, got {trig:?}"));
+                }
+                Some(c)
+            };
+            Req::Completion {
+                file: file.to_string(),
+                line,
+                character,
+                trigger,
+            }
+        }
         "raw" => {
             let (method, params) = split_word(args);
             let params: Value = serde_json::from_str(params.trim())
@@ -635,7 +673,8 @@ fn parse_req(rest: &str) -> Result<Req, String> {
             return Err(format!(
                 "unknown request kind `{other}` — expected hover, documentSymbol, \
                  formatting, codeAction, definition, references, prepareRename, \
-                 rename, signatureHelp, semanticTokens, inlayHint, or raw"
+                 rename, signatureHelp, semanticTokens, inlayHint, completion, \
+                 or raw"
             ));
         }
     })

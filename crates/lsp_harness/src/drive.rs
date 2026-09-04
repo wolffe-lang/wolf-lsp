@@ -446,6 +446,20 @@ impl<'a> Driver<'a> {
                 "range": {"start": {"line": start.0, "character": start.1},
                           "end": {"line": end.0, "character": end.1}},
             }),
+            Req::Completion {
+                file,
+                line,
+                character,
+                trigger,
+            } => json!({
+                "textDocument": {"uri": uri(file)?},
+                "position": {"line": line, "character": character},
+                "context": match trigger {
+                    None => json!({"triggerKind": 1}),
+                    Some(c) => json!({"triggerKind": 2,
+                                      "triggerCharacter": c.to_string()}),
+                },
+            }),
             Req::References {
                 file,
                 line,

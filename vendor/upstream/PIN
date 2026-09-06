@@ -1,20 +1,23 @@
 # The wolf-lang commit this repo is keyed to. A bump is its own commit, with
 # the re-vendored data, and nothing else (vendor/README.md).
 #
-# le07 pins the RELEASE TAG `v0.2.4`, which points at this sha. le04, le05 and
-# le06 pinned v0.2.1, v0.2.2 and v0.2.3 the same way; nothing here requires a
-# tag, and the next bump may be a trunk sha again.
-commit = 982f857885b991e686c6b045de213d10cab013c1
+# le08 pins the RELEASE TAG `v0.2.5`, which is an ANNOTATED tag (object
+# 0bb51c03…) peeling to the commit below. le04..le07 pinned v0.2.1..v0.2.4 the
+# same way; nothing here requires a tag, and the next bump may be a trunk sha
+# again. Note the peel: `git rev-parse v0.2.5` answers the TAG object, not the
+# commit — `v0.2.5^{commit}` is what belongs here, and reading the unpeeled
+# form would pin a sha no `wolf --version` will ever print.
+commit = 6ade878c1f5f48bcb5c9ee804c749fbbc8634a02
 # The exact `wolf --version` string that commit produces (first line; the
-# binary also prints a second line naming its lupin pairing — 0.1.24 at this
-# pin, up from 0.1.23 at v0.2.3). `lspconf doctor` fails on a mismatch: a stale
+# binary also prints a second line naming its lupin pairing — 0.1.26 at this
+# pin, up from 0.1.24 at v0.2.4). `lspconf doctor` fails on a mismatch: a stale
 # local `wolf` producing green transcripts is the failure mode the pin exists
 # to prevent.
 #
 # D57 decides the shape. A build is a release build only when the builder
 # stamps BOTH `WOLF_COMMIT=<short sha>` and `WOLF_RELEASE=v{crate version}`,
 # and the second is granted only when that exact tag points at HEAD. This pin
-# is at v0.2.4, so a release build prints the BARE version and the pin clause.
+# is at v0.2.5, so a release build prints the BARE version and the pin clause.
 # An unstamped build still prints `+dev.unknown` — the string any trunk build
 # of the same crate version prints, which is exactly the stale-binary hole —
 # so the pinned string remains a stamped build's, and `cargo xtask dist` in
@@ -23,29 +26,40 @@ commit = 982f857885b991e686c6b045de213d10cab013c1
 #
 # `xtask compat`'s `version_number` reads the number out of this string; it
 # learned semver build metadata at le03 and takes the bare tag form
-# unchanged — `0.2.4`, no `+` to strip. Asserted in xtask/src/compat.rs.
+# unchanged — `0.2.5`, no `+` to strip. Asserted in xtask/src/compat.rs.
 #
-# SEVEN HEX DIGITS FOR THE THIRD PIN RUNNING, and wolf-lang#199 reproduces on
-# this box at THIS commit exactly as le06 measured it at the last one. le05
-# derived the mechanism with arithmetic: `git rev-parse --short` sizes its AUTO
-# abbreviation to the object count of the clone it runs in, so the width is a
-# property of the BUILDER'S CLONE and never of the commit. le06 showed two
-# clones on one box disagreeing at one commit. le07 re-runs that measurement
-# and gets the same split:
+# SEVEN HEX DIGITS FOR THE FOURTH PIN RUNNING — and le08 finally has the
+# CONSTANT. wolf-lang#199 is that D57's pin clause is clone-dependent: le05
+# derived the mechanism as "`git rev-parse --short` sizes its AUTO abbreviation
+# to the object count of the clone it runs in", le06 exhibited two clones on one
+# box disagreeing, le07 re-ran it. All three left the threshold unstated, which
+# made the defect sound like drift. It is a STEP FUNCTION, and the step is at
+# **16,384 packed objects (2^14)** — measured, not read off a manual: three
+# scratch repositories packed to 16,383 / 16,384 / 16,385 objects answer 7 / 8 /
+# 8 hex digits (git 2.50.1). `git`'s auto-abbrev counts PACKED objects only, so
+# the loose half of `count-objects -v` does not move it.
 #
-#   * the binary installed at ~/.local/bin/wolf prints `pin 982f857` — SEVEN;
-#   * `git rev-parse --short 982f8578…` in THIS repo's `upstream/` submodule
-#     answers `982f8578` — EIGHT.
+# The two clones on this box, at THIS commit:
 #
-# Three consecutive pins, three identical splits. Nothing about the commit
-# changed between the two readings; the line below records what the ACQUIRED
-# artifact prints, because that is what CI acquires and what a user runs. A
-# locally built submodule binary on a large clone still fails `doctor` here,
-# and that refusal is the pin doing its job.
+#   * ~/GithubOrgs/wolffe-lang/wolf-lang — 12,257 packed — answers `6ade878`,
+#     SEVEN, and the acquired binary agrees;
+#   * this repo's `upstream/` submodule — 23,626 packed — answers `6ade878c`,
+#     EIGHT.
 #
-# The defect is upstream, in D57's clause being clone-dependent at all, and it
-# stays filed as wolf-lang#199 — see docs/COMPAT.md.
-version = "wolf 0.2.4 (wolfgang, pin 982f857)"
+# Their COMMIT counts are identical (1,020 each, `rev-list --all --count`), so
+# the older shorthand "the bigger clone" is not the test either; the pack count
+# is. And the consequence is worse than drift: the builder clone sits **4,127
+# packed objects below the flip**, so an ordinary `git fetch` there will one day
+# cross 16,384 and the string this file pins will become wrong on the builder's
+# own box WITHOUT ANY COMMIT CHANGING. That is the argument for fixing #199
+# upstream rather than re-measuring it every sprint — `--short=7`, or
+# `core.abbrev`, in whatever computes the stamp.
+#
+# The line below records what the ACQUIRED artifact prints, because that is
+# what CI acquires and what a user runs. A locally built submodule binary on
+# this clone still fails `doctor` here, and that refusal is the pin doing its
+# job. Filed as wolf-lang#199 — see docs/COMPAT.md.
+version = "wolf 0.2.5 (wolfgang, pin 6ade878)"
 # Does `wolf lsp` exist at this commit? YES, and at this pin it ANNOTATES.
 # wolf-lang s52 landed the subcommand (`wolf: the lsp subcommand`, 07e553d),
 # s133 added definition, references and rename, and s134 added
@@ -55,36 +69,51 @@ version = "wolf 0.2.4 (wolfgang, pin 982f857)"
 # navigation and fuzz suites all reach `Availability::Ready` as soon as a
 # binary at this version resolves.
 #
-# WHAT v0.2.4 ADDS THAT THIS REPO CAN SEE: the `byte` type ([type.byte], D72)
-# — `str.bytes()` and the eight byte-producing/consuming builtins answer
-# `List[byte]` where they answered `List[int]` through v0.2.3 (s136,
-# wolf-lang#231). That is a TYPE-DISPLAY change, so it reaches hover, inlay
-# hints and completion detail strings — the three surfaces that print a type
-# — and reaches nothing else on the wire. le07 records two NEW transcripts for
-# it (`requests/hover-byte`, `requests/completion-byte`) rather than trusting
-# the header-only diff the other transcripts show. Unix-domain sockets
-# ([os.net.unix]) and D74's BOM/multiline rules add no LSP surface: no new
-# request, no new capability, no new diagnostic code this repo pins.
+# WHAT v0.2.5 ADDS THAT THIS REPO CAN SEE: nothing on the wire, and le08 says
+# so after measuring rather than after sweeping. s137 is FIVE CLAUSES that are
+# five builtin FUNCTIONS — `[os.net.listen.opts]` (`net_listen_with`),
+# `[os.net.wait]` (`net_wait`), `[os.proc.inherit]` (`os_spawn_with`,
+# `net_adopt_listener`) and `[os.cpus]` (`os_cpus`); `[os.proc]` is a section
+# header declaring none. The spec diff is TWO files (`spec/11-os.md` +163,
+# `spec/anchors.json` +5) and adds no type, no keyword, no diagnostic code and
+# no LSP capability. `crates/wolf_sema/src/prelude.rs`'s BUILTIN_TYPES is
+# byte-identical across the pins at seventeen names; what grew is PRELUDE, the
+# builtin FUNCTION list.
 #
-# THE ARCHIVE IS WHOLE AT THIS TAG. Measured 2026-09-03: release id 381900956
+# That distinction is the whole of le08's LSP question, because the server's
+# three type-printing surfaces (hover, inlay hints, completion detail) key on
+# TYPES. Five new functions move none of them — but "predicted none" is what
+# le07 refused to accept about the byte, so le08 pins it: `net_wait`'s call
+# gets a hover transcript of its own, and le07's `completion-byte` ABSENCE is
+# re-verified against the grown prelude. See the two transcripts named below.
+#
+# THE VENDORED DATA DID NOT MOVE. `spec/grammar.ebnf` and all ELEVEN samples
+# are byte-identical at v0.2.4 and v0.2.5 — this bump's re-vendor changed only
+# the `upstream` gitlink, and that is the expected shape for a release that
+# touched neither the grammar nor any sampled corpus file. (le08 vendors ONE
+# new sample, `net/wait_readiness.lu`, in its own commit after this one.)
+#
+# THE ARCHIVE IS WHOLE AT THIS TAG. Measured 2026-09-05: release id 382606837
 # is published (`draft=false`), is Latest, and carries FOUR assets —
-#   wolf-0.2.4-aarch64-apple-darwin.tar.gz
-#   wolf-0.2.4-aarch64-unknown-linux-gnu.tar.gz
-#   wolf-0.2.4-x86_64-pc-windows-msvc.tar.gz
-#   wolf-0.2.4-x86_64-unknown-linux-gnu.tar.gz
-# — the same four-triple set v0.2.3 first carried, so le06's repaired acquire
-# step (`wolf-<version>-<triple>.tar.gz`, derived from the two fields above)
-# needs no change and all three tier-1 runners stay covered.
+#   wolf-0.2.5-aarch64-apple-darwin.tar.gz
+#   wolf-0.2.5-aarch64-unknown-linux-gnu.tar.gz
+#   wolf-0.2.5-x86_64-pc-windows-msvc.tar.gz
+#   wolf-0.2.5-x86_64-unknown-linux-gnu.tar.gz
+# — the same four-triple set v0.2.3 and v0.2.4 carried, so le06's repaired
+# acquire step (`wolf-<version>-<triple>.tar.gz`, derived from the two fields
+# above) needs no change and all three tier-1 runners stay covered.
 #
-# ONE UPSTREAM WART, MEASURED AND REPORTED RATHER THAN WORKED AROUND: the tag
-# `v0.2.4` has FOUR releases behind it, not one — the published one above plus
-# THREE empty drafts (ids 381901817, 381901945, 381903799; `assets=0`,
-# `published=null`). v0.2.3 has the identical shape (one published, three empty
-# drafts). This is wolf-lang#226's self-publishing release racing: each archive
-# job creates-or-gets the release, three lose, and the losers' empty drafts are
-# never reaped. It does NOT break acquisition — `gh release download v0.2.4`
+# THE UPSTREAM WART REPRODUCES A THIRD TIME, unchanged and unreaped: the tag
+# `v0.2.5` has FOUR releases behind it — the published one above plus THREE
+# empty drafts (ids 382607404, 382607457, 382609229; `assets=0`,
+# `published=null`), all three stamped 09:21:18Z against the published one's
+# 09:29:20Z. v0.2.3 and v0.2.4 have the identical shape. This is
+# wolf-lang#226's self-publishing release racing: each archive job
+# creates-or-gets the release, three lose, and the losers' empty drafts are
+# never reaped. It does NOT break acquisition — `gh release download v0.2.5`
 # and the API's tag lookup both resolve the published one — but `gh release
 # list` shows three Draft rows above the real one, which is exactly the shape
-# a human checking "did the release land?" misreads. Reported upstream; nothing
-# in this repo compensates for it, by design.
+# a human checking "did the release land?" misreads. Three releases is no
+# longer a coincidence; re-reported upstream, and nothing in this repo
+# compensates for it, by design.
 serves_lsp = true

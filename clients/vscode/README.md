@@ -237,6 +237,47 @@ WOLF_BIN=$SHIM/wolf \
 DISPLAY= xvfb-run -a node ./out/test/runTest.js
 ```
 
+On **macOS**, add `VSCODE_CLI=1` and point `WOLF_VSCODE_EXECUTABLE` at an
+installed VS Code (there is no `xvfb-run`, and the download path cannot launch
+— see the note in `src/test/runTest.ts`):
+
+```sh
+cd clients/vscode
+VSCODE_CLI=1 \
+WOLF_LSP_ROOT=/path/to/wolf-lsp \
+WOLF_REAL=/path/to/wolf \
+WOLF_BIN=$SHIM/wolf \
+WOLF_VSCODE_EXECUTABLE="/Applications/Visual Studio Code.app/Contents/MacOS/Electron" \
+node ./out/test/runTest.js
+```
+
+**`VSCODE_CLI=1` is not optional on macOS, and without it the lane looks like
+it worked.** `runTest.ts` hands the extension host a `PATH` with the shim's
+directory first, which is the entire capture mechanism. But VS Code, when it
+is launched as a bare Electron binary rather than through its `code` CLI,
+resolves the user's LOGIN-SHELL environment in its main process and REPLACES
+`PATH` with it — so the shim's directory is dropped before any extension runs.
+Measured at le08: the shim's own log recorded **zero** invocations while the
+suite reported **16/16 passing** and printed the correct pinned version, because
+the real `wolf` on the login `PATH` answered every probe and served the session.
+The tests pass, the transcript is never written, and `git status` is clean — a
+silent no-op with a green tick over it, which is the same failure shape le07
+found twice in this lane. `VSCODE_CLI=1` makes VS Code treat the launch as
+CLI-originated and skip that resolution; with it set, the shim logs
+`--version`, `--version`, `lsp --stdio` and the capture lands.
+
+**The vscode capture is NOT byte-reproducible, and that is a property of the
+client.** `clients/nvim/README.md` records that recording nvim three times in a
+row produces three byte-identical files. VS Code does not: three consecutive
+runs at le08, all 16/16, produced **56, 54 and 58** records. The varying rungs
+are the ones VS Code fires on its OWN timers rather than at the test's
+direction — `documentSymbol` for the outline view, `codeAction` for the
+lightbulb, `inlayHint` on scroll — and the test-driven rungs (`didOpen`,
+`hover`, `formatting`, `publishDiagnostics`, `semanticTokens/*`) have identical
+counts in all three. So a re-capture that differs from its predecessor by a
+background rung or two is expected and is not a regression; a re-capture that
+loses a test-driven rung is. Compare the METHOD MULTISET, not the byte count.
+
 Two details that are not incidental:
 
 **The shim passes every non-`lsp` subcommand through.** ls04's equivalent could

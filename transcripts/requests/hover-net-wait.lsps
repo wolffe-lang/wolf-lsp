@@ -1,0 +1,87 @@
+#! s137's calls in the one surface an editor user reads a type from (le08).
+#!
+#! le07 wrote `requests/hover-byte` because v0.2.4 moved a TYPE
+#! (`str.bytes()`: `List[int]` -> `List[byte]`) and a header-only sweep
+#! proves the wire did not move while proving nothing about a type the
+#! library never bound. v0.2.5 is the opposite pin and this transcript is
+#! its counterpart: s137 adds FIVE builtin FUNCTIONS
+#! (`net_listen_with`, `net_wait`, `os_spawn_with`, `net_adopt_listener`,
+#! `os_cpus`) and NO type — `BUILTIN_TYPES` is byte-identical across the
+#! pins at seventeen names, and what grew is `PRELUDE`.
+#!
+#! So the prediction is that hover does not move, and this file is the
+#! measurement that makes the prediction falsifiable rather than an
+#! assumption. `net_wait` is the s137 call worth hovering: alone among
+#! the five its signature is interesting at both ends
+#! (`List[int] -> List[int]`), so a server that had learned anything at
+#! all about s137's names would have to show it here.
+#!
+#! Five positions on `net/wait_readiness.lu`, s137's own witness:
+#!   41:8   `let woke = net_wait(set, 5000)?` — the binding taking the
+#!                                     ANSWER. `List[int]`: the subset,
+#!                                     in the caller's order.
+#!   41:15  `net_wait` itself           — hover on the builtin FUNCTION
+#!                                     NAME, and the load-bearing line.
+#!                                     It does NOT answer `null`, which
+#!                                     is what hover on the builtin TYPE
+#!                                     name `byte` answers (`hover-byte`
+#!                                     15:16) and what le08 predicted
+#!                                     here by analogy. Measured, it
+#!                                     answers
+#!
+#!                                         List[int] ! {io}
+#!
+#!                                     over the range 15..34 — the whole
+#!                                     CALL expression `net_wait(set,
+#!                                     5000)`, not the name. So the two
+#!                                     builtin namespaces are asymmetric
+#!                                     in the editor: a builtin TYPE name
+#!                                     hovers to nothing, a builtin
+#!                                     FUNCTION name hovers to the type
+#!                                     of the call it heads. That is the
+#!                                     prediction-by-analogy failing, and
+#!                                     the reason this position is in the
+#!                                     script rather than reasoned about.
+#!
+#!                                     Note what it is NOT: a signature.
+#!                                     No parameter names, no arity, no
+#!                                     clause prose — hovering the name
+#!                                     of a call the language gained on
+#!                                     this very pin tells a reader only
+#!                                     what the expression evaluates to.
+#!                                     Note also what it IS: the error
+#!                                     row rides the string, and
+#!                                     `List[int] ! {io}` is character
+#!                                     for character the signature tail
+#!                                     `[os.net.wait]` writes for this
+#!                                     call. The editor prints the
+#!                                     clause's own words without having
+#!                                     been taught them.
+#!   34:8   `let set = List[int]()`     — the ARGUMENT. Same type as the
+#!                                     answer, so both ends of the call
+#!                                     are pinned by one string.
+#!   38:8   `let quiet_is_empty = net_wait(set, 20)?.len == 0`
+#!                                     — `bool`, through `?` immediately
+#!                                     followed by a field access and
+#!                                     then a comparison. The chain the
+#!                                     clause's "an EMPTY answer is an
+#!                                     answer, not a failure" sentence
+#!                                     is about.
+#!   31:8   `let a = net_listen(...)`   — a net HANDLE is an `int`. Pins
+#!                                     that `[os.net.listen.opts]`'s
+#!                                     "acquisition call and nothing
+#!                                     else" rule reaches the editor as
+#!                                     the plain integer it is, and not
+#!                                     as some opaque handle type.
+name      requests/hover-net-wait
+profile   minimal
+
+initialize
+open      net/wait_readiness.lu
+wait      diagnostics net/wait_readiness.lu
+req       hover net/wait_readiness.lu 41:8
+req       hover net/wait_readiness.lu 41:15
+req       hover net/wait_readiness.lu 34:8
+req       hover net/wait_readiness.lu 38:8
+req       hover net/wait_readiness.lu 31:8
+shutdown

@@ -56,6 +56,10 @@ reason = "cross-file relatedInformation: the `member: true` sibling that carries
 path = "strings/bytes_roundtrip.lu"
 reason = "the byte tier's type display: the s136/#231 witness that `str.bytes()` answers `List[byte]` and not `List[int]`. Added at le07 because that is the ONE v0.2.4 change this repo can see on the wire — hover, inlay hints and completion detail are the three surfaces that print a type, and no other sample binds a byte at all. `let bs = s.bytes()` hovers `List[byte]`, `for b in bs` binds a bare `byte`, `bs[5] as int` shows [type.byte.cast]'s widening, and `fn dup(bs: List[byte]) -> List[byte]` puts `byte` in TYPE position for a completion subject. `phase: run`, so it is also a clean-diagnostics document."
 
+[[sample]]
+path = "net/wait_readiness.lu"
+reason = "s137's readiness call, and the ONE surface v0.2.5 could have moved. le08's question was whether five new builtin FUNCTIONS reach a server whose type-printing surfaces key on TYPES. Added because no sample bound a net handle at all, so `net_wait` — the only s137 call whose signature is interesting (`List[int] -> List[int]`, both ends a list) — could not be hovered anywhere. `let set = List[int]()` and `let woke = net_wait(set, 5000)?` put the same type on both sides of the call; `net_wait(set, 20)?.len == 0` puts `?` immediately before a field access; `woke[0] == b` indexes the answer. `phase: run`, so it is a clean-diagnostics document like the rest. Pairs with `strings/bytes_roundtrip.lu`: that one is the pin where a TYPE moved, this one the pin where only FUNCTIONS did, and the two transcripts are meant to be read together."
+
 # --- Known gap, deliberately not papered over -------------------------------
 #
 # ls01 §5 requires **astral-plane** text (an emoji: one char, two UTF-16 units,

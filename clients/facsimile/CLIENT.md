@@ -1,9 +1,18 @@
 # What facsimile's LSP client actually is
 
-Read from the source at `a121ab3` (trunk, v0.35.0 — re-read at le05 and at
-**le07**, which found trunk unmoved: `a121ab3` is still the tip; first read at
-`1242ffa`), not from `docs/LSP_GUIDE.md`, which documents gutter markers that
+Read from the source at `a121ab3` (trunk, v0.35.0 — re-read at le05, le07 and
+**le08**, each of which found trunk unmoved: `a121ab3` is still the tip, and
+`git log --oneline -3` still reads `a121ab3` / `8847550` / `daa258f`; first read
+at `1242ffa`), not from `docs/LSP_GUIDE.md`, which documents gutter markers that
 are commented out.
+
+**Every claim below was re-verified in the source at le08**, not carried
+forward: `handle_request` is still the empty `TODO` stub (now at
+`lsp_server_manager_module.f90:853`), `notify_file_closed` still has zero call
+sites (two imports, no callers), `$/cancelRequest` is still absent from `src/`,
+and `shutdown` is still a `TODO: Implement proper shutdown sequence` at `:515`
+rather than a request. The version-site drift is also unfixed — `VERSION` and
+`src/version_module.f90` say `0.35.0`, `fpm.toml` still says `0.34.0`.
 
 **A version-site drift worth reporting back, found at le07's re-read.** The
 commit `a121ab3` is subject-lined "Bump to 0.35.0" and touches exactly two
@@ -85,8 +94,45 @@ the whole buffer, debounced 0.5 s (`document_sync_module`). No incremental
 path, and the server's `textDocumentSync.change` is never read — wolf
 advertises `1` (Full), so they agree by luck rather than negotiation.
 
-`didChange` always carries `"version": 1` — the version field is hardcoded, so
-it conveys no ordering information at all.
+**The debounce is not a timer; it is a check on the next keystroke.** This is
+the property that decides whether a driven session can record an edit at all,
+and le08 measured it after le07 concluded — wrongly — that "facsimile sends
+exactly one `didChange` per session, and then stops".
+
+`app/main.f90:800` calls `flush_pending_document_changes` once per main-loop
+iteration, and the **next statement is `get_key_input`, which blocks**.
+`flush_pending_changes` sends only when `elapsed >= sync%sync_delay`, and it is
+evaluated microseconds after the edit that set `last_change_time`, so it
+declines — and the loop then parks in the read with the change still in
+`pending_content`. Nothing else wakes it. So **a pending change is flushed when
+the NEXT KEY ARRIVES, not when the timer expires**: an edit followed by silence
+is never sent, no matter how long anyone waits. (The comment in
+`flush_pending_changes` describes an EARLIER bug of the opposite shape — `force`
+selecting between the two branches instead of skipping the elapsed check — and
+that one really is fixed. This is a second, structural one and it is still
+live.)
+
+Compounding it, the loop after `get_key_input` deliberately coalesces an entire
+buffered burst into ONE iteration ("fast typing, paste, or a consumer that fell
+behind"). A driver that writes its whole key sequence at once therefore gets
+**one** flush regardless of how many edits it contains — which is precisely the
+measurement le07 reported and read as a hard client limit.
+
+It is not one. Typing one key per `write()`, with more than `sync_delay`
+between keys and a harmless non-edit key after each edit, records **both** edit
+rungs; three consecutive runs produce three byte-identical transcripts. The
+recipe is in `../README.md` §"Recording the transcript" and the session is
+`transcripts/facsimile/smoke.jsonl`, re-captured at `6ade878`.
+
+`didChange` always carries `"version": 1`, and le08 has this **on the wire**
+rather than only in the source: the re-captured session makes two DISTINCT
+edits and both notifications carry `"version": 1`.
+`document_sync_module.f90:103` increments `sync%version` on the line above and
+then calls `notify_file_changed` **without the version argument**, so
+`notify_file_changed`'s `doc_version = 1` default stands
+(`lsp_server_manager_module.f90:1352-1354`). The counter exists, is maintained,
+and is discarded at the one call site that could use it — one argument at each
+of the two sites is the whole fix.
 
 ## How the client tells its user something went wrong (PR #5)
 

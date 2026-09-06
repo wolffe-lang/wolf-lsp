@@ -6,88 +6,169 @@ run. Every row below names the tier it is verified at, the evidence for that
 tier, and — for T1 and T2 — the CI job that re-checks the evidence on every
 push. A row that claims a verification it does not have is a bug in this file.
 
-**Last reviewed against wolf pin `982f857`, 2026-09-03** (le07) — the wolf-lang
-release tag **`v0.2.4`**, so the pinned version string is the bare
-`wolf 0.2.4 (wolfgang, pin 982f857)`, and `lspconf doctor` reports **READY**
+**Last reviewed against wolf pin `6ade878`, 2026-09-05** (le08) — the wolf-lang
+release tag **`v0.2.5`**, so the pinned version string is the bare
+`wolf 0.2.5 (wolfgang, pin 6ade878)`, and `lspconf doctor` reports **READY**
 here. The scripted transcript library was re-recorded at that pin and
 `lspconf replay` + `onetruth` ran green under all nine derived profiles
-(**67** transcripts, 11 samples, zero divergences).
+(**69** scripted transcripts, 12 samples, zero divergences).
 
-**Every one of the 65 inherited transcripts is a header-only diff**, and the
-only fields that moved are `wolf_pin` and `recorded` — asserted by walking the
-diff and comparing parsed records field by field, not by eyeballing line
-counts. So the server's wire behaviour is byte-identical across
-`v0.2.3..v0.2.4`, capability answers included.
+**Every one of the 67 inherited transcripts is a header-only diff**, and the
+only fields that moved are `wolf_pin` and `recorded` — asserted by parsing every
+changed record and comparing field by field, not by counting lines. So the
+server's wire behaviour is byte-identical across `v0.2.4..v0.2.5`, capability
+answers included. **The two byte transcripts le07 wrote did not move either**,
+which is the specific thing le08 was sent to check: `hover-byte` and
+`completion-byte` both re-recorded header-only, so s137 changed neither the
+type display nor completion's answer.
 
-**That sweep is also why le07 wrote two NEW transcripts rather than trusting
-it.** A header-only sweep proves the wire did not move; it proves nothing about
-a type the library never bound. wolf-lang v0.2.4's one change this repository
-can see is the `byte` type ([type.byte], D72): `str.bytes()` and the eight
-byte-producing/consuming builtins answer `List[byte]` where they answered
-`List[int]` through v0.2.3 (s136, wolf-lang#231), and hover, inlay hints and
-completion detail are the three surfaces that print a type. No sample bound a
-byte at all, so the sweep could not have noticed:
+**And le08 wrote two NEW transcripts anyway, for the opposite reason le07 did.**
+le07's pin moved a TYPE and the sweep could not see it. This pin moves no type
+at all: wolf-lang v0.2.5's s137 is FIVE CLAUSES that are five builtin
+FUNCTIONS — `[os.net.listen.opts]` (`net_listen_with`), `[os.net.wait]`
+(`net_wait`), `[os.proc.inherit]` (`os_spawn_with`, `net_adopt_listener`) and
+`[os.cpus]` (`os_cpus`); `[os.proc]` is a section header declaring none.
+`BUILTIN_TYPES` is byte-identical across the pins at seventeen names; what grew
+is `PRELUDE`. Since the server's three type-printing surfaces key on TYPES, the
+prediction was "nothing moves" — and a prediction is not a measurement:
 
-- **`transcripts/requests/hover-byte`** — five positions in a new vendored
-  sample (`strings/bytes_roundtrip.lu`, the s136 witness): the changed binding
-  (`let bs = s.bytes()` hovers `List[byte]`), a BARE `byte` (`for b in bs`), the
-  type as WRITTEN rather than inferred (a `List[byte]` parameter),
-  [type.byte.cast]'s widening seen from outside (`bs[5] as int` hovers `int`),
-  and hover on the builtin type NAME itself, which answers `null`.
-- **`transcripts/requests/completion-byte`** — and it does not contain `byte`,
-  which is the finding. See the capability table below.
+- **`transcripts/requests/hover-net-wait`** — five positions in a new vendored
+  sample (`net/wait_readiness.lu`, s137's own witness). It found the one thing
+  the analogy got wrong. le07 pinned that hover on the builtin TYPE name `byte`
+  answers `null`; le08 predicted the same for a builtin FUNCTION name and
+  measured otherwise. Hover on `net_wait` answers **`List[int] ! {io}`** over
+  the range of the whole CALL expression. So the two builtin namespaces are
+  asymmetric in the editor: a type name hovers to nothing, a function name
+  hovers to the type of the call it heads. It is not a signature — no parameter
+  names, no arity, no clause prose — but the error row rides the string, and
+  `List[int] ! {io}` is character for character the signature tail
+  `[os.net.wait]` writes.
+- **`transcripts/requests/completion-s137`** — completion's absence
+  re-verified, and WIDENED. le07 pinned that no builtin TYPE name is offered.
+  le08 measured by set intersection against the pin's own `prelude.rs`: of the
+  **90** names in `PRELUDE` and the **17** in `BUILTIN_TYPES`, the answer in
+  call position offers **zero and zero**. `print` is not offered.
+  `net_listen` is not offered in a document that calls it twice above the
+  cursor. That is why `completion-byte` could not have moved: the surface that
+  would have shown five new prelude names does not exist. The `.` trigger the
+  server advertises still answers empty, now measured on a `List[int]` that
+  demonstrably has a `len`.
 
 **`lspconf doctor` is READY, and the archive is whole at this tag.** Release
-`v0.2.4` is published with the same four-triple asset set `v0.2.3` first
-carried, so le06's repaired acquire step needs no change. One upstream wart,
-measured and reported rather than worked around: the tag has FOUR releases
-behind it — the published one plus THREE empty drafts (wolf-lang#226's
-self-publishing release racing; `v0.2.3` has the identical shape). Acquisition
-resolves the published one; `gh release list` shows three Draft rows above it,
-which is exactly the shape a human misreads. Recorded in `vendor/upstream/PIN`.
+`v0.2.5` (id 382606837) is published with the same four-triple asset set
+`v0.2.3` first carried, so le06's repaired acquire step needs no change. The
+upstream wart reproduces a THIRD time, unchanged and unreaped: the tag has FOUR
+releases behind it — the published one plus THREE empty drafts (`assets=0`,
+`published=null`), all three stamped eight minutes before the real one.
+`v0.2.3` and `v0.2.4` have the identical shape, so wolf-lang#226's
+self-publishing release racing is no longer a coincidence. Acquisition resolves
+the published one; `gh release list` shows three Draft rows above it, which is
+exactly the shape a human misreads. Recorded in `vendor/upstream/PIN`.
 
-## THE SIX CAPTURED SMOKES: FIVE RE-CAPTURED, ONE NARROWED
+**Note the tag shape.** `v0.2.5` is an ANNOTATED tag: `git rev-parse v0.2.5`
+answers the TAG OBJECT (`0bb51c03…`), which peels to the commit `6ade878c…`.
+The pin records the peeled commit, because the unpeeled form is a sha no
+`wolf --version` will ever print.
+
+## THE SIX CAPTURED SMOKES: ALL SIX, AND THE OBLIGATION IS CLOSED
 
 This obligation has been owed since **le01** and named by this file every
 sprint since. The captured smokes are the transcripts no script decided — a
-real editor's real traffic — so they cannot be re-recorded, only re-CAPTURED
-by driving that editor again. le06 left all six at pin `70bdd35`. le07 drove
-**five of the six** on this box and re-captured them at `982f857`. The
-`lspconf replay` SKIP list is **six entries shorter by five**.
+real editor's real traffic — so they cannot be re-recorded, only re-CAPTURED by
+driving that editor again. le06 left all six at pin `70bdd35`; le07 drove five
+and left facsimile as a measured red; **le08 drove all six at `6ade878`.**
+`lspconf replay` now prints **no SKIP line at all** — 75 transcripts, zero
+skipped, where le06 skipped six and le07 skipped one.
 
-| smoke | driven? | how, at le07 |
+| smoke | driven at le08? | how, and what moved |
 |---|---|---|
-| **nvim** | **RE-CAPTURED** | `nvim --headless` with the documented shim, NVIM **v0.12.5**. All 7 `smoke.lua` assertions passed *while recording*. The old capture's `initialize` answer had **no `completionProvider`** — the transcript was materially wrong about what the server serves. Profile RE-DERIVED at v0.12.5: eglot-style drift found, `inlayHint.resolveSupport` moved from `location`/`command` to the dotted `label.location`/`label.tooltip`/`label.command`, and `didChangeWatchedFiles.dynamicRegistration` false → true. |
-| **fackr** | **RE-CAPTURED** | `cargo test lsp::smoke_wolf::wolf_lsp_corpus_session` in a clean clone at `496c7e2` with `patches/wolf-integration.diff` applied — which is how the patch series' own README says to reproduce it, and the series still applies cleanly. The user's own fackr worktree was never touched. |
-| **helix** | **RE-CAPTURED** | Driven through a pty with the stdlib `pty` module, helix **25.07.1** — the exact version `profiles/helix.json` was derived from, and the captured capability document is **byte-identical** to the profile, so no re-derivation was owed. Every rung of the recorded session reproduced, plus a NEW `textDocument/signatureHelp`: helix fires it on entering insert mode and the server has advertised `signatureHelpProvider` since s134. 9 records match on replay, up from 8. **The `[[grammar]]` and `languages.toml` fragment this repo ships is what made it work** — `hx --health wolf` resolves the server from it. |
-| **emacs** | **RE-CAPTURED** | `emacs --batch -l clients/emacs/tests/server-test.el`, GNU Emacs **31.1** with built-in eglot **1.24.31**. All eight `ert-info` sections asserted while recording; 24 records, rung for rung the old session. Profile RE-DERIVED at 31.1 — eglot grew a lot since 30.2: `$streamingDiagnostics`, `callHierarchy`, `diagnostic`, `semanticTokens`, `completion.insertReplaceSupport`, `publishDiagnostics.versionSupport` and — load-bearing for this repo — **`rename.prepareSupport: true`**. |
-| **vscode** | **RE-CAPTURED** | The extension's own test runner, against the installed VS Code. **16/16 passing, and the server half of that suite had never run.** Getting there needed two fixes, both in this repo and both described at their site — see the next section. |
-| **facsimile** | **NOT re-captured — and this is the one narrow red** | The editor CAN be driven here: `fac` v0.35.0 builds and runs, `pexpect`/`pyte` are present, and the read-only rungs all answer correctly at the new pin (hover → the type, documentSymbol → the one function, formatting → no edits, clean publish on open). What cannot be reproduced is the *recorded session*, for a measured client-side reason. See below. |
+| **nvim** | **RE-CAPTURED** | `nvim --headless` with the documented shim, NVIM **v0.12.5**, 7/7 `smoke.lua` assertions passing while recording. 33 records, **header-only** diff against le07's — bodies byte-identical, so the real editor's real traffic is unchanged at the new pin. Profile unchanged since le07's re-derivation. |
+| **fackr** | **RE-CAPTURED** | `cargo test lsp::smoke_wolf::wolf_lsp_corpus_session` in a clean clone at `496c7e2` with `patches/wolf-integration.diff` applied — the series still applies cleanly. 20 records, **header-only**. The user's own fackr worktree was never touched. |
+| **helix** | **RE-CAPTURED** | Driven through a pty, helix **25.07.1**, config dropped into a throwaway `XDG_CONFIG_HOME` (the shipped `languages.toml` is what makes `hx --health wolf` resolve the server). 20 records, **header-only**. One driver detail worth keeping: `Space s` opens the symbol PICKER and an open picker swallows the next keys, so the `codeAction` rung vanishes unless the driver sends `Esc` between the two space-mode bindings. |
+| **emacs** | **RE-CAPTURED** | `emacs --batch -l clients/emacs/tests/server-test.el`, GNU Emacs **31.1** with built-in eglot **1.24.31**, the suite passing while recording. 24 records, **header-only**. |
+| **vscode** | **RE-CAPTURED** | The extension's own test runner against the installed VS Code, **16/16**. Two things measured here, both in `clients/vscode/README.md`: `VSCODE_CLI=1` is **mandatory on macOS** or the lane is a silent no-op (below), and this capture is **not byte-reproducible** (below). |
+| **facsimile** | **RE-CAPTURED — and le07's red is withdrawn, not narrowed** | Driven through a pty, `fac` **v0.35.0**. 16 records, **rung for rung identical to the `70bdd35` session**, including BOTH `didChange` rungs and the break/fix round trip le07 reported as unrecordable. Three consecutive runs produce three **byte-identical** transcripts. See below. |
 
-### Why facsimile could not be re-captured, precisely
+### facsimile: what le07 measured, and what was actually true
 
-Two independent findings, both in the client and neither in `wolf lsp`:
+le07 recorded two client-side reasons the session could not be reproduced. The
+first was real and remains true. **The second was a wrong conclusion from a
+right measurement, and le08 withdraws it.**
 
-1. **The documented key sequence is stale, because the server's capability set
-   moved under it.** At `70bdd35` the server did not advertise
-   `completionProvider`. At `982f857` it does, and facsimile PR #5 routes on
-   the `initialize` reply — so the editor now opens a completion popup on the
-   very keystroke (`x`) the recorded sequence uses to break the file, and every
-   key after it is interpreted against a popup that did not exist when the
-   sequence was written.
-2. **facsimile sends exactly one `didChange` per session, and then stops.**
-   This is the blocker, and it is not a timing artifact of the driver: a probe
-   that made **five** separate edits three seconds apart, pumping the input
-   loop between each, produced **zero** `didChange` notifications. The
-   break/fix round-trip — half the value of the smoke — therefore cannot be
-   recorded at all. A transcript missing it would replay green forever while
-   covering less than the one it replaced, and `clients/nvim/README.md` states
-   the rule this repo follows: *a transcript of a broken session is worse than
-   none*. The `70bdd35` capture is kept, and its row keeps the pin it earned.
+1. **The documented key sequence was stale, and that part stands.** At
+   `70bdd35` the server did not advertise `completionProvider`; at `982f857`
+   and after, it does, and facsimile PR #5 routes on the `initialize` reply —
+   so a WORD character now opens a completion popup and every key after it is
+   interpreted against a popup that did not exist when the sequence was
+   written. The fix is one character wide: break the file with **`;`** rather
+   than a letter. It is not a word character, it produces a clean `E0002`, and
+   it is what the nvim and helix smokes already use.
 
-Both are reported to facsimile. The client mirror was re-read against the
-human's trunk at le07 and re-recorded where it had drifted — see
-`clients/facsimile/CLIENT.md` and `patches/STATUS.md`.
+2. **"facsimile sends exactly one `didChange` per session, and then stops" is
+   FALSE.** le07's probe — five edits three seconds apart — really did produce
+   zero notifications, so the measurement was sound; the conclusion drawn from
+   it was not, and it was about to become a permanent client limitation in this
+   file. The mechanism, read out of facsimile's source at `a121ab3` and then
+   confirmed on the wire:
+
+   - **The flush precedes a BLOCKING read.** `app/main.f90:800` calls
+     `flush_pending_document_changes` once per main-loop iteration and the very
+     next statement is `get_key_input`, which blocks. The debounce check runs
+     microseconds after the edit that set `last_change_time`, declines, and the
+     loop then parks in the read. **A pending change is flushed when the NEXT
+     KEY ARRIVES, not when the timer expires** — nothing wakes the loop. An
+     edit followed by silence is never sent, however long a driver waits.
+   - **A buffered burst is coalesced into ONE iteration.** The loop after
+     `get_key_input` deliberately drains every keystroke already buffered
+     ("fast typing, paste, or a consumer that fell behind"). A driver that
+     writes its key sequence in one `write()` gets **one** flush no matter how
+     many edits it contains — which is exactly what le07 saw.
+
+   So the rule is **type, do not paste**: one key per `write()`, more than
+   `sync_delay` (0.5 s) between them, and a harmless NON-EDIT key after each
+   edit to give the loop the iteration in which the debounce can expire. With
+   that, the full session records. A third trap cost a run and is worth the
+   line: facsimile's `Home` is a SMART home that lands on the first non-blank
+   column, so a driver assuming column 0 hovers the `=` and gets `null`.
+
+   **Assertions ran against the recording before it was committed**, the rule
+   the other five smokes follow: the method sequence matches the `70bdd35`
+   capture rung for rung, the open publish is clean, the break publish is
+   exactly one `E0002`, the fix publish is clean again, hover answers
+   `who: str`, `documentSymbol` answers `main`, `formatting` answers `[]`, and
+   no server→client request appears.
+
+   What this does NOT change: every constraint in
+   [`SERVER-CONSTRAINTS.md`](SERVER-CONSTRAINTS.md) still holds — `handle_request`
+   is still an empty stub, there is still no `shutdown`/`exit`, still no
+   `$/cancelRequest`, still no `\uXXXX` decoding. Re-verified in the source at
+   le08. And `didChange` still carries `"version": 1`, which le08 now has **on
+   the wire**: two distinct edits, two notifications, both version 1.
+
+### The VS Code lane: two properties measured at le08
+
+**`VSCODE_CLI=1` is mandatory on macOS, and without it the lane looks like it
+worked.** `runTest.ts` hands the extension host a `PATH` with the capture
+shim's directory first — that is the entire capture mechanism. But VS Code,
+launched as a bare Electron binary rather than through its `code` CLI, resolves
+the user's LOGIN-SHELL environment in its main process and REPLACES `PATH` with
+it, dropping the shim before any extension runs. Measured: the shim's own log
+recorded **zero** invocations while the suite reported **16/16 passing** and
+printed the correct pinned version, because the real `wolf` on the login `PATH`
+answered every probe and served the session. Tests pass, no transcript is
+written, `git status` stays clean. That is the third instance in this lane of
+the same failure shape — a green tick over a no-op — after the two le07 found.
+
+**The vscode capture is NOT byte-reproducible, and that is a client property.**
+`clients/nvim/README.md` records that nvim, recorded three times, produces three
+byte-identical files. VS Code does not: three consecutive runs at le08, all
+16/16, produced **56, 54 and 58** records. The varying rungs are the ones VS
+Code fires on its own timers — `documentSymbol` for the outline, `codeAction`
+for the lightbulb, `inlayHint` on scroll — and every test-driven rung
+(`didOpen`, `hover`, `formatting`, `publishDiagnostics`, `semanticTokens/*`) has
+an identical count across all three. **Compare the method multiset, not the byte
+count**: a re-capture differing by a background rung is expected; one that loses
+a test-driven rung is a regression.
 
 ### The two repairs that lit the VS Code lane
 
@@ -147,12 +228,12 @@ commit's run.
 
 | editor | tier | CI job | evidence | last verified |
 |---|---|---|---|---|
-| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | **2026-09-03, pin `982f857`** — RE-CAPTURED at le07 |
-| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | 2026-08-10, pin `70bdd35` — **re-capture attempted and refused at le07; see the header** |
-| [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.5`) | **2026-09-03, pin `982f857`, NVIM v0.12.5** — RE-CAPTURED, profile re-derived |
-| [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 16 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | **2026-09-03, pin `982f857`, VS Code 1.120.0** — RE-CAPTURED; 16/16, the server half ran for the first time |
-| [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | **2026-09-03, pin `982f857`, helix 25.07.1** — RE-CAPTURED; profile byte-identical, no re-derivation owed |
-| [Emacs (eglot)](../clients/emacs/README.md) | **T2** | `emacs-mode` (3 OS, 9 cases) + `emacs-check` | `clients/emacs/wolf-mode.el` loaded by `emacs --batch`; `transcripts/emacs/smoke` · `profiles/emacs.json` (`emacs@31.1`, eglot 1.24.31) | **2026-09-03, pin `982f857`, GNU Emacs 31.1** — RE-CAPTURED, profile re-derived |
+| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | **2026-09-05, pin `6ade878`** — RE-CAPTURED at le08; header-only |
+| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | **2026-09-05, pin `6ade878`, fac v0.35.0** — RE-CAPTURED at le08, rung for rung with the `70bdd35` session; the le01 obligation is CLOSED |
+| [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.5`) | **2026-09-05, pin `6ade878`, NVIM v0.12.5** — RE-CAPTURED at le08; 7/7, header-only |
+| [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 16 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | **2026-09-05, pin `6ade878`** — RE-CAPTURED at le08; 16/16, and the capture is not byte-reproducible (see above) |
+| [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | **2026-09-05, pin `6ade878`, helix 25.07.1** — RE-CAPTURED at le08; header-only |
+| [Emacs (eglot)](../clients/emacs/README.md) | **T2** | `emacs-mode` (3 OS, 9 cases) + `emacs-check` | `clients/emacs/wolf-mode.el` loaded by `emacs --batch`; `transcripts/emacs/smoke` · `profiles/emacs.json` (`emacs@31.1`, eglot 1.24.31) | **2026-09-05, pin `6ade878`, GNU Emacs 31.1** — RE-CAPTURED at le08; header-only |
 | [Zed](../clients/zed/README.md) | **T2** | `zed-extension` (wasm build) + `config-check` | wasm component builds; config statically checked | **wasm build: 2026-08-10.** **Manual run: NEVER — see below** |
 | [JetBrains (LSP4IJ)](../clients/jetbrains/README.md) | **T3** | *(none, by design)* | a written recipe | **NEVER — see below** |
 | Emacs (lsp-mode) | **T3** | *(none)* | a three-line `lsp-register-client` snippet in `clients/emacs/README.md` | **NEVER — no `lsp-mode` on any machine this repo runs on** |
@@ -277,8 +358,8 @@ document to decide whether to answer, only to decide the SHAPE (`linkSupport`,
 
 | capability | state | evidence per client | CI job |
 |---|---|---|---|
-| diagnostics, hover, documentSymbol, formatting, codeAction | served (s52) | `transcripts/{diagnostics,requests}/*`; hover's TYPE DISPLAY additionally pinned at le07 by `transcripts/requests/hover-byte` — the surface v0.2.4's `byte` type actually moved | `server-lane` |
-| completion | **served (s122), and pinned by a transcript for the first time at le07** — with two findings. **(1) It offers no builtin TYPE name at all.** In type position (inside `List[byte]`'s argument, the one place a type is the only legal completion) the answer is the locals in scope, the file's functions, and all FIFTY reserved keywords — and not `byte`, `int`, `str` or `bool`. A user annotating a type in any editor is offered `while` and `spawn` and never the type they are annotating with. **(2) `.` is advertised and answers nothing.** The server declares `completionProvider.triggerCharacters: ["."]`, so every client fires a request on every dot, and member completion returns an EMPTY list. Both are upstream; the transcript records the item set whole so a fix shows as a diff. **And the row itself was the bug this file exists to prevent**: it cited `transcripts/requests/*` from s133 while NO transcript had ever sent `textDocument/completion` — the word appeared only inside `initialize` capability blocks. | `transcripts/requests/completion-byte` | `server-lane` |
+| diagnostics, hover, documentSymbol, formatting, codeAction | served (s52) | `transcripts/{diagnostics,requests}/*`; hover's TYPE DISPLAY additionally pinned at le07 by `transcripts/requests/hover-byte` — the surface v0.2.4's `byte` type actually moved — and at le08 by `transcripts/requests/hover-net-wait`, which found the two builtin namespaces ASYMMETRIC: hover on a builtin TYPE name answers `null`, hover on a builtin FUNCTION name answers the type of the call it heads (`net_wait` → `List[int] ! {io}`, the error row included, over the whole call expression). Not a signature: no parameter names, no arity, no clause prose | `server-lane` |
+| completion | **served (s122), and pinned by a transcript for the first time at le07** — with two findings. **(1) It offers no builtin TYPE name at all.** In type position (inside `List[byte]`'s argument, the one place a type is the only legal completion) the answer is the locals in scope, the file's functions, and all FIFTY reserved keywords — and not `byte`, `int`, `str` or `bool`. A user annotating a type in any editor is offered `while` and `spawn` and never the type they are annotating with. **(2) `.` is advertised and answers nothing.** The server declares `completionProvider.triggerCharacters: ["."]`, so every client fires a request on every dot, and member completion returns an EMPTY list. Both are upstream; the transcript records the item set whole so a fix shows as a diff. **le08 widened finding (1) and gave it a number.** It is not that builtin TYPES are missing from completion — it is that the PRELUDE IS MISSING ENTIRELY. Measured by set intersection against the pin's own `prelude.rs` rather than by reading the list: of the **90** names in `PRELUDE` and the **17** in `BUILTIN_TYPES`, the call-position answer offers **zero and zero**. `print` is not offered; `net_listen` is not offered in a document that calls it twice above the cursor. That is also the explanation for a non-event — s137 added five names to `PRELUDE` and `completion-byte` re-recorded header-only, because the surface that would have shown them does not exist. Finding (2) restated at le08 on a `List[int]` that demonstrably has a `len`, through `?` and without it: still empty both ways. **And the row itself was the bug this file exists to prevent**: it cited `transcripts/requests/*` from s133 while NO transcript had ever sent `textDocument/completion` — the word appeared only inside `initialize` capability blocks. | `transcripts/requests/completion-byte`, `transcripts/requests/completion-s137` | `server-lane` |
 | `textDocument/definition` | **served (s133)** — `LocationLink[]` to fackr, facsimile, nvim, vscode, emacs (they declare `linkSupport`), `Location[]` to helix | `transcripts/navigation/definition-<client>.jsonl` | `server-lane` |
 | `textDocument/references` | **served (s133)** — package-wide, `includeDeclaration` honored, (file, offset) order | `transcripts/navigation/references-<client>.jsonl` | `server-lane` |
 | `textDocument/rename` + `prepareRename` | **served (s133)** — `documentChanges` to fackr, facsimile, vscode, helix, emacs, the `changes` map to nvim; refusals by name as `-32803` (`docs/COMPAT.md`) | `transcripts/navigation/rename-<client>.jsonl` | `server-lane` |

@@ -122,16 +122,81 @@ exec "$WOLF_LSP_ROOT/target/debug/lspconf" capture \
   -- "$WOLF_REAL" lsp
 ```
 
-The editor itself is driven headlessly through a pty with `pexpect` + `pyte`,
-exactly the way facsimile's own `test/integration_*.py` suites drive it. The
-session opens `hello.lu`, waits for the clean publish, types a character and
-waits out the 0.5 s debounce (E0203 arrives), deletes it and waits again (the
-clean publish returns), moves the cursor onto `who`, hovers, requests document
-symbols, formats, and quits with `Ctrl+Q`.
+The editor itself is driven headlessly through a pty (the stdlib `pty` module
+is enough; `pexpect`/`pyte` are not required). The session opens `hello.lu`,
+waits for the clean publish, appends a `;` and waits out the 0.5 s debounce
+(**E0002** arrives), deletes it and waits again (the clean publish returns),
+moves the caret onto `who`, hovers (`Ctrl+H`), requests document symbols
+(`Alt+O`), formats (`Alt+Shift+F`), and quits with `Ctrl+Q`.
+
+### Two client properties the driver MUST respect, or the edit rungs vanish
+
+le07 recorded that "facsimile sends exactly one `didChange` per session, and
+then stops", measured with a probe that made five edits three seconds apart and
+saw **zero** notifications. That conclusion is **withdrawn** — le08 re-captured
+the full session including both edit rungs. The mechanism, read out of
+facsimile's own source at `a121ab3` and then confirmed on the wire:
+
+1. **The flush is on the loop path immediately BEFORE a BLOCKING read.**
+   `app/main.f90:800` calls `flush_pending_document_changes` once per
+   iteration, and the very next statement is `get_key_input`, which blocks.
+   `flush_pending_changes` (`document_sync_module.f90`) only sends when
+   `elapsed >= sync%sync_delay` — but it is evaluated microseconds after the
+   edit that set `last_change_time`, so it declines, and the loop then parks in
+   the read. **A pending change is flushed when the NEXT KEY ARRIVES, not when
+   the timer expires**, because nothing wakes the loop. An edit followed by
+   silence sits in `pending_content` for the life of the session, however long
+   the driver waits.
+
+2. **A buffered burst is coalesced into ONE iteration.** The loop after
+   `get_key_input` deliberately drains every keystroke already in the buffer
+   and renders once ("fast typing, paste, or a consumer that fell behind"). So
+   a driver that writes its whole key sequence at once gets **one** flush no
+   matter how many edits the sequence contains — which is exactly the "exactly
+   one `didChange`" le07 measured.
+
+The recipe that follows from the two: **type, do not paste.** Write ONE key per
+`write()`, leave more than `sync_delay` between them, and send a harmless
+NON-EDIT key (an arrow) after each edit to give the loop the iteration in which
+the debounce can expire. With that, both `didChange` rungs and both publishes
+record, and three consecutive runs produce three BYTE-IDENTICAL transcripts.
+
+**Pass `-w <workspace>`, or the transcript leaks an absolute path.** Left to
+itself facsimile picks its LSP root with `workspace_detect_from_file`, which
+walks UP from the opened file looking for a workspace marker
+(`app/main.f90:231`, `workspace_module.f90:55-90`). That walk does not stop at
+the samples directory — on the le08 machine it climbed to `$HOME`, where a
+marker exists, and `rootUri` came out as the home directory. The capture
+normalizer elides the workspace directory to `$WS` and has nothing to elide a
+home directory to, so `tests/client_recorded.rs` rejects the transcript, exactly
+as it should. `-w/--workspace` sets `explicit_lsp_workspace`, which takes
+priority over every other branch, and reproduces the `file://$WS` root the
+`70bdd35` capture recorded. Note that opening the file by an ABSOLUTE path is
+NOT enough: the workspace-mode branch is tested before the filename branch.
+
+Two smaller traps, both measured at le08:
+
+- **`Home` is a SMART home**: it lands on the first non-blank column (4 on
+  `    let who = "wolf"`), not column 0. A driver that assumes column 0 hovers
+  the `=` and gets `null` back.
+- Break the file with `;` rather than a letter. le07 found that a word
+  character now opens the completion popup — the server advertises
+  `completionProvider` and facsimile PR #5 routes on the `initialize` reply —
+  and every key after it is then interpreted against a popup that did not exist
+  when the original sequence was written. `;` is not a word character, produces
+  a clean `E0002`, and is what the nvim and helix smokes already use.
 
 The driver script is not committed to either repo: it is scaffolding, and the
-transcript is the artifact. The recipe above plus the key sequences in
-`patches/STATUS.md` reproduce it.
+transcript is the artifact. The recipe above, the key table in `CLIENT.md`, and
+the two properties above reproduce it.
+
+**Assertions run against the recording before it is committed**, the rule the
+other five smokes follow: the method sequence matches the previous capture
+rung for rung, the open publish is clean, the break publish is exactly one
+`E0002`, the fix publish is clean again, hover answers ``who: str``,
+`documentSymbol` answers `main`, `formatting` on a canonical file answers `[]`,
+and no server→client request appears (the constraint `SERVER-CONSTRAINTS.md`
+exists for). A transcript of a broken session is worse than none.
 
 There is **no `.lsps` beside the transcript**, and that is the point — no
 script decided what facsimile sent. `lspconf verify` knows the shape

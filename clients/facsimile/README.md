@@ -161,6 +161,19 @@ NON-EDIT key (an arrow) after each edit to give the loop the iteration in which
 the debounce can expire. With that, both `didChange` rungs and both publishes
 record, and three consecutive runs produce three BYTE-IDENTICAL transcripts.
 
+**Pass `-w <workspace>`, or the transcript leaks an absolute path.** Left to
+itself facsimile picks its LSP root with `workspace_detect_from_file`, which
+walks UP from the opened file looking for a workspace marker
+(`app/main.f90:231`, `workspace_module.f90:55-90`). That walk does not stop at
+the samples directory — on the le08 machine it climbed to `$HOME`, where a
+marker exists, and `rootUri` came out as the home directory. The capture
+normalizer elides the workspace directory to `$WS` and has nothing to elide a
+home directory to, so `tests/client_recorded.rs` rejects the transcript, exactly
+as it should. `-w/--workspace` sets `explicit_lsp_workspace`, which takes
+priority over every other branch, and reproduces the `file://$WS` root the
+`70bdd35` capture recorded. Note that opening the file by an ABSOLUTE path is
+NOT enough: the workspace-mode branch is tested before the filename branch.
+
 Two smaller traps, both measured at le08:
 
 - **`Home` is a SMART home**: it lands on the first non-blank column (4 on

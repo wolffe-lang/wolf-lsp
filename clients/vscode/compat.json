@@ -3,19 +3,19 @@
   "client_version": "0.0.1",
   "artifact": "vsix \u2014 clients/vscode/, packaged by @vscode/vsce",
   "wolf": {
-    "min": "0.2.4",
-    "max_tested": "0.2.4",
-    "pin": "982f857885b991e686c6b045de213d10cab013c1",
-    "pin_version_string": "wolf 0.2.4 (wolfgang, pin 982f857)"
+    "min": "0.2.5",
+    "max_tested": "0.2.5",
+    "pin": "6ade878c1f5f48bcb5c9ee804c749fbbc8634a02",
+    "pin_version_string": "wolf 0.2.5 (wolfgang, pin 6ade878)"
   },
   "verified": {
-    "date": "2026-09-03",
+    "date": "2026-09-05",
     "host": "local (macos arm64)",
     "evidence": [
-      "transcripts/vscode/smoke.jsonl (still at 70bdd35 \u2014 the extension test runner cannot launch a current VS Code on macOS; see clients/vscode/src/test/runTest.ts and docs/MATRIX.md)",
+      "transcripts/vscode/smoke.jsonl (RE-CAPTURED at this pin, le08: the extension's own test runner against the installed VS Code via WOLF_VSCODE_EXECUTABLE, the override le07 added; HEADER-ONLY diff against le07's)",
       "profiles/vscode.json",
-      "clients/vscode/src/test/suite/extension.test.ts (the no-toolchain half runs; the server half is what the runner blocks)",
-      "lspconf replay + onetruth under this client's derived profile at pin 982f857 (v0.2.4), 2026-09-03 (the captured smoke keeps its recorded pin)"
+      "clients/vscode/src/test/suite/extension.test.ts (both halves \u2014 the server half has run at every pin since le07 repaired the two defects that had kept it dark)",
+      "lspconf replay + onetruth under this client's derived profile at pin 6ade878 (v0.2.5), 2026-09-05 \u2014 69 scripted transcripts matched, 12 samples \u00d7 9 profiles with zero divergences"
     ]
   },
   "warning_surface": "one notification at activation, plus `Wolf: Show Version`"

@@ -3,19 +3,19 @@
   "client_version": "0.0.1",
   "artifact": "TOML fragment \u2014 clients/helix/languages.toml, copied into the user's config",
   "wolf": {
-    "min": "0.2.4",
-    "max_tested": "0.2.4",
-    "pin": "982f857885b991e686c6b045de213d10cab013c1",
-    "pin_version_string": "wolf 0.2.4 (wolfgang, pin 982f857)"
+    "min": "0.2.5",
+    "max_tested": "0.2.5",
+    "pin": "6ade878c1f5f48bcb5c9ee804c749fbbc8634a02",
+    "pin_version_string": "wolf 0.2.5 (wolfgang, pin 6ade878)"
   },
   "verified": {
-    "date": "2026-09-03",
+    "date": "2026-09-05",
     "host": "local (macos arm64)",
     "evidence": [
-      "transcripts/helix/smoke.jsonl (RE-CAPTURED at this pin, le07: helix 25.07.1 driven through a pty, every rung of the recorded session reproduced)",
+      "transcripts/helix/smoke.jsonl (RE-CAPTURED at this pin, le08: helix 25.07.1 driven through a pty, every rung of the recorded session reproduced; 20 records, HEADER-ONLY diff against le07's)",
       "profiles/helix.json (re-read at 25.07.1 \u2014 byte-identical to the capture, no re-derivation needed)",
       "cargo xtask helix-health",
-      "lspconf replay + onetruth under this client's derived profile at pin 982f857 (v0.2.4), 2026-09-03"
+      "lspconf replay + onetruth under this client's derived profile at pin 6ade878 (v0.2.5), 2026-09-05 \u2014 69 scripted transcripts matched, 12 samples \u00d7 9 profiles with zero divergences"
     ]
   },
   "warning_surface": "none \u2014 a TOML fragment cannot run code; docs/COMPAT.md is the whole statement"

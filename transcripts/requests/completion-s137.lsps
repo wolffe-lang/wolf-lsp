@@ -1,0 +1,66 @@
+#! Completion's ABSENCE, re-verified against a prelude that GREW (le08).
+#!
+#! le07's `requests/completion-byte` pinned an absence: asked in TYPE
+#! position, the server offers the locals in scope, the file's functions
+#! and all FIFTY reserved keywords — and not one of the seventeen builtin
+#! TYPE names. The le08 contract asks whether s137 changed that, and it
+#! is the sharpest question this repository could ask of v0.2.5, because
+#! s137's whole delta is FIVE NEW NAMES IN `PRELUDE`
+#! (`net_listen_with`, `net_wait`, `os_spawn_with`, `net_adopt_listener`,
+#! `os_cpus`). A completion surface that offered prelude names would have
+#! to move by exactly five items. `completion-byte` re-recorded
+#! header-only, so it did not move — and this file is WHY, stated as a
+#! measurement on s137's own witness rather than inferred from that.
+#!
+#! The absence is wider than le07 could see from a file that binds no
+#! builtin call. It is not that builtin TYPES are missing from
+#! completion; it is that the PRELUDE IS MISSING FROM COMPLETION
+#! ENTIRELY. Measured by set intersection against the pin's own
+#! `prelude.rs` rather than by reading the item list: of the **90**
+#! names in `PRELUDE` and the **17** in `BUILTIN_TYPES`, the call-position
+#! answer offers **zero and zero**. `print` is not offered. `net_listen`
+#! is not offered, in a document that calls it twice on the lines above
+#! the cursor. So the five names s137 added could not have appeared, and
+#! the header-only diff on `completion-byte` is explained rather than
+#! merely observed.
+#!
+#! Four positions on `net/wait_readiness.lu`:
+#!
+#!   34:19  inside `List[int]`'s type argument — TYPE position, where a
+#!          type name is the only legal completion. le07's finding
+#!          re-measured at the new pin on a different file: keywords and
+#!          locals, no `int`, no `byte`, no `str`, no `bool`.
+#!
+#!   41:18  partway through the NAME `net_wait`, on the line that calls
+#!          it — CALL position. This is the s137 question asked directly:
+#!          a user typing `net_wa` in a document whose subject is
+#!          `net_wait` is offered no `net_wait`, and no other member of
+#!          the family either. The whole item list is recorded, so the
+#!          day the prelude reaches completion this record moves by a
+#!          knowable amount.
+#!
+#!   38:44  after the `.` in `net_wait(set, 20)?.len` — the trigger
+#!          character the server ADVERTISES in its own
+#!          `completionProvider.triggerCharacters: ["."]`, fired on a
+#!          `List[int]` that genuinely has a `len`. Empty.
+#!
+#!   43:12  after the `.` in `woke.len` — the same trigger on a plain
+#!          local rather than through a `?`, so the empty answer cannot
+#!          be blamed on the error-propagation operator. Also empty.
+#!
+#! Both dot positions restate le07's second finding at a pin where the
+#! member being completed demonstrably exists. Every record here is a
+#! regression witness pointed the right way: red-flag shapes, committed
+#! so that fixing them shows up as a diff instead of being silently
+#! absent. Filed upstream with le07's two.
+name      requests/completion-s137
+profile   minimal
+
+initialize
+open      net/wait_readiness.lu
+wait      diagnostics net/wait_readiness.lu
+req       completion net/wait_readiness.lu 34:19
+req       completion net/wait_readiness.lu 41:18
+req       completion net/wait_readiness.lu 38:44 .
+req       completion net/wait_readiness.lu 43:12 .
+shutdown

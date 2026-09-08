@@ -297,14 +297,14 @@ shape a human checking "did the release land?" misreads. Recorded in
 ## le06 — 2026-09-02 — the generator tells the truth
 
 The tmLanguage generator stops saying two things the spec does not, the
-pin moves to wolf-lang **v0.2.3** (`3befc3e`), and a normalizer that had
+pin moves to wolf-lang v0.2.3 (`3befc3e`), and a normalizer that had
 been leaking absolute paths for eight sprints is caught by the pin bump
 that re-recorded them.
 
-**The generator, and the two blocks that were the acceptance.**
+The generator, and the two blocks that were the acceptance.
 `raw-string` and `generalized-string` each carried `{ "include":
 "#interpolation" }` while `[gram.lex.str.raw]` and `[gram.lex.str.gen]`
-both say raw-mode — tree-sitter has always agreed, and the v0.2.3 EBNF
+both say raw-mode; tree-sitter has always agreed, and the v0.2.3 EBNF
 this sprint vendors now says it in productions too (`RAW_TEXT ::=
 SCALAR*`, `GEN_TEXT ::= (SCALAR - ('"' | NL))*`; neither has an INTERP
 alternative). Both rules carry an empty pattern list now. Measured
@@ -317,42 +317,43 @@ through wolf-book's own tmLanguage interpreter, before and after:
 | solutions `r"when (a, b) { c[0] }"` | hole punctuation **and `0` as a numeric literal** | one raw run, `19..39` |
 
 A fourth mover nobody had filed: `re"[a-z]+{2}"`'s regex quantifier
-stopped reading as an interpolation hole. **wolf-lsp#4 closes.**
+stopped reading as an interpolation hole. wolf-lsp#4 closes.
 
-**The hole scans the literals (wolf-lsp#5), and the second half is a
-closed match on purpose.** `#chars` drops straight in, so `'a'` inside
+The hole scans the literals (wolf-lsp#5), and the second half is a
+closed match. `#chars` drops straight in, so `'a'` inside
 `"{(m + ('a' as int)) as char}"` paints as it does two lines above it.
 The nested string ships as `#interpolated-string`, a closed match, and
-**not** as `{ "include": "#strings" }` — that spelling is a reference
+not as `{ "include": "#strings" }`: that spelling is a reference
 cycle (strings -> quoted-string -> interpolation -> strings), and the
 one downstream consumer of this file that is not VS Code refuses it:
 wolf-book renders every code block through `xtask/src/tm.rs`, which
 expands includes eagerly and fails at LOAD with "include cycle through
-`#strings` — the interpreter does not support recursion". Not a wrong
-paint: no paint at all, book-wide. The closed form reads identically on
+`#strings` — the interpreter does not support recursion". The result is
+no paint at all, book-wide. The closed form reads identically on
 both engines, paints `"total"` in `print("{"total":<10}")`, and refuses
-what it cannot prove — a nested literal carrying a brace or an escape
-still goes unpainted, which is the same argument `#chars` has made since
+what it cannot prove: a nested literal with a brace or an escape
+still goes unpainted, the same argument `#chars` has made since
 le05. A generator test walks the emitted include graph and fails on any
 cycle, so nobody re-introduces this one by accident.
 
-**The pin, and two terminals the default was wrong about.** `vendor/
+The pin, and two terminals the default was wrong about. `vendor/
 upstream/PIN` records `wolf 0.2.3 (wolfgang, pin 3befc3e)` and `lspconf
-doctor` is **READY** here. The re-vendored data is one file:
-`spec/grammar.ebnf` gains twelve lines that answer **wolf-lang#215** —
+doctor` is READY here. The re-vendored data is one file:
+`spec/grammar.ebnf` gains twelve lines that answer wolf-lang#215:
 SCALAR, NL, STR_TEXT, the MULTILINE/RAW/GENERALIZED string productions
 and CHAR_TEXT, the ones le05 filed as named-and-undefined. Those
 productions are also the first to write `'"""'` and `'#'` as quoted
 terminals, and xtask's partition sends every unlisted symbol to
 `keyword.operator.wolf`. That default does not hold here: `#` in the
 operator scope paints the fence of every `r#"…"#` and, worse, paints a
-STRAY `#` — a stray byte by `[gram.lex.shebang]`, not language. Both
+STRAY `#`, which is a stray byte by `[gram.lex.shebang]` and not
+language. Both
 join `DELIMITERS` as the literal-form fragments they are, so the emitted
 tmLanguage is unchanged by the bump.
 
-**wolf-lang#199 gets its cleanest evidence yet.** le05 measured why the
-pin clause's width belongs to the builder's clone; le06 shows two clones
-on ONE BOX at ONE COMMIT disagreeing. The installed binary prints `pin
+wolf-lang#199 gets its cleanest evidence yet. The measurement at le05
+showed why the pin clause's width belongs to the builder's clone; here
+two clones on ONE BOX at ONE COMMIT disagree. The installed binary prints `pin
 3befc3e` (seven); `git rev-parse --short` in this repo's `upstream/`
 submodule (22,590 objects) answers `3befc3e8` (eight). So a developer
 who follows `vendor/README.md`'s own pin-bump ritual gets a string this
@@ -360,21 +361,21 @@ file would have to record as eight digits, and one who installs the
 published archive gets seven. PIN records what the ACQUIRED artifact
 prints, and says so.
 
-**Transcripts: 65 re-recorded, 60 header-only, and 5 that found a bug in
-this repo.** Every scripted transcript re-recorded at the new pin; sixty
+Transcripts: 65 re-recorded, 60 header-only, and 5 that found a bug in
+this repo. Every scripted transcript re-recorded at the new pin; sixty
 diffs are `@@ -1 +1 @@` with `wolf_pin` the only moved field. That is
 what s134 predicted for the eighteen `annotate/*` files, recorded
-against a branch binary with the pin unmoved — the caveat retires, and
+against a branch binary with the pin unmoved. The caveat retires, and
 it is the second consecutive branch-recorded set to re-pin without
 moving.
 
 The other five are the normalizer's. `Stage::Paths` is unconditional
 because a machine-specific path in a committed artifact is the one thing
 no assertion may depend on, and it walked string VALUES only. LSP has
-exactly one map whose keys are data: `WorkspaceEdit.changes`,
+one map whose keys are data: `WorkspaceEdit.changes`,
 `{ [uri: DocumentUri]: TextEdit[] }`. A rename or a code-action edit
-answered to a client that does not declare `documentChanges` — nvim and
-helix — stores its URIs in KEY position and nowhere else, so eight
+answered to a client that does not declare `documentChanges` (nvim and
+helix) stores its URIs in KEY position and nowhere else, so eight
 records across six transcripts shipped a developer's home directory.
 The sprint contract named this the "astral-path defect" and predicted
 the fixtures root was missing from the elision list; measured, the
@@ -386,26 +387,26 @@ learned the tilde form, because eglot names its workspace folder through
 
 Six of the eight cleared on re-record. The two that did not are captured
 sessions predating the fix, one of them recorded on a linux box, and a
-script-less transcript cannot be re-recorded by design — they need a
-re-CAPTURE, filed as **wolf-lsp#7**.
+script-less transcript cannot be re-recorded by design; they need a
+re-CAPTURE, filed as wolf-lsp#7.
 `tests/client_recorded.rs` now holds the property over every transcript
 and every field, with those two in a waiver that is exhaustive in both
 directions: a waived file that stops leaking fails the test too.
 
-**The clients.** The vscode extension contributes `semanticTokenScopes`,
+The clients. The vscode extension contributes `semanticTokenScopes`,
 and the test that enforced their ABSENCE inverts to enforcing that the
 mapping covers the server's closed legend exactly, in both directions.
-This is not decoration: VS Code's fallback for a token type a theme has
-no rule for is *no rule*, so serving semantic tokens without a mapping
-would leave a file **less** coloured than the TextMate grammar left it.
-Inlay hints needed nothing — there is no contribution point, whether
+VS Code's fallback for a token type a theme has no rule for is *no
+rule*, so serving semantic tokens without a mapping would leave a file
+less coloured than the TextMate grammar left it.
+Inlay hints needed nothing: there is no contribution point, whether
 hints show is the user's `editor.inlayHints.enabled`, and nvim's and
 helix's stay off by those editors' own defaults. The README sentence
 "semantic tokens and inlay hints are absent, and a test enforces it"
-retires. compat rows earn **0.2.3** on measured evidence; Zed keeps its
+retires. compat rows earn 0.2.3 on measured evidence; Zed keeps its
 NO-SESSION caveat with the wasm component re-built locally today.
 
-**wolf-lsp#3 closes.** The acquire step asked for
+wolf-lsp#3 closes. The acquire step asked for
 `wolf-<shortsha>-linux-x86_64.tar.gz`, a name `xtask dist` has never
 published at any tag this repo has pinned. Both fields come out of PIN
 now. Two more things would have failed the moment a download succeeded:
@@ -418,18 +419,18 @@ the triple is derived per host. Whether the lane LIGHTS is CI's to
 answer; docs/MATRIX.md is re-stamped from a CI result, never from an
 edit, so its rows do not yet claim green.
 
-**THE SERVER LANE LIT, AND THEN IT WENT RED — measured, not predicted.**
+THE SERVER LANE LIT, AND THEN IT WENT RED.
 Pushing the acquire fix was the first time `server-lane` had ever
 acquired anything (run `33694888387`): the download step and `lspconf
-doctor` both passed on ubuntu AND macos, and the next step failed. Not
-the server — the six captured editor smokes, at pin `70bdd35`, which
+doctor` both passed on ubuntu AND macos, and the next step failed. The
+failure was the six captured editor smokes, at pin `70bdd35`, which
 `lspconf replay` refuses. That refusal has been documented-red in
 `release-check 3b` for four sprints; it had simply never reached CI,
 because CI had never had a binary.
 
 So `replay` learns the distinction this repository already draws
 everywhere else. A SCRIPTED transcript at another pin means somebody
-forgot `lspconf rerecord` — a real error, still exit 2. A SCRIPT-LESS
+forgot `lspconf rerecord`, a real error, still exit 2. A SCRIPT-LESS
 one cannot be re-recorded by design; it needs a person and an editor.
 Those six are a named `SKIP:` now, printed with both pins and the remedy
 on every run, and the sixty-five transcripts that ARE at the pin get
@@ -437,20 +438,20 @@ replayed instead of the whole lane aborting before the first one.
 Nothing that was checked stops being checked: they were never compared
 against anything, they were killing the run.
 
-**A LANE THAT RUNS FINDS THINGS, AND IT FOUND ONE IMMEDIATELY.** With
-the six captures skipped, `server-lane` went green on ubuntu — acquire,
+A LANE THAT RUNS FINDS THINGS, AND IT FOUND ONE IMMEDIATELY. With
+the six captures skipped, `server-lane` went green on ubuntu (acquire,
 `doctor`, replay, one-truth, the five server-gated suites and the seeded
-fuzz, all of them for the first time in this repository's history — and
-red on **macos**, at `semantics::a_cancelled_request_completes_promptly_
+fuzz, all of them for the first time in this repository's history) and
+red on macos, at `semantics::a_cancelled_request_completes_promptly_
 with_request_cancelled`: `Timeout { awaited: "a
 textDocument/publishDiagnostics notification for …/hello.lu", seen:
 ["response id=1 …"] }`. The two sibling tests in the same file, at 800 ms
 and 1500 ms of injected slowness, passed; ubuntu passed all three.
 
-Nothing was wrong with the server, and the first fix was not enough,
-which is the interesting part. `slow_session` sets
+Nothing was wrong with the server, and the first fix was not enough.
+`slow_session` sets
 `WOLF_QUERY_TEST_SLOW_MS`, which adds that many milliseconds at every
-query checkpoint, and then waited on `DEFAULT_TIMEOUT` — a 20 s budget
+query checkpoint, and then waited on `DEFAULT_TIMEOUT`, a 20 s budget
 whose own comment says it exists to cover a COLD non-resident compiler.
 Adding one `ms` to it moved the failure from 20 s to 30 s and no
 further: `didOpen` -> the first `publishDiagnostics` is an analysis
@@ -460,8 +461,8 @@ caller gets `DEFAULT_TIMEOUT + ms` back, because every assertion past
 the setup is about one query and handing it the setup's headroom would
 let a slow server look prompt. Six is headroom, not a measured count.
 
-Then windows acquired a binary too, `doctor` said READY, and **59 of the
-65 transcripts ERRORed** — every one of them `timed out waiting for a
+Then windows acquired a binary too, `doctor` said READY, and 59 of the
+65 transcripts ERRORed, every one of them `timed out waiting for a
 textDocument/publishDiagnostics notification for file://D:/a/…`, with an
 empty server stderr. The two slashes are the whole bug. A transcript
 records document URIs as `file://$WS/…`, which is correct on unix by
@@ -471,8 +472,8 @@ eliding the workspace to `$WS` takes the slash with it. On Windows the
 workspace is `D:/a/…`, so substitution yields `file://D:/a/…`, in which
 `D:` parses as the URI's AUTHORITY. The server normalized what it was
 sent and published `file:///D:/a/…`; the harness waited for the string it
-had built. `session::file_uri` has always known this — its comment says
-so — but replay and drive rebuild URIs by substitution rather than by
+had built. `session::file_uri` has always known this (its comment says
+so), but replay and drive rebuild URIs by substitution instead of
 calling it, so the knowledge never reached them. `expand_workspace` puts
 it in one place; on unix the two forms are the same string and nothing
 moves.
@@ -480,20 +481,20 @@ moves.
 That fix bought the other half of the same fact. With the URIs
 expanding correctly, windows stopped timing out and started
 MISMATCHING: `/uri: expected "file://$WS/…", got "file:///$WS/…"`, three
-records in each of 59 transcripts. Record and replay are mirrors — on
+records in each of 59 transcripts. Record and replay are mirrors: on
 unix the workspace root supplies the third slash, so the whole library
 is written `file://$WS/…`; on windows `file:///D:/a/…` elides to
 `file:///$WS/…` unless the slash-prefixed root is elided too.
 `elide_paths` now does. Unix is untouched, measured: re-recording all 65
 transcripts moves nothing but the `recorded` date. The test that has
 asserted "two machines normalize to the same transcript" since ls01 was
-building its windows twin by a blunt substring swap — `file://C:/…`, a
-URI in which `C:` is the authority and which no windows run emits — so
+building its windows twin by a blunt substring swap (`file://C:/…`, a
+URI in which `C:` is the authority and which no windows run emits), so
 it agreed about a shape that does not exist. It builds the real one now.
 
-**AND THEN IT WAS GREEN ON ALL THREE.** Measured at head `8df0f03`:
+AND THEN IT WAS GREEN ON ALL THREE. Measured at head `8df0f03`:
 `server-lane` passes on ubuntu-latest, macos-latest and windows-latest,
-every step run and none skipped — acquire, `doctor`, conformance replay,
+every step run and none skipped: acquire, `doctor`, conformance replay,
 one-truth, the five server-gated suites and the seeded fuzz. This
 repository has never had that before; the lane had never resolved a
 binary on any platform.
@@ -507,7 +508,7 @@ stopped asking for a filename nobody publishes. The MATRIX rows are not
 re-stamped from this: a three-OS claim is the release commit's to make
 (D35), and `server-lane` drives `lspconf`, not an editor.
 
-**Gates.** `cargo xtask ci` is green on **all 16 checked steps** — the
+Gates. `cargo xtask ci` is green on all 16 checked steps, the
 first time this repository has had no red one; seven stay PENDING on a
 human act, as before. `replay` is 65 ok / 6 named skips, `onetruth` 10
 samples x 9 profiles with zero divergences, `doctor` READY,
@@ -518,7 +519,7 @@ and the workspace suite passes. On the branch, CI is green on `test`,
 `emacs mode`, `helix config` and `zed extension` across the three
 tier-1 OSes.
 
-**A rig note that changed a verdict.** `/opt/homebrew/bin/cargo`
+A rig note that changed a verdict. `/opt/homebrew/bin/cargo`
 precedes `~/.cargo/bin` on this box's PATH and is not a rustup shim, so
 it ignores `rust-toolchain.toml`: gates run through it were 1.98.0
 Homebrew, not the pinned 1.97.1, and a `collapsible_if` that is `-D
@@ -529,10 +530,10 @@ gates here as `env PATH="$HOME/.cargo/bin:$PATH" cargo …`.
 
 ## s134 transcripts — 2026-09-02 — the server annotates (pinned at le06)
 
-**The server annotates — signature help, semantic tokens, inlay hints.**
+The server annotates: signature help, semantic tokens, inlay hints.
 Recorded against the wolf-lang `s134` branch binary with the pin unmoved:
 eighteen new transcripts under `transcripts/annotate/` (one script per rung
-per maintained client — fackr, facsimile, nvim, vscode, helix, emacs), the
+per maintained client: fackr, facsimile, nvim, vscode, helix, emacs), the
 forty-seven existing ones re-recorded with the `initialize` answer as their
 only diff (three providers gained), `lifecycle/unknown-method` re-targeted
 at what the server still refuses. `lspconf`'s script DSL learned `req
@@ -541,11 +542,11 @@ range means `/range`) and `req inlayHint <file> <l:c-l:c>`. The answers
 differ per profile by the profile's own declarations: the doc rides as
 markdown where `signatureHelp.signatureInformation.documentationFormat`
 lists it and plain text where the client declares nothing (facsimile
-issues the request without declaring it — answered on merit, s122's
+issues the request without declaring it, answered on merit, s122's
 posture). `lspconf bench` before/after the s134 binary on the same
 machine: `diagnostics-after-edit` p95 110.6 → 110.8 ms (p50 107.7 →
-106.6), hover p95 0.2 → 0.1, cold 4.1 → 4.4 — every class inside its
-budget. **MATRIX** gains the three rows. Nothing in the clients moved:
+106.6), hover p95 0.2 → 0.1, cold 4.1 → 4.4, every class inside its
+budget. MATRIX gains the three rows. Nothing in the clients moved:
 the vscode extension still contributes no `semanticTokenScopes` and its
 test still enforces that (a client packaging decision for le06, now that
 the server serves them), nvim's and helix's inlay hints stay off by their

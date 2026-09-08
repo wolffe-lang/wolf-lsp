@@ -57,7 +57,7 @@ something else. *Holds today.*
 
 **Integer request ids only, and never a response before the initialize
 response.** fackr parses only integer ids (`as_i64`) and detects the initialize
-response *without checking its id* — the first response it sees while
+response *without checking its id*: the first response it sees while
 `Initializing` is treated as the handshake. A server that answered anything
 before `initialize` would be misread as the server's capabilities. *Holds
 today.*
@@ -65,7 +65,7 @@ today.*
 **Do not block on a server→client request.** `workspace/configuration` is
 always answered `[]`, `client/registerCapability` is acked and discarded, and
 `workspace/applyEdit` is refused `-32601` despite being advertised. There is no
-channel for server-side settings in this client at all. *Holds today — wolf
+channel for server-side settings in this client at all. *Holds today: wolf
 sends no server→client requests.*
 
 **Tolerate a SIGKILL microseconds after `exit`.** fackr sends `shutdown`,
@@ -158,7 +158,7 @@ only, while its `initialize` declared `linkSupport: true`. Both
 capabilities exist (s122 completion; s133 definition/references/rename) and
 both follow the protocol, not the client's parser: completion answers the bare
 array the spec allows, and definition answers `LocationLink[]` to any client
-that declares `linkSupport` — facsimile included, because the declaration is
+that declares `linkSupport`, facsimile included, because the declaration is
 the client's own claim and a server that second-guessed it would be the
 workaround this file forbids.
 
@@ -317,7 +317,7 @@ would be surprised by it.
 **Answer `utf-8` even though the client asks for `utf-32` first.** eglot
 declares `general.positionEncodings: ["utf-32", "utf-8", "utf-16"]`, and wolf
 answers `utf-8` because the *server's* preference decides. eglot is therefore
-the first client tracked here whose own first choice the server declines — every
+the first client tracked here whose own first choice the server declines. Every
 other client either offers one encoding, or offers utf-8 first. If the
 negotiation rule ever changed to honour client order, this is the client where
 it would show up first and silently: eglot converts correctly to whatever is
@@ -329,7 +329,7 @@ negotiation recorded in `transcripts/emacs/smoke.jsonl`.*
 carrying nothing useful.** eglot sends it on connect with the (empty) workspace
 configuration, before any user action. A server that treated an unsolicited
 `didChangeConfiguration` as an error, or that waited for settings before serving,
-would break a client behaving perfectly. *Holds today — `wolf lsp` reads no
+would break a client behaving perfectly. *Holds today: `wolf lsp` reads no
 settings and ignores the notification.*
 
 **`shutdown` then `exit`, and the client waits for the `shutdown` response.**

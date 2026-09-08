@@ -308,8 +308,8 @@ without a lane is the artefact this file exists to prevent.
 
 - Emacs was promoted from T3 to T2. ls06 §3 files Emacs under "doc tier,
   verified by a human at release time". Its config turned out to be
-  machine-checkable in CI — `emacs --batch` loading `clients/emacs/wolf-mode.el`
-  with nine ERT assertions and no `wolf` binary — which is the promotion rule's
+  machine-checkable in CI (`emacs --batch` loading `clients/emacs/wolf-mode.el`
+  with nine ERT assertions and no `wolf` binary), which is the promotion rule's
   own criterion for T2. Understating a row that a green CI lane verifies would
   make the table lie in the other direction about what is maintained.
 - Emacs is *not* promoted to T1, although half the criterion is

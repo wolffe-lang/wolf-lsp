@@ -414,7 +414,7 @@ the archive is a directory, so `--strip-components=1` is what makes
 `.wolf-bin/wolf` the path `lsp_harness::locate` looks for (and puts the
 runtime lib beside the binary), and the matrix is three OSes while the
 pattern named linux. v0.2.3 publishes an asset for every runner in the
-matrix — including the linux/aarch64 one le05 recorded as missing — so
+matrix (including the linux/aarch64 one le05 recorded as missing), so
 the triple is derived per host. Whether the lane LIGHTS is CI's to
 answer; docs/MATRIX.md is re-stamped from a CI result, never from an
 edit, so its rows do not yet claim green.
@@ -524,7 +524,7 @@ precedes `~/.cargo/bin` on this box's PATH and is not a rustup shim, so
 it ignores `rust-toolchain.toml`: gates run through it were 1.98.0
 Homebrew, not the pinned 1.97.1, and a `collapsible_if` that is `-D
 warnings` under the pin passed silently under it. The same PATH is why
-`--target wasm32-wasip2` reported "can't find crate for core" — cargo
+`--target wasm32-wasip2` reported "can't find crate for core": cargo
 1.97.1 spawning rustc 1.98.0, whose wasm std is not installed. Run the
 gates here as `env PATH="$HOME/.cargo/bin:$PATH" cargo …`.
 
@@ -605,7 +605,7 @@ ordinary local in any code that measures one.
 A stale test, red before this sprint touched it. `tests/negotiation.rs`
 asserted that `textDocument/rename` answers `-32601`. s133 implemented
 rename and did not update the list, so the test failed against any binary
-that serves the capability `docs/MATRIX.md` credits it with — including at
+that serves the capability `docs/MATRIX.md` credits it with, including at
 trunk's own pin, measured. `signatureHelp` takes its place as the
 real-but-unimplemented shape, and the positive half is now asserted too:
 definition, references and rename must NOT answer MethodNotFound, so
@@ -670,7 +670,7 @@ at le04. Every sentence below was true when written and is not now:
   re-verified against trunk.
 - A new section records what the mirror never had: `note_lsp_error`,
   the one-message channel that finally makes an LSP failure visible. Keys
-  used to fail silently — the messages existed but went through
+  used to fail silently: the messages existed but went through
   `set_status_message`, which does not set `g_lsp_ui_changed`, so the main
   loop never redrew. `note_unserved_capability` now tells a user "wolf lsp
   does not serve go-to-definition" instead of letting the key do nothing,
@@ -686,7 +686,7 @@ captured editor smokes, which cannot be cleared without driving six real
 editors and which `docs/MATRIX.md` has named as owed since le01. Measured
 on this box: trunk was red on five release-check steps (2a, 2b, 3b, 5a,
 5b), and one is left. The range in every `compat.json` moves to a
-0.2.2 pin range — one version wide, as `plugin_spec.lua` asserts and the
+0.2.2 pin range, one version wide, as `plugin_spec.lua` asserts and the
 pre-1.0 posture requires.
 
 ## s133-transcripts — 2026-09-02 — the server navigates
@@ -730,7 +730,7 @@ s122 and before served. `lifecycle/unknown-method` probed
 Two harness changes. `lspconf`'s script DSL learned `definition`,
 `references … decl|nodecl`, `prepareRename` and `rename … <newName>`
 (the `raw` escape hatch would have done, but a verb per rung keeps the
-scripts reviewable). The `set:` matcher accepts `null` — the array-
+scripts reviewable). The `set:` matcher accepts `null`: the array-
 valued methods may all answer "nothing here", and a null is not a set of
 anything; it matches only itself.
 

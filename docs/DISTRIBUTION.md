@@ -138,7 +138,7 @@ or an identity, and a repository that could create one could also leak one.
 - [ ] **Create the PAT.** Azure DevOps → Personal Access Tokens, organization
       "All accessible organizations" (a single-org token is rejected by the
       marketplace API), scope Marketplace → Manage. Azure DevOps caps PAT
-      lifetime at one year, so this expires — put the expiry date in a calendar,
+      lifetime at one year, so this expires; put the expiry date in a calendar,
       because the failure mode is a release that dies at the last step.
 - [ ] **Record custody as well as the token.** Who owns the account, where the
       token is stored, and who can rotate it. A marketplace listing controlled
@@ -204,7 +204,7 @@ both ls07 compatibility cases) passed from it.
 
 One finding came out of that run. The clone
 step printed `warning: remote HEAD refers to nonexistent ref, unable to
-checkout` and produced an **empty working tree**. Pushing `refs/heads/main` into
+checkout` and produced an empty working tree. Pushing `refs/heads/main` into
 a repository whose `HEAD` points somewhere else (a fresh `git init` still says
 `master`) succeeds, and then hands every cloner nothing. So:
 
@@ -228,7 +228,7 @@ committing it safe.
 
 ### OWED TO HUMAN — the mirror repository
 
-- [ ] Create `wolffe-lang/wolf.nvim`, **public**, default branch `main` (see
+- [ ] Create `wolffe-lang/wolf.nvim`, public, default branch `main` (see
       the finding above).
 - [ ] Add a deploy key with write access, or a fine-grained PAT scoped to that
       one repository, as `secrets.NVIM_MIRROR_KEY`. Not a broad org token: this
@@ -236,7 +236,7 @@ committing it safe.
 - [ ] Put the "GENERATED — do not send PRs here, send them to `wolf-lsp`" banner
       at the top of the mirror's README before the first push, not after.
 - [ ] Then the lspconfig and mason entries in [`UPSTREAM.md`](UPSTREAM.md)
-      become submittable — both are gated on a public installable `wolf` first.
+      become submittable; both are gated on a public installable `wolf` first.
 
 ### What users will be told, once it exists
 

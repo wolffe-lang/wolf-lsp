@@ -555,54 +555,54 @@ is le06's to retire at the re-pin.
 
 ## le05 — 2026-09-02 — the editors navigate
 
-The pin moves to wolf-lang **v0.2.2** (`8cda3aa`), the transcripts move
+The pin moves to wolf-lang v0.2.2 (`8cda3aa`), the transcripts move
 with it, and three documents that described a client stop being true
 about it.
 
-**The pin, and wolf-lang#199 answered.** `vendor/upstream/PIN` records
+The pin, and wolf-lang#199 answered. `vendor/upstream/PIN` records
 `wolf 0.2.2 (wolfgang, pin 8cda3aa)`, measured from the binary installed
-on nomad-1, and `lspconf doctor` is **GREEN** here — `READY —
+on nomad-1, and `lspconf doctor` is GREEN here: `READY —
 /Users/…/.local/bin/wolf serves LSP at pin 8cda3aa`. The re-vendored data
 is one file: `spec/grammar.ebnf` takes the v0.2.2 deltas, and all ten
 samples are byte-identical across the two tags.
 
-The clause is **seven** hex digits where le04's was eight, and le05
-measured why rather than picking one. `git rev-parse --short` sizes its
+The clause is seven hex digits where le04's was eight, and the reason was
+measured here. `git rev-parse --short` sizes its
 AUTO abbreviation to the object count of the clone it runs in, so the
-width is a property of the **builder's clone**, not of the commit: in a
+width comes from the builder's clone and not from the commit: in a
 2086-object clone `8cda3aa41…` abbreviates to `8cda3aa` and the binary
 built there prints `pin 8cda3aa`; the same commit built from a full clone
 of wolf-lang would print `pin 8cda3aa4`, and `doctor` would refuse it. The
-PIN is doing its job — its job is to record what ONE binary prints and
-refuse everything else, and loosening it to accept a prefix would accept a
-stale binary, the single failure the mechanism exists to prevent. The
-defect is upstream in D57's clause, it stays filed as **wolf-lang#199**,
+PIN is doing its job: recording what ONE binary prints and
+refusing everything else. Loosening it to accept a prefix would accept a
+stale binary, the failure the mechanism exists to prevent. The
+defect is upstream in D57's clause, it stays filed as wolf-lang#199,
 and `docs/COMPAT.md` now states the consequence for anyone who builds
 their own `wolf` instead of acquiring the published one.
 
-**The transcripts are at the pin, and s133's caveat is retired.** All
-**47** scripted transcripts re-recorded; every diff is `@@ -1 +1 @@` and
+The transcripts are at the pin, and s133's caveat is retired. All
+47 scripted transcripts re-recorded; every diff is `@@ -1 +1 @@` and
 the only field that moved is `wolf_pin`. The eighteen `navigation/*` files
-are the ones that mattered: le04 recorded them against the wolf-lang
-`s133` **branch** binary with the pin unmoved and predicted a header-only
-diff at the re-pin. Measured — the `initialize` answer still carries
+are the ones that mattered: they were recorded at le04 against the wolf-lang
+`s133` branch binary with the pin unmoved, predicting a header-only
+diff at the re-pin. Measured: the `initialize` answer still carries
 `definitionProvider`, `referencesProvider` and `renameProvider:
 {prepareProvider: true}`, byte-identical. Every navigation row in
-`docs/MATRIX.md` is now pinned by a transcript taken from a **tagged
-release build**. `replay` 47/47, `onetruth` 10 samples × 9 profiles with
-zero divergences, `verify` green. The six **captured** editor smokes are
+`docs/MATRIX.md` is now pinned by a transcript taken from a tagged
+release build. `replay` 47/47, `onetruth` 10 samples × 9 profiles with
+zero divergences, `verify` green. The six captured editor smokes are
 NOT re-captured and still refuse replay at their own pin (`70bdd35`;
-`67c977f` for fackr) — the standing posture, and the whole of what keeps
-release-check 3b red.
+`67c977f` for fackr), which is the standing posture and the whole of what
+keeps release-check 3b red.
 
-**`cap` is a contextual keyword.** v0.2.2's `region_cap ::= 'cap' ':'
+`cap` is a contextual keyword. v0.2.2's `region_cap ::= 'cap' ':'
 expr` (s132, `[mem.region.cap.1]`) put a new word terminal in the pinned
-grammar, and `grammar-drift` refused to generate until it was classified
-— which is exactly what that gate is for. It joins `rc` and `pool` in
+grammar, and `grammar-drift` refused to generate until it was classified,
+which is what that gate is for. It joins `rc` and `pool` in
 xtask's `CONTEXTUAL` list: contextual, not coloured, because `cap` is an
 ordinary local in any code that measures one.
 
-**A stale test, red before le05 touched it.** `tests/negotiation.rs`
+A stale test, red before this sprint touched it. `tests/negotiation.rs`
 asserted that `textDocument/rename` answers `-32601`. s133 implemented
 rename and did not update the list, so the test failed against any binary
 that serves the capability `docs/MATRIX.md` credits it with — including at
@@ -612,33 +612,33 @@ definition, references and rename must NOT answer MethodNotFound, so
 moving a method off that list can never quietly mean "we stopped testing
 it".
 
-**The acquire lane's darkness has a new owner: us.** Measured 2026-09-02,
-`gh release list --repo wolffe-lang/wolf-lang` reports **v0.2.2 as
-Latest, not Draft**, carrying three tier-1 archives, and an
+The acquire lane's darkness has a new owner: us. Measured 2026-09-02,
+`gh release list --repo wolffe-lang/wolf-lang` reports v0.2.2 as
+Latest, not Draft, carrying three tier-1 archives, and an
 unauthenticated request for the download URL answers `200`.
-**wolf-lang#200 is resolved** and `release-check` step 0 — a step whose
-reason had been rewritten twice as the world moved — is a PASS for the
-first time. What still keeps `server-lane` dark is a **stale glob in this
-repo**: `.github/workflows/ci.yml` asks for
+wolf-lang#200 is resolved and `release-check` step 0, a step whose
+reason had been rewritten twice as the world moved, is a PASS for the
+first time. What still keeps `server-lane` dark is a stale glob in this
+repo: `.github/workflows/ci.yml` asks for
 `wolf-<shortsha>-linux-x86_64.tar.gz` while `xtask dist` publishes
-`wolf-<version>-<target-triple>.tar.gz` — filed as **wolf-lsp#3**, with the
-two things a fix has to get right. le05 records it rather than rewriting a
-CI lane it cannot run, and the matrix rows say "dark: acquire
-glob stale" instead of "no pin-matched artifact", which had stopped being
-true. (One real upstream gap remains: no linux/aarch64 archive at this
+`wolf-<version>-<target-triple>.tar.gz`, filed as wolf-lsp#3, with the
+two things a fix has to get right. It is recorded here instead of
+rewriting a CI lane this box cannot run, and the matrix rows say "dark:
+acquire glob stale" instead of "no pin-matched artifact", which had
+stopped being true. (One real upstream gap remains: no linux/aarch64 archive at this
 tag; wolf-lang trunk `4d9683d` repairs it for the next.)
 
-**The facsimile mirror stops describing an editor that no longer exists.**
-Re-read against facsimile trunk `a121ab3` (v0.35.0), whose PR **#5**
-(merge `2f5d5f4`) closed FortranGoingOnForty/facsimile#4 — the issue le04
-filed. Every sentence below was true when written and is not now:
+The facsimile mirror stops describing an editor that no longer exists.
+Re-read against facsimile trunk `a121ab3` (v0.35.0), whose PR #5
+(merge `2f5d5f4`) closed FortranGoingOnForty/facsimile#4, the issue filed
+at le04. Every sentence below was true when written and is not now:
 
 - *"the client's static capability table still gates the keys off"* →
   routing reads the server's own advertised capabilities. `lsp_server_t`
   carries nine `supports_*` fields filled from the `initialize` reply, and
   `server_serves()` consults them; the static table is demoted in its own
   comment to "the floor used before that reply arrives". All three
-  navigation rows are **reachable** in that editor now, not merely
+  navigation rows are reachable in that editor now, and not only
   answerable by the server.
 - *"its definition parser reads `Location[]` while it declares
   `linkSupport: true`"* → `definition_target()` parses `LocationLink`,
@@ -653,95 +653,97 @@ filed. Every sentence below was true when written and is not now:
   retired; nine capabilities have call sites and `server_serves`
   special-cases diagnostics by name.
 - *"three real parts of wolf lexical structure are out of reach"* → two.
-  **`TOKEN_INTERP`** is a tenth token class with a theme role of its own
+  `TOKEN_INTERP` is a tenth token class with a theme role of its own
   (`syntax.interp`), driven by a new `interpolated_strings` language flag
   that `load_wolf_syntax` sets because every wolf string is an f-string.
-  `{{`/`}}` are recognised rather than invisible. What is still out of
+  `{{`/`}}` are recognised now instead of invisible. What is still out of
   reach is the expression *inside* a hole.
 - *"in worktree, uncommitted"* (every row of `patches/STATUS.md`) →
-  **upstreamed**, as one squashed commit `21e58aa`, which means the
+  upstreamed, as one squashed commit `21e58aa`, which means the
   one-PR-per-group decomposition never happened and there is nothing in
   facsimile's history to point the labels at. Flagged there, with the
   number collision it creates: that table's own "PR5" is an unwritten
   offer, unrelated to facsimile's real PR #5.
 - *"facsimile's Python table lists `\"` before the triple form and has
   exactly that bug today"* → fixed upstream at `d9fafb3`, whose sibling
-  `c6f8878` is `docs/UPSTREAM.md`'s PR6. **That row moves to `MERGED`**,
+  `c6f8878` is `docs/UPSTREAM.md`'s PR6. That row moves to `MERGED`,
   re-verified against trunk.
-- A new section records what the mirror never had: **`note_lsp_error`**,
+- A new section records what the mirror never had: `note_lsp_error`,
   the one-message channel that finally makes an LSP failure visible. Keys
   used to fail silently — the messages existed but went through
   `set_status_message`, which does not set `g_lsp_ui_changed`, so the main
   loop never redrew. `note_unserved_capability` now tells a user "wolf lsp
   does not serve go-to-definition" instead of letting the key do nothing,
-  which is one more reason `wolf lsp` must keep answering `-32601` by name.
+  which is one more reason `wolf lsp` must keep answering `-32601` with
+  the method it refused.
 
-**Gate posture.** `doctor` GREEN, `verify` green, `replay` 47/47 scripted,
+Gate posture. `doctor` GREEN, `verify` green, `replay` 47/47 scripted,
 `onetruth` zero divergences, `config-check`, `grammar-drift`,
 `compat-check`, `nvim-check`, `independence`, `vendor-check`,
 `fixtures-check`, `sync-pin` all green, and the Rust suite passes.
-`cargo xtask ci` is red on exactly one step, `release-check 3b` — the six
+`cargo xtask ci` is red on one step, `release-check 3b`: the six
 captured editor smokes, which cannot be cleared without driving six real
 editors and which `docs/MATRIX.md` has named as owed since le01. Measured
-on this box: **trunk was red on five release-check steps (2a, 2b, 3b, 5a,
-5b); le05 leaves one.** The range in every `compat.json` moves to a
+on this box: trunk was red on five release-check steps (2a, 2b, 3b, 5a,
+5b), and one is left. The range in every `compat.json` moves to a
 0.2.2 pin range — one version wide, as `plugin_spec.lua` asserts and the
 pre-1.0 posture requires.
 
 ## s133-transcripts — 2026-09-02 — the server navigates
 
 wolf-lang's s133 branch serves `textDocument/definition`,
-`textDocument/references` and `textDocument/rename` (+`prepareRename`)
-— wolf-lang#208's three dead keys. This branch is the harness half,
-**recorded against that branch's binary with the pin UNMOVED**:
+`textDocument/references` and `textDocument/rename` (+`prepareRename`),
+wolf-lang#208's three dead keys. This branch is the harness half,
+recorded against that branch's binary with the pin UNMOVED:
 `vendor/upstream/PIN` still names `v0.2.1`, every transcript header
 still says so, and the sessions were driven with `WOLF_BIN` pointed at
 a `wolf 0.2.1+dev` build of `s133` (the Doctor's version check was
 satisfied by a local, uncommitted edit of the PIN's `version` line for
-the duration of the recording — the honest statement of what these
-bytes were earned against). le05 re-pins at the tag that carries s133
+the duration of the recording, which is what these bytes were earned
+against). le05 re-pins at the tag that carries s133
 and re-records; that is expected to be a header-only diff.
 
-**21 new scripted sessions.** `transcripts/navigation/` holds one script
-per rung per maintained client profile — `definition-`, `references-`,
-`rename-` × fackr, facsimile, nvim, vscode, helix, emacs — over
+21 new scripted sessions. `transcripts/navigation/` holds one script
+per rung per maintained client profile (`definition-`, `references-`,
+`rename-` × fackr, facsimile, nvim, vscode, helix, emacs) over
 `resolve/two_mod` (a cross-file item, a module name) and `hello.lu` (a
-local, a prelude name). The request lines are identical across the six;
-the answers are not, and that is the point: `LocationLink[]` to the five
+local, a prelude name). The request lines are identical across the six
+and the answers are not: `LocationLink[]` to the five
 profiles that declare `linkSupport`, `Location[]` to helix;
 `documentChanges` to the five that declare
 `workspaceEdit.documentChanges`, the `changes` map to nvim. Rename's
 refusal set rides every one of them as `-32803` errors, and
 `docs/COMPAT.md` states it in a table. `transcripts/encoding/` gains
-`astral-navigate-{utf8,utf16,utf32}` — the astral-utf16 shape applied to
+`astral-navigate-{utf8,utf16,utf32}`, the astral-utf16 shape applied to
 navigation: the same `bmp` requested and answered at three different
 columns.
 
-**The capability snapshot regains three providers.** All 26 existing
+The capability snapshot regains three providers. All 26 existing
 sessions re-recorded: every diff is the header date plus
 `definitionProvider: true`, `referencesProvider: true`,
-`renameProvider: {prepareProvider: true}` in the `initialize` answer —
+`renameProvider: {prepareProvider: true}` in the `initialize` answer,
 byte-identical otherwise, which is the regression claim for everything
 s122 and before served. `lifecycle/unknown-method` probed
 `textDocument/definition` as its unimplemented method and now probes
 `signatureHelp` (s134's), since the old probe is answered.
 
-**Two harness changes.** `lspconf`'s script DSL learned `definition`,
+Two harness changes. `lspconf`'s script DSL learned `definition`,
 `references … decl|nodecl`, `prepareRename` and `rename … <newName>`
 (the `raw` escape hatch would have done, but a verb per rung keeps the
 scripts reviewable). The `set:` matcher accepts `null` — the array-
 valued methods may all answer "nothing here", and a null is not a set of
 anything; it matches only itself.
 
-**MATRIX** gains a capability-rows table (what the server serves and
-which transcript pins it per client); **SERVER-CONSTRAINTS** records
+MATRIX gains a capability-rows table (what the server serves and
+which transcript pins it per client); SERVER-CONSTRAINTS records
 where facsimile's two response-shape traps landed: the server follows
 the protocol (bare completion array; `LocationLink[]` to a `linkSupport`
-declaration — facsimile's own), and the one-line fix is facsimile's,
+declaration, facsimile's own), and the one-line fix is facsimile's,
 filed on FortranGoingOnForty/facsimile#4 together with the static
 capability table that still gates F12/Shift+F12/F2 off. The `lspconf
 bench` table before/after the s133 binary: `diagnostics-after-edit` p95
-105.7 → 105.7 ms (p50 104.9 → 104.6) — the number near perception holds.
+105.7 → 105.7 ms (p50 104.9 → 104.6), so the number near perception
+holds.
 
 ## le04 — 2026-09-01 — the pin and the escape
 

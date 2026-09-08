@@ -80,7 +80,7 @@ every trunk build of that crate version prints — and `doctor` refuses it,
 because a version string that cannot name its commit is exactly the
 stale-binary hole the pin exists to close.
 
-Two things changed at le04, which is why this is `xtask dist` and no longer a
+Two things changed upstream, which is why this is `xtask dist` and no longer a
 hand-rolled `cargo build` with `WOLF_COMMIT` in front of it:
 
 - A **release** stamp needs `WOLF_RELEASE=v{version}` as well as

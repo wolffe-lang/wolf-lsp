@@ -1,26 +1,26 @@
 # What `wolf lsp` may not assume about real clients
 
 Notes against the compiler track (s52 and after), discovered by integrating
-actual editors rather than by reading the specification. Each one is a promise
+actual editors; none of it came from reading the specification. Each one is a promise
 the server has to keep because a client this repo tracks would otherwise break;
 each names the client that proves it, so a promise can be retired when the last
 client needing it is gone.
 
 This file grows one client at a time (ls02–ls06). Nothing here is a request for
-a new capability — it is the list of things that must stay true.
+a new capability. It is the list of things that must stay true.
 
 ## From fackr (ls02, `496c7e2`)
 
-**Publish diagnostics on open and on change — never only on save.** fackr
+**Publish diagnostics on open and on change, never only on save.** fackr
 advertises `synchronization.didSave: true` and then never sends `didSave`
 (`document_saved` exists with zero call sites). A server that waited for a save
-would look completely dead in this editor. *Holds today.*
+would look dead in this editor. *Holds today.*
 
 **Accept full-text `didChange` regardless of what `textDocumentSync`
 advertises.** Every change fackr sends is the whole buffer in a single
 `contentChanges: [{text}]`, found by hashing on a ~50 ms tick, and it never
 reads the server's advertised sync mode. wolf advertises `change: 1` (Full), so
-the two agree — by luck, not negotiation. *Holds today; asserted by
+the two agree; nothing negotiated that. *Holds today; asserted by
 `lspconf fuzz --profile=fackr`.*
 
 **Survive a `didChange` that arrives before `initialized`.** fackr queues only
@@ -34,11 +34,11 @@ overlay the editor believes it replaced.
 **Keep stderr quiet in normal operation.** fackr pipes stderr; before this
 sprint's patch it never read it, and a server would deadlock at ~64 KiB of
 logging. The patch drains it, but every unpatched fackr in the world still has
-the old behaviour, and so do other hand-rolled clients. *Holds today — `wolf
+the old behaviour, and so do other hand-rolled clients. *Holds today: `wolf
 lsp` writes nothing to stderr in a clean session.*
 
 **Answer `utf-32` when it is the only offered encoding.** fackr's columns are
-`ropey` char offsets, and it declares `["utf-32"]` alone for exactly that
+`ropey` char offsets, and it declares `["utf-32"]` alone for that
 reason. wolf's preference order is utf-8 → utf-16 → utf-32, so utf-32 is
 reachable only as a sole offer; a change to that order would silently corrupt
 every column past an astral character in this editor. *Holds today; asserted by
@@ -73,56 +73,55 @@ sleeps 100 ms, sends `exit`, and kills the process. *Holds today.*
 
 ## From facsimile (ls03, `1242ffa`)
 
-**Never require a response to a server→client request — and at v0, send none
+**Never require a response to a server→client request, and at v0 send none
 at all.** `handle_request` in facsimile is an empty stub: its whole body is a
 `TODO` and an `if (.false.) print *, …` that exists to silence unused-argument
 warnings. `workspace/configuration`, `client/registerCapability` and
-`window/workDoneProgress/create` get **no reply of any kind, ever**. A server
+`window/workDoneProgress/create` get no reply of any kind, ever. A server
 that blocks waiting for one hangs this editor forever, with no error, no
-timeout and no log line — the user sees an editor that has simply stopped.
+timeout and no log line; the user sees an editor that has stopped.
 
 *Holds today, structurally:* `wolf lsp` constructs only `Message::Response` and
 `Message::Notification` and never `Message::Request`
 (`crates/wolf_lsp/src/server.rs`; its inbound `Message::Response(_)` arm is
 commented "we send no server→client requests"). Proven empirically by
-`transcripts/facsimile/smoke.jsonl` — 15 records, zero server→client requests,
+`transcripts/facsimile/smoke.jsonl`: 15 records, zero server→client requests,
 a session that completes normally with hover, symbols, formatting and
 diagnostics all delivered.
 
-**This is a standing constraint on every future capability, not a one-time
-check.** Anything that would need `workspace/configuration` (user settings),
+**This is a standing constraint on every future capability.** Anything that would need `workspace/configuration` (user settings),
 `client/registerCapability` (dynamic registration) or
-`window/workDoneProgress/create` (progress reporting) must be **opt-in, gated
+`window/workDoneProgress/create` (progress reporting) must be opt-in, gated
 on a client capability, and degrade to a working default when the reply never
-comes.** "Send it and wait" is not available to this server while facsimile is
+comes. "Send it and wait" is not available to this server while facsimile is
 tier 0. A timeout is the minimum bar and is still worse than not sending.
 
-**Emit raw UTF-8 in JSON strings — never `\uXXXX` escapes.** facsimile's
+**Emit raw UTF-8 in JSON strings, never `\uXXXX` escapes.** facsimile's
 hand-rolled `json_module` does not decode escape sequences in either
 direction, so an escaped character arrives at the user as the literal six
-characters. serde_json does the right thing by default, which is exactly why it
-is pinned rather than trusted: *Holds today; asserted by
+characters. serde_json does the right thing by default, and a test pins it:
+*Holds today; asserted by
 `tests/encoding.rs::the_server_emits_raw_utf8_and_never_backslash_u_escapes`,
 which reads raw frame bytes rather than parsed JSON, because parsing is what
 would hide the bug.*
 
 **Integer request ids only, and small ones.** All numbers in facsimile's JSON
 are `real64`, so ids round-trip through a double (bounded by 2^53) and
-**string ids are unsupported entirely**. Echo ids back exactly as received.
+string ids are unsupported entirely. Echo ids back exactly as received.
 *Holds today.*
 
 **Answer `utf-16` when it is the only offered encoding.** facsimile's columns
-are UTF-16 code units, converted correctly at every site — including non-BMP —
+are UTF-16 code units, converted correctly at every site (including non-BMP)
 by `utf8_char_col_to_utf16` / `utf16_to_utf8_char_col`. It now declares
 `general.positionEncodings: ["utf-16"]` alone. wolf's preference order is
 utf-8 → utf-16 → utf-32, so a sole offer is the only way to reach utf-16; a
 change to that order would silently shift every column past a multi-byte
-character. Note this is the exact mirror of fackr's constraint, and the two
+character. Note this is the mirror of fackr's constraint, and the two
 together pin both ends of the preference order. *Holds today; asserted by
 `profiles/facsimile.json`, by `lspconf onetruth` under that profile, and by the
 negotiation recorded in the transcript.*
 
-**Publish diagnostics on open and on debounced change — never only on save.**
+**Publish diagnostics on open and on debounced change, never only on save.**
 facsimile declares no `synchronization` object at all and sends no `didSave`
 in the recorded session. It also declares no `publishDiagnostics` capability
 while handling diagnostics anyway. A server that keyed diagnostics off a
@@ -131,12 +130,12 @@ declared capability, or off `didSave`, would look dead here. *Holds today.*
 **Accept full-text `didChange` regardless of what `textDocumentSync`
 advertises, and expect no useful version numbers.** Every change is the whole
 buffer in one `contentChanges: [{text}]` on a 0.5 s debounce, and the
-`version` field is **hardcoded to 1** — so it carries no ordering information
-whatsoever. The server may not use client versions to order or discard edits.
+`version` field is hardcoded to 1, so it carries no ordering information.
+The server may not use client versions to order or discard edits.
 *Holds today; asserted by `lspconf fuzz --profile=facsimile --splices=200`.*
 
 **Survive a client that never closes a document.** `notify_file_closed` exists,
-is exported, is imported by two modules, and has **zero call sites**. Open
+is exported, is imported by two modules, and has zero call sites. Open
 documents accumulate for the life of the session, so the server's overlay set
 only ever grows. *Holds today.*
 
@@ -144,20 +143,20 @@ only ever grows. *Holds today.*
 facsimile sends neither message: it SIGTERMs the server and SIGKILLs it 100 ms
 later. This is why the recorded transcript ends at the last response rather
 than at an exit. It is also why the pin's new "bare `exit` exits 1" behaviour
-is invisible to this client — it never sends `exit` at all. *Holds today;
+is invisible to this client; it never sends `exit` at all. *Holds today;
 asserted by `tests/semantics.rs::a_client_that_vanishes_leaves_no_orphan`.*
 
 **Keep responses small.** facsimile's JSON parse and serialize are both O(n²)
 in message size and its `read_buffer` regrows by copy. A large completion list
-or a long markdown hover visibly stalls the editor. *Holds today — wolf's
+or a long markdown hover visibly stalls the editor. *Holds today: wolf's
 hover is a short code fence.*
 
 **Two response shapes, and how facsimile closed them.** facsimile's completion
-parser used to want a `CompletionList` (`{"items": […]}`) — a bare array
-yielded zero items — and its definition parser read `Location`/`Location[]`
-only, while its `initialize` **declared `linkSupport: true`**. Both
+parser used to want a `CompletionList` (`{"items": […]}`, since a bare array
+yielded zero items) and its definition parser read `Location`/`Location[]`
+only, while its `initialize` declared `linkSupport: true`. Both
 capabilities exist (s122 completion; s133 definition/references/rename) and
-both follow the protocol rather than the parser: completion answers the bare
+both follow the protocol, not the client's parser: completion answers the bare
 array the spec allows, and definition answers `LocationLink[]` to any client
 that declares `linkSupport` — facsimile included, because the declaration is
 the client's own claim and a server that second-guessed it would be the
@@ -165,15 +164,15 @@ workaround this file forbids.
 
 **facsimile has now taken the other half, and it is no longer Location-only.**
 FortranGoingOnForty/facsimile#4 is CLOSED by that repo's PR #5 (merge
-`2f5d5f4`, in trunk `a121ab3`). Of the two one-line fixes available — declare
-`linkSupport: false`, or parse the link shape it asked for — it took the
+`2f5d5f4`, in trunk `a121ab3`). Of the two one-line fixes available (declare
+`linkSupport: false`, or parse the link shape it asked for) it took the
 second, and did the same for completion:
 
-- `lsp_protocol_module.f90:665-697` — a new public `definition_target()` reads
+- `lsp_protocol_module.f90:665-697`: a new public `definition_target()` reads
   `targetUri` and prefers `targetSelectionRange` over `targetRange`, falling
   back to the plain `Location`'s `uri`/`range`. `linkSupport: true` still
   stands, and is now true.
-- `completion_popup_module.f90:102-108` — falls through to a bare `JSON_ARRAY`
+- `completion_popup_module.f90:102-108`: falls through to a bare `JSON_ARRAY`
   when there is no `items` key, commented with the exact failure it repairs
   ("a server answering the bare array -- which wolf 0.2.1 does -- produced
   zero items and no popup, indistinguishable from a server that had nothing to
@@ -181,7 +180,7 @@ second, and did the same for completion:
 - `test/test_lsp_response_shapes.f90` pins both, including that the cursor
   follows `targetSelectionRange` and not `targetRange`.
 
-**Nothing on the server changes, and that is the point.** The shapes are still
+**Nothing on the server changes.** The shapes are still
 pinned per client in `transcripts/navigation/definition-*.jsonl` (facsimile's
 carries the links; helix's, which declares no `linkSupport`, carries plain
 locations), and those transcripts were re-recorded byte-identical at pin
@@ -191,20 +190,20 @@ caught up, and it is satisfied by both now.
 
 ## From Neovim (ls04, `v0.12.4`)
 
-Neovim is the first *well-behaved* client on this list — it answers
+Neovim is the first *well-behaved* client on this list (it answers
 server→client requests, cancels properly, closes documents, and shuts down
-cleanly — so it constrains the server in a different way than fackr and
-facsimile do. What it pins is the **preference order**, not a workaround.
+cleanly), so it constrains the server in a different way than fackr and
+facsimile do. What it pins is the preference order.
 
 **The encoding preference order is user-visible, and Neovim is where a change
 to it lands hardest.** Neovim declares
-`general.positionEncodings: ["utf-8", "utf-16", "utf-32"]` — all three, utf-8
-first — so wolf's own preference is the only thing deciding the wire format,
+`general.positionEncodings: ["utf-8", "utf-16", "utf-32"]`, all three with
+utf-8 first, so wolf's own preference is the only thing deciding the wire format,
 and today it decides `utf-8`. Reordering the server's preference (or dropping
 utf-8) would silently change every Neovim user's positions with no client-side
 signal at all: unlike fackr, Neovim converts correctly to whatever is
-negotiated, so a *wrong* choice here is invisible rather than broken. That is
-worse. *Holds today; asserted by `profiles/nvim.json`'s `expects_encoding` and
+negotiated, so a *wrong* choice here shows up as nothing at all, which is worse
+than broken. *Holds today; asserted by `profiles/nvim.json`'s `expects_encoding` and
 by a live assertion on `client.offset_encoding` in the recorded session.*
 
 **Start, and diagnose, with no `rootUri`.** Neovim's native config has no
@@ -214,26 +213,26 @@ in a directory with no `wolf.pkg` and no `.git` still expects diagnostics.
 *Holds today.*
 
 **Do not require `workspace/configuration`, and do not wait for settings.**
-Neovim would answer, so this is not the hang facsimile would suffer — but the
+Neovim would answer, so this is not the hang facsimile would suffer, but the
 plugin sends no `settings` block by design, and a server that treated absent
 settings as "not ready" would stall a client that is behaving perfectly.
-*Holds today — `wolf lsp` reads no settings.*
+*Holds today: `wolf lsp` reads no settings.*
 
 **Keep `textDocument/formatting` byte-stable on canonical input.** Neovim's
 `gq` and `:WolfFmt` both route through `textDocument/formatting`, and the
-recorded session asserts that formatting a corpus sample returns an **empty**
+recorded session asserts that formatting a corpus sample returns an empty
 edit list. A response that returned a no-op edit instead of no edits would mark
 every formatted buffer modified and burn an undo state per format. *Holds
 today; asserted in `clients/nvim/tests/smoke.lua`.*
 
 ## From VS Code (ls05, `1.132.0`, vscode-languageclient 9.0.1)
 
-VS Code is, like Neovim, a well-behaved client — but it is the first one whose
+VS Code is, like Neovim, a well-behaved client, but it is the first one whose
 *client library* enforces a constraint the server can violate only once.
 
 **Answer `utf-16`, or the client throws.** `vscode-languageclient` declares
-`general.positionEncodings: ["utf-16"]` — hardcoded at
-`lib/common/client.js:1370`, with no extension-facing option to change it — and
+`general.positionEncodings: ["utf-16"]` (hardcoded at
+`lib/common/client.js:1370`, with no extension-facing option to change it) and
 then refuses any other answer outright:
 
 ```js
@@ -247,29 +246,29 @@ Every other client on this list would *mis-render* a wrong encoding. This one
 fails to start, in a `try`/`catch` that surfaces as a notification, and the user
 gets an extension that does nothing. Note that this is the same wire outcome as
 facsimile's constraint and a strictly stronger requirement: facsimile needs
-utf-16 to be *reachable*, VS Code needs it to be *the answer*. *Holds today —
+utf-16 to be *reachable*, VS Code needs it to be *the answer*. *Holds today:
 wolf's preference order is utf-8 → utf-16 → utf-32 and a sole utf-16 offer
 selects utf-16; asserted by `profiles/vscode.json`, by `lspconf onetruth` under
 that profile, and by the negotiation recorded in `transcripts/vscode/smoke.jsonl`.*
 
 **Expect `textDocument/codeAction` on every cursor move, unprompted.** The
-recorded 42-record session contains **nine** `codeAction` requests and **three**
-`documentSymbol` requests; the suite that drove it issued exactly one of each.
-The other eight and two are VS Code's own — it polls code actions to decide
+recorded 42-record session contains nine `codeAction` requests and three
+`documentSymbol` requests; the suite that drove it issued one of each.
+The other eight and two are VS Code's own: it polls code actions to decide
 whether to draw the lightbulb, and requests document symbols for breadcrumbs and
-the outline. With their responses and the four `$/setTrace` notifications, **24
-of the 42 records are traffic nobody asked for.** This is the highest request rate of
-any client tracked so far, it scales with typing and cursor movement rather than
-with anything the user asks for, and it arrives on *clean* files where there is
-nothing to fix. A `codeAction` handler whose cost is proportional to anything
-but the diagnostics already computed will be felt here first. *Holds today —
-wolf resolves fix-its at publish time, so the response is a lookup.*
+the outline. With their responses and the four `$/setTrace` notifications, 24
+of the 42 records are traffic nobody asked for. This is the highest request rate of
+any client tracked so far, it scales with typing and cursor movement, and it
+arrives on *clean* files where there is nothing to fix. A `codeAction` handler
+whose cost is proportional to anything but the diagnostics already computed will
+be felt here first. *Holds today: wolf resolves fix-its at publish time, so the
+response is a lookup.*
 
 **Expect `$/setTrace` at any point, including several in a row.** The client
 sends it on connection and whenever `wolf.trace.server` changes; the recorded
 session carries four. A server that treated an unknown notification as an error
 would be reacting to a setting the user changed in a different window. *Holds
-today — unknown notifications are ignored.*
+today: unknown notifications are ignored.*
 
 **`shutdown` then `exit`, and the client waits for the response.** Unlike
 facsimile (which SIGTERMs) and fackr (which SIGKILLs after 100 ms),
@@ -284,8 +283,8 @@ Helix is the first client that is *neither* hand-rolled nor well-behaved: it
 implements the protocol competently and then declines to finish it.
 
 **Survive a client that never sends `shutdown` or `exit`, leaving no orphan.**
-Helix sends **neither**, and this was verified across all three quit paths —
-`:q`, `:qa` and `:q!` — each producing a recorded session that ends at the last
+Helix sends neither, and this was verified across all three quit paths
+(`:q`, `:qa` and `:q!`), each producing a recorded session that ends at the last
 response with no handshake at all. It is a different shape from facsimile's
 (which SIGTERMs then SIGKILLs) and fackr's (which sends both and then kills):
 helix simply drops the process. So the server must treat stdin EOF as a normal
@@ -295,21 +294,21 @@ end of session and exit cleanly on it. *Holds today; asserted by
 orphaned process left behind.*
 
 **Answer `utf-8` when the client offers all three with utf-8 first.** Helix
-declares `general.positionEncodings: ["utf-8", "utf-32", "utf-16"]` — note the
+declares `general.positionEncodings: ["utf-8", "utf-32", "utf-16"]`. Note the
 order differs from Neovim's `["utf-8", "utf-16", "utf-32"]` while producing the
 same negotiated result, because wolf's own preference is what decides. Like
 Neovim, helix converts correctly to whatever is negotiated, so a *wrong* choice
-here is invisible rather than broken, which is worse. *Holds today; asserted by
+here shows up as nothing at all, which is worse than broken. *Holds today; asserted by
 `profiles/helix.json`'s `expects_encoding`.*
 
 **Do not require `textDocument/didSave`.** The recorded session contains none;
 diagnostics arrive on open and on change. *Holds today.*
 
 **Expect `documentSymbol`, `hover` and `codeAction` only when asked.** Unlike VS
-Code — nine unprompted `codeAction` requests in a 42-record session — helix
-issues each exactly once, when the user presses the key. The 17-record helix
-transcript contains no unrequested traffic of any kind. That is recorded not as
-a constraint but as the *contrast*: the request-rate constraint VS Code imposes
+Code (nine unprompted `codeAction` requests in a 42-record session) helix
+issues each once, when the user presses the key. The 17-record helix
+transcript contains no unrequested traffic of any kind. That is recorded as a
+*contrast*: the request-rate constraint VS Code imposes
 is a VS Code property, not an LSP one, and a server tuned only against helix
 would be surprised by it.
 
@@ -334,10 +333,10 @@ would break a client behaving perfectly. *Holds today — `wolf lsp` reads no
 settings and ignores the notification.*
 
 **`shutdown` then `exit`, and the client waits for the `shutdown` response.**
-Same contract as `vscode-languageclient`. eglot additionally **reconnects** on an
+Same contract as `vscode-languageclient`. eglot additionally reconnects on an
 unexpected server exit (`eglot-autoreconnect`, default 3 s), so a server that
-exited on `shutdown` without responding would not merely stall — it would be
-respawned, and the user would see an editor that appears to work while leaking a
+exited on `shutdown` without responding would be respawned rather than merely
+stalling, and the user would see an editor that appears to work while leaking a
 process per window close. *Holds today; the recorded transcript ends on the
 `shutdown` response followed by `exit`.*
 

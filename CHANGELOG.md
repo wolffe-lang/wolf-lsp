@@ -2,10 +2,10 @@
 
 ## le08 — 2026-09-05 — five calls, six smokes, and a red that was not one
 
-The pin moves to wolf-lang **v0.2.5** (`6ade878`, `lspconf doctor` READY), the
+The pin moves to wolf-lang v0.2.5 (`6ade878`, `lspconf doctor` READY), the
 transcript library re-records header-only again, and the obligation this
-repository has carried since **le01** — the six captured editor smokes — comes
-down to **zero**.
+repository has carried since le01 (the six captured editor smokes) comes
+down to zero.
 
 ### s137 is five FUNCTIONS, and that is the whole LSP question
 
@@ -17,129 +17,128 @@ declaring none. No new type, no new keyword, no new diagnostic code, no new LSP
 capability. `crates/wolf_sema/src/prelude.rs`'s `BUILTIN_TYPES` is
 byte-identical across the pins at seventeen names; what grew is `PRELUDE`.
 
-All **67** inherited transcripts re-recorded with a **header-only** diff, only
+All 67 inherited transcripts re-recorded with a header-only diff, only
 `wolf_pin` and `recorded` moving, asserted by parsing every changed record and
-comparing field by field. **The two byte transcripts did not move either** —
-which is the specific thing this sprint was sent to check, since le07 pinned an
-ABSENCE in `completion-byte` that s137's new builtins could have falsified.
+comparing field by field. The two byte transcripts did not move either, which
+is what this sprint was sent to check, since le07 pinned an ABSENCE in
+`completion-byte` that s137's new builtins could have falsified.
 
 ### Two new transcripts, and the prediction-by-analogy was wrong
 
-**`requests/hover-net-wait`** — five positions on a new vendored sample
+`requests/hover-net-wait`: five positions on a new vendored sample
 (`net/wait_readiness.lu`, s137's own witness; the sample set had no net handle
-at all). le07 pinned that hover on the builtin TYPE name `byte` answers `null`,
-and le08 predicted the same for a builtin FUNCTION name. **It does not.** Hover
-on `net_wait` answers `List[int] ! {io}` over the range of the whole CALL
-expression. The two builtin namespaces are asymmetric in the editor: a type
-name hovers to nothing, a function name hovers to the type of the call it
-heads. It is not a signature — no parameter names, no arity, no clause prose —
-but the error row rides the string, and `List[int] ! {io}` is character for
-character the signature tail `[os.net.wait]` writes. That is why the position is
-in a script rather than in a paragraph.
+at all). A transcript at le07 pinned that hover on the builtin TYPE name `byte`
+answers `null`, and the same was predicted here for a builtin FUNCTION name. It
+does not. Hover on `net_wait` answers `List[int] ! {io}` over the range of the
+whole CALL expression. The two builtin namespaces are asymmetric in the editor:
+a type name hovers to nothing, a function name hovers to the type of the call
+it heads. It is not a signature (no parameter names, no arity, no clause
+prose), but the error row rides the string, and `List[int] ! {io}` is character
+for character the signature tail `[os.net.wait]` writes. That is why the
+position is in a script and not in a paragraph.
 
-**`requests/completion-s137`** — completion's absence re-verified and WIDENED.
+`requests/completion-s137`: completion's absence re-verified and WIDENED.
 le07 found that no builtin TYPE name is offered. Measured by set intersection
-against the pin's own `prelude.rs`: of the **90** names in `PRELUDE` and the
-**17** in `BUILTIN_TYPES`, the call-position answer offers **zero and zero**.
+against the pin's own `prelude.rs`: of the 90 names in `PRELUDE` and the
+17 in `BUILTIN_TYPES`, the call-position answer offers zero and zero.
 `print` is not offered; `net_listen` is not offered in a document that calls it
-twice above the cursor. So the absence is not about types — **the prelude is
-missing from completion entirely**, and that is the explanation for a non-event:
-s137 added five names to `PRELUDE` and `completion-byte` could not move, because
-the surface that would have shown them does not exist. The advertised `.`
-trigger still answers empty, now measured on a `List[int]` that demonstrably has
-a `len`.
+twice above the cursor. The absence covers more than types: the prelude is
+missing from completion entirely, which explains a non-event. s137 added five
+names to `PRELUDE` and `completion-byte` could not move, because the surface
+that would have shown them does not exist. The advertised `.` trigger still
+answers empty, now measured on a `List[int]` that has a `len`.
 
 ### All six captured smokes, and the le01 obligation is closed
 
-`lspconf replay` prints **no SKIP line at all** — 75 transcripts, zero skipped,
+`lspconf replay` prints no SKIP line at all: 75 transcripts, zero skipped,
 where le06 skipped six and le07 skipped one. nvim (7/7), fackr, helix, emacs and
-vscode (16/16) all re-captured with **header-only** diffs: the real editors' real
-traffic is byte-identical at the new pin, which is five independent
+vscode (16/16) all re-captured with header-only diffs, so the real editors' real
+traffic is byte-identical at the new pin. That is five independent
 confirmations that s137 moved nothing on the wire.
 
-**facsimile's red is WITHDRAWN, not narrowed.** le07 reported two client-side
-reasons the session could not be reproduced. The first stands: the documented
-key sequence is stale because the server now advertises `completionProvider`,
-and the fix is one character wide — break the file with `;` rather than a
-letter. The second — *"facsimile sends exactly one `didChange` per session, and
-then stops"* — is **false**, and it was one sprint away from becoming a
-permanent client limitation in `MATRIX.md`. le07's probe was sound; the
-inference was not. Read out of facsimile's source and then confirmed on the
-wire:
+facsimile's red is WITHDRAWN. Two client-side reasons the session could not be
+reproduced were reported at le07. The first stands: the documented key sequence
+is stale because the server now advertises `completionProvider`, and the fix is
+one character wide, breaking the file with `;` instead of a letter. The second,
+*"facsimile sends exactly one `didChange` per session, and then stops"*, is
+false, and it was one sprint away from becoming a permanent client limitation
+in `MATRIX.md`. The le07 probe was sound; the inference drawn from it was
+wrong. Read out of facsimile's source and then confirmed on the wire:
 
-- **The flush precedes a BLOCKING read.** `app/main.f90:800` calls
+- The flush precedes a BLOCKING read. `app/main.f90:800` calls
   `flush_pending_document_changes` once per loop iteration and the next
   statement is `get_key_input`, which blocks. The debounce check runs
   microseconds after the edit that set `last_change_time`, declines, and the
-  loop parks in the read. **A pending change is flushed when the NEXT KEY
-  ARRIVES, not when the timer expires.** An edit followed by silence is never
-  sent, however long a driver waits.
-- **A buffered burst is coalesced into ONE iteration**, deliberately ("fast
-  typing, paste, or a consumer that fell behind"). A driver that writes its
-  sequence in one `write()` gets one flush no matter how many edits it contains
-  — exactly what le07 measured.
+  loop parks in the read. A pending change is flushed when the NEXT KEY
+  ARRIVES; nothing wakes the loop when the timer expires. An edit followed by
+  silence is never sent, however long a driver waits.
+- A buffered burst is coalesced into ONE iteration ("fast typing, paste, or a
+  consumer that fell behind"). A driver that writes its sequence in one
+  `write()` gets one flush no matter how many edits it contains, which is what
+  le07 measured.
 
 Type, do not paste: one key per `write()`, more than `sync_delay` between them,
-and a harmless non-edit key after each edit. The session then records **rung for
-rung with the `70bdd35` capture** — both `didChange`s, `E0002` appearing and
+and a harmless non-edit key after each edit. The session then records rung for
+rung with the `70bdd35` capture (both `didChange`s, `E0002` appearing and
 clearing, hover `who: str`, `documentSymbol` `main`, `formatting` `[]`, zero
-server→client requests, all asserted before the commit — and three consecutive
-runs produce three **byte-identical** transcripts.
+server→client requests, all asserted before the commit), and three consecutive
+runs produce three byte-identical transcripts.
 
 Two further facsimile findings, both filed: `Home` is a SMART home landing on
 the first non-blank column (assume column 0 and you hover the `=` and get
-`null`), and **`-w` is required** or `workspace_detect_from_file` walks past the
+`null`), and `-w` is required or `workspace_detect_from_file` walks past the
 samples directory to a marker in `$HOME`, making `rootUri` a home directory the
-normalizer cannot elide. The leak test caught that one, which is the test doing
-its job. `didChange` still carries `"version": 1`, now measured **on the wire**:
-two distinct edits, two notifications, both version 1.
+normalizer cannot elide. The leak test caught that one. `didChange` still
+carries `"version": 1`, now measured on the wire: two distinct edits, two
+notifications, both version 1.
 
 ### The VS Code lane: a third silent no-op, and a client property
 
-**`VSCODE_CLI=1` is mandatory on macOS.** `runTest.ts` hands the extension host
-a `PATH` with the shim's directory first — the entire capture mechanism — but
-VS Code, launched as a bare Electron binary rather than through its `code` CLI,
+`VSCODE_CLI=1` is mandatory on macOS. `runTest.ts` hands the extension host
+a `PATH` with the shim's directory first (the entire capture mechanism), but
+VS Code, launched as a bare Electron binary instead of through its `code` CLI,
 resolves the user's LOGIN-SHELL environment and REPLACES `PATH` with it. The
-shim's log recorded **zero** invocations while the suite reported **16/16** and
+shim's log recorded zero invocations while the suite reported 16/16 and
 printed the correct pinned version, because the real `wolf` on the login `PATH`
 answered everything. Tests pass, no transcript is written, `git status` stays
 clean: the third instance in this lane of a green tick over a no-op, after the
-two le07 found.
+two found at le07.
 
-**And the vscode capture is not byte-reproducible.** Three consecutive runs, all
-16/16, produced **56, 54 and 58** records — VS Code fires `documentSymbol`,
+The vscode capture is also not byte-reproducible. Three consecutive runs, all
+16/16, produced 56, 54 and 58 records, because VS Code fires `documentSymbol`,
 `codeAction` and `inlayHint` on its own timers. Every test-driven rung has an
-identical count across all three. Compare the method multiset, not the byte
-count.
+identical count across all three. Compare the method multiset; the byte count
+varies.
 
 ### wolf-lang#199 finally has its constant
 
 Three sprints have recorded that D57's pin clause is clone-dependent and left
 the threshold unstated, which made a step function read as drift. It is
-**16,384 packed objects (2^14)** — measured, not quoted: scratch repositories
-packed to 16,383 / 16,384 / 16,385 objects answer 7 / 8 / 8 hex digits (git
-2.50.1), and git's auto-abbrev counts PACKED objects only. The two clones on
-this box at this commit: wolf-lang, 12,257 packed, answers `6ade878`; this
-repo's `upstream/` submodule, 23,626 packed, answers `6ade878c`. Their COMMIT
-counts are identical (1,020 each), so "the bigger clone" was never the test.
-The consequence is worse than drift: **the builder clone sits 4,127 objects
-below the flip**, so an ordinary `git fetch` will one day cross it and the
-pinned string will become wrong with no commit changing. That is the argument
-for fixing #199 upstream rather than re-measuring it every sprint.
+16,384 packed objects (2^14), measured here: scratch repositories packed to
+16,383 / 16,384 / 16,385 objects answer 7 / 8 / 8 hex digits (git 2.50.1), and
+git's auto-abbrev counts PACKED objects only. The two clones on this box at
+this commit: wolf-lang, 12,257 packed, answers `6ade878`; this repo's
+`upstream/` submodule, 23,626 packed, answers `6ade878c`. Their COMMIT counts
+are identical (1,020 each), so "the bigger clone" was never the test. The
+consequence is worse than drift: the builder clone sits 4,127 objects below the
+flip, so an ordinary `git fetch` will one day cross it and the pinned string
+will become wrong with no commit changing. That is the argument for fixing #199
+upstream instead of re-measuring it every sprint.
 
 ### Counts, and the wart that is no longer a coincidence
 
 69 scripted transcripts (67 re-recorded header-only + 2 new) plus 6 captured,
 12 samples, nine derived profiles, zero divergences; `cargo xtask ci` green,
-`release-check 3b` PASS with an **empty** SKIP list.
+`release-check 3b` PASS with an empty SKIP list.
 
-`v0.2.5` has FOUR releases behind the tag — the published one with its four
-archives plus **three empty drafts**, all stamped eight minutes earlier.
+`v0.2.5` has FOUR releases behind the tag: the published one with its four
+archives plus three empty drafts, all stamped eight minutes earlier.
 `v0.2.3` and `v0.2.4` have the identical shape, so wolf-lang#226's
-self-publishing release racing is not a fluke; re-reported, not compensated for
-here. One more shape worth the line: `v0.2.5` is an **annotated** tag, so
+self-publishing release racing is not a fluke; re-reported, and not compensated
+for here. One more shape: `v0.2.5` is an annotated tag, so
 `git rev-parse v0.2.5` answers the tag object (`0bb51c03…`) and the pin records
-the peeled commit — the unpeeled form is a sha no `wolf --version` will print.
+the peeled commit, since the unpeeled form is a sha no `wolf --version` will
+print.
 
 ## le07 — 2026-09-03 — the byte in the editors, and five of the six
 

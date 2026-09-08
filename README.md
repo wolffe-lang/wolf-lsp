@@ -29,11 +29,10 @@ They stop at gates that need a person:
 | | |
 |---|---|
 | [`docs/COMPAT.md`](docs/COMPAT.md) | which `wolf` each client works with, and the gate that keeps the claim earned |
-| [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md) | every channel, per ecosystem, and the human act each one waits on |
+| [`docs/DISTRIBUTION.md`](docs/DISTRIBUTION.md) | every channel, per ecosystem, and what each one is waiting on |
 | [`docs/RELEASE.md`](docs/RELEASE.md) | the checklist, steps 0 through 9. Run it with `cargo xtask release-check` |
 | [`docs/UPSTREAM.md`](docs/UPSTREAM.md) | every patch's status upstream, in five words, none of them "soon" |
 
-Sprint plan: the `lsp` track (`lsNN`) in the wolf metarepo.
 Licensed under [GPL-3.0-or-later](LICENSE).
 
 ## The harness

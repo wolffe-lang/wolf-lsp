@@ -2,80 +2,76 @@
 
 > **NO CLIENT HERE HAS BEEN PUBLISHED.** The VS Code publisher identity is
 > unregistered and the nvim mirror does not exist, so every distribution
-> channel in this repository is built, dry-run proven and switched **off**; the
+> channel in this repository is built, dry-run proven and switched off. The
 > steps that would cross a network are human-gated and listed in
-> [`DISTRIBUTION.md`](DISTRIBUTION.md). The table below therefore describes
-> what a client *would* declare at its first release, and nobody has installed
-> any of it from anywhere.
+> [`DISTRIBUTION.md`](DISTRIBUTION.md). The table below describes what a client
+> *would* declare at its first release, and nobody has installed any of it from
+> anywhere.
 >
-> **`wolf-lang` itself is no longer the missing half.** That sentence read "and
-> `wolf-lang` has no tagged release" through le04; le05 retired the claim and
-> le06 measured the consequence. `v0.2.3` is published, Latest, with four
-> tier-1 archives, and this repository's CI now acquires one: the `server-lane`
-> job resolved a binary and reported `doctor` READY for the first time on
-> 2026-09-02.
+> `wolf-lang` is no longer the missing half. That sentence read "and
+> `wolf-lang` has no tagged release" through le04; the claim was retired in
+> le05 and the consequence measured in le06. `v0.2.3` is published, Latest,
+> with four tier-1 archives, and this repository's CI now acquires one: the
+> `server-lane` job resolved a binary and reported `doctor` READY for the first
+> time on 2026-09-02.
 
-Editor tooling rots by drifting silently out of compatibility with its server.
-This file, `clients/*/compat.json` and the runtime check in the two clients that
-can carry one are the machinery that makes that drift loud instead.
+Editor tooling drifts out of compatibility with its server. This file,
+`clients/*/compat.json` and the runtime check in the two clients that can carry
+one are what reports the drift.
 
 ## The claim, and its exact width
 
-Client versions are the **client's**, not wolf's (ls07 non-target: no
-version-lockstep). What each client owes is a declared range of `wolf` it works
-with, and the rule that governs the range is one sentence:
+Client versions are the client's own; they do not track wolf's (ls07
+non-target: no version-lockstep). Each client declares a range of `wolf` it
+works with, and one sentence governs the range:
 
-> **`max_tested` may only name a wolf version this repository has actually run
-> the conformance suite against.**
+> `max_tested` may only name a wolf version this repository has actually run
+> the conformance suite against.
 
-That rule is a gate, not a convention. `cargo xtask compat-check` derives the
-*earned set* from `vendor/upstream/PIN` and fails if any client declares a
-`max_tested` outside it — and it runs in `cargo xtask ci`, on every push, so the
-moment a range outruns its evidence is the moment somebody edits the file rather
-than the moment somebody tags a release.
+The rule is enforced. `cargo xtask compat-check` derives the *earned set* from
+`vendor/upstream/PIN` and fails if any client declares a `max_tested` outside
+it. It runs in `cargo xtask ci`, on every push, so a range that outruns its
+evidence turns the build red as soon as somebody edits the file.
 
-**Today the earned set has exactly one member.** Not because wolf-lang has no
-releases any more — as of 2026-09-02 it publishes them, and `v0.2.2` is Latest
-with three tier-1 archives — but because this repository pins one commit,
-`wolf --version` at that commit prints one string, and every transcript under
-`transcripts/` was recorded against it. So the schema supports ranges and the
-data claims a point. Widening `max_tested` to a version nobody has run turns
-the build red, which was tested deliberately — see *The red test*, below.
+Today the earned set has one member. wolf-lang does publish releases: as of
+2026-09-02 `v0.2.2` is Latest with three tier-1 archives. The set is one member
+because this repository pins one commit, `wolf --version` at that commit prints
+one string, and every transcript under `transcripts/` was recorded against it.
+The schema supports ranges; the data claims a point. Widening `max_tested` to a
+version nobody has run turns the build red, and that was tested (see *The red
+test*, below).
 
 ### The pin clause is as wide as the builder's clone (wolf-lang#199)
 
 The declared range is compared against the *number* in `wolf --version`, so
-this does not move a range — but it decides whether `lspconf doctor` accepts
-your binary at all, and it is worth stating where a reader will look for it.
+this does not move a range. It does decide whether `lspconf doctor` accepts
+your binary, and this is where a reader will look for it.
 
-`vendor/upstream/PIN` records the exact string the pinned commit prints and
-`doctor` refuses anything else. At `v0.2.1` that string ended `pin 75fd2d0b`,
-**eight** hex digits. At `v0.2.2` it ends `pin 8cda3aa`, **seven**. The commits
-did not change shape; the clause is `git rev-parse --short`'s AUTO
-abbreviation, and git sizes that to the object count of the repository it runs
-in. So the width is a property of the **builder's clone**, not of the commit —
-le04 suspected it, le05 measured it on nomad-1 (a 2086-object clone of
-wolf-lang abbreviates `8cda3aa41…` to `8cda3aa`, and the binary built there
-prints `pin 8cda3aa` to match).
+`vendor/upstream/PIN` records the string the pinned commit prints and `doctor`
+refuses anything else. At `v0.2.1` that string ended `pin 75fd2d0b`, eight hex
+digits. At `v0.2.2` it ends `pin 8cda3aa`, seven. The commits did not change
+shape; the clause is `git rev-parse --short`'s AUTO abbreviation, and git sizes
+that to the object count of the repository it runs in. The width therefore
+comes from the builder's clone, suspected in le04 and measured in le05 on
+nomad-1 (a 2086-object clone of wolf-lang abbreviates `8cda3aa41…` to
+`8cda3aa`, and the binary built there prints `pin 8cda3aa` to match).
 
-**What that means for you.** If you *acquire* the published artifact for the
-pin, this never bites: one build, one string, and `doctor` is green. If you
-BUILD your own `wolf` from a full clone of wolf-lang, the same commit will
-stamp `pin 8cda3aa4` and `doctor` will refuse it — correctly, by its own rule,
-against a binary that is in fact the right one. The remedy is not to loosen
-`doctor`: a pin that accepts a prefix accepts a stale binary too, which is the
-single failure this whole mechanism exists to prevent. The remedy is upstream,
-and it stays filed as **wolf-lang#199** — D57's version clause should not
-depend on how much of the history the builder happened to fetch.
+If you *acquire* the published artifact for the pin, this never bites: one
+build, one string, and `doctor` is green. If you BUILD your own `wolf` from a
+full clone of wolf-lang, the same commit will stamp `pin 8cda3aa4` and `doctor`
+will refuse it, by its own rule, against a binary that is in fact the right
+one. Loosening `doctor` is the wrong remedy: a pin that accepts a prefix
+accepts a stale binary too, and a stale binary is what the mechanism exists to
+catch. The remedy is upstream, filed as wolf-lang#199. D57's version clause
+should not depend on how much of the history the builder happened to fetch.
 
 ## Pre-1.0 posture, stated plainly
 
-Until wolf v1 the range below is a **pin range**, not a stability promise.
+Until wolf v1 the range below is a pin range. It is not a stability promise.
 Breakage between compiler campaigns is *expected*: `wolf lsp` is being built at
 the same time as these clients, and a campaign that changes a diagnostic code, a
 capability, or a position-encoding preference can move the wire under a client
-that did nothing wrong. The honest posture is to say so here rather than to
-imply a stability this track cannot provide.
+that did nothing wrong.
 
 That is also why no client refuses to run out of range. An out-of-range server
 usually mostly works, and blocking a user's editor is worse than warning them.
@@ -123,15 +119,15 @@ on a hand edit, for the same reason `pin.lua` and `pin.ts` are generated.
 `compat-check` fails if one appears. The reason is structural: a compatibility
 range describes a *release*, and none of the three is a release this repository
 cuts. fackr's and facsimile's deliverable is a patch series applied to somebody
-else's editor — the range statement travels with the patch, into their
-repository, under their version scheme — and `jetbrains/` is a page of prose
-with no artefact at all.
+else's editor, so the range statement travels with the patch, into their
+repository, under their version scheme. `jetbrains/` is a page of prose with no
+artefact at all.
 
 ## The runtime check
 
 Each client that can run code compares `wolf --version` against its declared
-range at startup and, on a mismatch, emits **exactly one** actionable message
-naming both versions and what to do. No modal, no repetition, no auto-update,
+range at startup and, on a mismatch, emits one actionable message naming both
+versions and what to do. No modal, no repetition, no auto-update,
 no refusal to run.
 
 | client | surface | behaviour |
@@ -145,13 +141,13 @@ no refusal to run.
 
 The two implemented checks share one shape: parse the leading
 `MAJOR.MINOR.PATCH` out of `wolf --version`, compare numerically against
-`[min, max_tested]`, say which side of the range the binary is on, and get out
-of the way. Numerically matters — `0.10.0 < 0.9.0` as strings, and a unit test
-in `xtask/src/compat.rs` pins the ordering.
+`[min, max_tested]`, and say which side of the range the binary is on.
+Numerically matters, because `0.10.0 < 0.9.0` as strings; a unit test in
+`xtask/src/compat.rs` pins the ordering.
 
 ## The red test
 
-ls07's acceptance asks for the refusal to be *exercised*, not asserted. It was:
+ls07's acceptance asks for the refusal to be *exercised*. Here is the run:
 
 ```
 $ # clients/vscode/compat.json, max_tested 0.0.1 -> 0.1.0
@@ -170,11 +166,11 @@ hand edit to either generated artifact.
 ## Rename's refusal set (s133)
 
 `textDocument/rename` (and `prepareRename` before it) never produces a partial
-edit. It answers the whole edit — every use in every file of the package the
-entry reaches, the declaration, the `use`-site path segment — or it refuses,
+edit. It answers the whole edit (every use in every file of the package the
+entry reaches, the declaration, the `use`-site path segment) or it refuses,
 as a `ResponseError` with code `-32803` (`RequestFailed`) whose message names
 the token and the reason. A client shows the message; nothing was changed.
-The set, pinned in every `transcripts/navigation/rename-<client>.jsonl`:
+Every `transcripts/navigation/rename-<client>.jsonl` pins the set:
 
 | cursor on | refused as |
 |---|---|
@@ -187,20 +183,20 @@ The set, pinned in every `transcripts/navigation/rename-<client>.jsonl`:
 | anything else (a literal, punctuation, whitespace) | `null` — nothing to rename, not an error |
 
 And for the new name: a keyword (`` `let` is a keyword and cannot be a name ``)
-or anything that does not lex as exactly one identifier (`` `9x` is not an
-identifier ``). No conflict check is made against names already in scope — the
-compiler's next diagnostics (E0302 duplicate definition, W0305 shadowing) are
-the authority, not a second checker inside the server.
+or anything that does not lex as one identifier (`` `9x` is not an identifier
+``). No conflict check is made against names already in scope. The compiler's
+next diagnostics (E0302 duplicate definition, W0305 shadowing) are the
+authority; the server does not carry a second checker.
 
-**The `//!` header is never an edit site.** The D59 module-formation marker
-(`//! member: true` / `//! member: false`) carries no identifier — `member:`
-is a boolean — so renaming a `pub` member of a `member: true` file changes the
-item's name token and its uses, and leaves every `//!` line untouched. Doc
-links in `///` prose are not rewritten either (a rename is a binding-table
-edit; prose is not in the table).
+The `//!` header is never an edit site. The D59 module-formation marker
+(`//! member: true` / `//! member: false`) has no identifier in it, since
+`member:` is a boolean, so renaming a `pub` member of a `member: true` file
+changes the item's name token and its uses and leaves every `//!` line
+untouched. Doc links in `///` prose are not rewritten either (a rename is a
+binding-table edit; prose is not in the table).
 
-**The reachable set is the package around the entry.** wolf's v0 model is
+The reachable set is the package around the entry. wolf's v0 model is
 single-entry (D32): asked from `main.lu`, a rename reaches the sibling module
 it imports; asked from a `member: true` sibling opened on its own, the set is
-that module alone — the entry that imports it is not in its package. Honest
-rather than guessed; a workspace-root model is s57's.
+that module alone, because the entry that imports it is not in its package. A
+workspace-root model is s57's.

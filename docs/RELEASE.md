@@ -2,14 +2,14 @@
 
 > **No client has ever been released, and today none can be.** Steps 7 and 8
 > need a registered publisher, a mirror repository and a published `wolf`;
-> [`DISTRIBUTION.md`](DISTRIBUTION.md) lists exactly which human acts are
+> [`DISTRIBUTION.md`](DISTRIBUTION.md) lists which human acts are
 > missing. Everything before them runs now, on every push.
 
 ```sh
 cargo xtask release-check
 ```
 
-That command **is** this document. Every step below is a line in its output,
+That command is this document. Every step below is a line in its output,
 and each line is one of three things:
 
 | | meaning |
@@ -18,14 +18,13 @@ and each line is one of three things:
 | `FAIL` | a real problem. Non-zero exit; `cargo xtask ci` goes red |
 | `PENDING` | cannot be checked from this repository. Names the human act that would clear it |
 
-**`PENDING` is not a pass, and it never disappears.** A checklist whose
-unrunnable steps quietly vanish from the output shrinks until it certifies
-nothing — the same failure `MATRIX.md` was built to prevent one layer up. So the
-pending rows print on every run, including the ones that will be pending for
-months.
+`PENDING` is not a pass, and it never disappears. A checklist whose unrunnable
+steps vanish from the output shrinks until it certifies nothing; `MATRIX.md`
+was built to prevent the same failure one layer up. So the pending rows print
+on every run, including the ones that will be pending for months.
 
-`release-check` runs in `cargo xtask ci`, not only at a tag. A checklist first
-executed on release day is a checklist whose first execution is a discovery.
+`release-check` runs in `cargo xtask ci`, on every push as well as at a tag, so
+release day is not its first execution.
 
 ---
 
@@ -37,9 +36,9 @@ release that was verified against something other than what shipped.
 ### 0. There is a `wolf` to be compatible *with*
 
 `PENDING`, and everything else hangs off it. `wolf-lang` tags no release, so the
-pin in `vendor/upstream/PIN` is a private-repo sha — not something a user can
-acquire. Until wolf-lang s66 publishes an artifact, "install the extension" has
-no coherent second half.
+pin in `vendor/upstream/PIN` is a private-repo sha that a user cannot acquire.
+Until wolf-lang s66 publishes an artifact, "install the extension" has no
+coherent second half.
 
 *Clears when:* `gh release list --repo wolffe-lang/wolf-lang` is non-empty.
 
@@ -55,45 +54,44 @@ pin bump nobody can revert.
 `grammar-drift` (VS Code's four generated files), `nvim-check`
 (`syntax/wolf.vim` keywords and `pin.lua`), `config-check` (Helix, Zed and the
 shared formatter numbers), `emacs-check` (the derived keyword list). Commit any
-diff **with the pin**, not after it.
+diff in the pin bump's own commit.
 
 Five independent tables are derived from one pinned grammar, in five target
 languages. The redundancy is the check: a drift in one is a drift in all five.
 
 ### 3. The conformance suite, green, on all three tier-1 OSes
 
-Split honestly in two, because half of it can run without a server and half
-cannot:
+Split in two, because half of it can run without a server and half cannot:
 
-- `lspconf verify` — transcripts parse, validate and canonicalise. Runs
+- `lspconf verify`: transcripts parse, validate and canonicalise. Runs
   everywhere, gates today.
-- `lspconf --require-server replay` and `--require-server onetruth` — the
-  transcript library and D34's falsifiable claim (`publishDiagnostics` ==
+- `lspconf --require-server replay` and `--require-server onetruth`: the
+  transcript library and D34's claim (`publishDiagnostics` ==
   `conform-run`). `PENDING` while `lspconf doctor` reports SERVER UNAVAILABLE.
-- The **three-OS** claim is CI's, never a local run's (D35). `release-check`
-  reports it `PENDING` on principle: it ran on one host, and one host cannot
-  substantiate three.
+- Only CI can make the three-OS claim (D35). `release-check` reports it
+  `PENDING`: it ran on one host, and one host cannot substantiate three.
 
 ### 4. Every T1 matrix row green
 
-T1 breakage **blocks**. T2 files an issue and proceeds. T3 gets its manual
-verification and its stamp now, before the tag rather than after.
+T1 breakage blocks. T2 files an issue and proceeds. T3 gets its manual
+verification and its stamp before the tag.
 
-`release-check` reads [`MATRIX.md`](MATRIX.md) rather than trusting it: every
-transcript and profile a T1 or T2 row cites must exist on disk, and any row
-stamped `NEVER` is reported as the unverified row it is. Zed is stamped `NEVER`
-today and will be until somebody runs it.
+`release-check` checks [`MATRIX.md`](MATRIX.md) against the disk: every
+transcript and profile a T1 or T2 row cites must exist, and any row stamped
+`NEVER` is reported as unverified. Zed is stamped `NEVER` today and will be
+until somebody runs it.
 
 ### 5. Refresh the stamps
 
-`MATRIX.md`'s "last reviewed against wolf pin" line must name the current pin —
-checked. Then `COMPAT.md`, which is generated: `cargo xtask compat-generate`
-rewrites the table and the two client artifacts from `clients/*/compat.json`.
+`MATRIX.md`'s "last reviewed against wolf pin" line must name the current pin,
+and that is checked. Then `COMPAT.md`, which is generated: `cargo xtask
+compat-generate` rewrites the table and the two client artifacts from
+`clients/*/compat.json`.
 
-**`max_tested` moves only on step 3's evidence.** `compat-check` derives the
-earned set from the pin and fails on any declared range wider than it. That gate
-is the whole point of [`COMPAT.md`](COMPAT.md) and it was exercised red on
-purpose (see that file, §The red test).
+`max_tested` moves only on step 3's evidence. `compat-check` derives the earned
+set from the pin and fails on any declared range wider than it.
+[`COMPAT.md`](COMPAT.md) exists for that gate, and the gate was exercised red
+(see that file, §The red test).
 
 ### 6. A changelog per client
 
@@ -116,10 +114,9 @@ release tag.
 | 7d. nvim mirror push | `PENDING` — `wolffe-lang/wolf.nvim` does not exist. **Its default branch must be `main` before the first push**, or every clone is empty; see `DISTRIBUTION.md` §neovim |
 
 Note what 7c reports on a dirty working tree: `git subtree split` reads
-**history**, so on uncommitted changes it faithfully splits HEAD — a correct
-answer to a question nobody asked. That case is reported as `PENDING` naming the
-uncommitted files, never as a pass. In CI, where the tree is always clean, it is
-a hard gate.
+history, so on uncommitted changes it splits HEAD and ignores them. That case
+is reported as `PENDING` naming the uncommitted files. In CI, where the tree is
+always clean, it is a hard gate.
 
 ### 8. Install it on a clean machine, per T1 editor
 
@@ -127,16 +124,15 @@ a hard gate.
 channel*, and step 7 has not run.
 
 Install from the marketplace / the mirror on a machine with no `wolf-lsp`
-checkout, open a vendored sample, **see a diagnostic**, stamp the matrix row. A
-release nobody installed is a release nobody has tested, and every other step in
-this document is a proxy for this one.
+checkout, open a vendored sample, see a diagnostic, stamp the matrix row. Every
+other step in this document is a proxy for this one.
 
 ### 9. Refresh the upstream statuses
 
 [`UPSTREAM.md`](UPSTREAM.md) states every patch's status in a five-word
-vocabulary, and `release-check` fails if a row uses none of them. It **cannot**
-check that a row is true — nothing here can observe a PR moving — so 9b is
-permanently `PENDING`: open each link and re-read the state before tagging.
+vocabulary, and `release-check` fails if a row uses none of them. It cannot
+check that a row is true, because nothing here can observe a PR moving, so 9b
+is permanently `PENDING`: open each link and re-read the state before tagging.
 
 ---
 

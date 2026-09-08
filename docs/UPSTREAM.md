@@ -1,25 +1,22 @@
 # Upstream integration status
 
-A track whose value is integration must report integration **status**, not
-intent (ls07 §5). This file is that report, and its rule is that a row states a
-*state* rather than a plan.
+A track whose value is integration must report integration status (ls07 §5).
+This file is that report, and its rule is that every row states a *state*.
 
-**The facsimile series is MERGED; everything else is unsubmitted.** For one
+The facsimile series is MERGED; everything else is unsubmitted. For one
 sprint this file said nothing had shipped anywhere while facsimile's whole
 wolf series sat merged in that repo's own trunk (`21e58aa`, 2026-08-10, on
-its origin) — a ledger saying work is unsubmitted when it is merged is worse
-than no ledger, and le01's reconciliation (2026-08-27) corrected six rows.
-Everything else below remains genuinely unsubmitted. The old blanket reason
+its origin); a reconciliation in le01 (2026-08-27) corrected six rows.
+Everything else below remains unsubmitted. The old blanket reason
 has also expired: `wolf-lang` now tags releases (v0.1.0 "wolfgang",
 2026-08-12, published with artifacts), so "a language nobody can install" no
-longer gates the registry rows — what gates each row now is written on the
+longer gates the registry rows. What gates each row now is written on the
 row.
 
 ## The state vocabulary
 
-Exactly five words. `cargo xtask release-check` step 9 fails if a row uses none
-of them, because a row that says something else is a promise rather than a
-state.
+Five words. `cargo xtask release-check` step 9 fails if a row uses none
+of them; a row that says something else is a promise.
 
 | state | means |
 |---|---|
@@ -29,8 +26,7 @@ state.
 | `DECLINED` | upstream said no. The reason is recorded, and it stays in the table |
 | `ABANDONED` | we stopped pursuing it. The reason is recorded, and it stays in the table |
 
-A row is never deleted. A table that forgets its declines is a table that
-proposes the same patch twice.
+A row is never deleted, so the table does not propose the same patch twice.
 
 ## fackr — `wolffe-lang/fackr`, read at `496c7e2` (v1.2.1)
 
@@ -55,11 +51,11 @@ decomposition and per-PR file lists:
 
 Series: [`clients/facsimile/patches/`](../clients/facsimile/patches/) ·
 [`STATUS.md`](../clients/facsimile/patches/STATUS.md). Written against
-`1242ffa` (v0.32.8); the six written patches landed **as one commit**,
-`21e58aa`, on that repo's trunk (and its origin) the same day — this table
-said `NOT SUBMITTED` for all six until le01's reconciliation, 2026-08-27.
-Each row below was re-verified against facsimile trunk source, not the
-commit message.
+`1242ffa` (v0.32.8); the six written patches landed as one commit,
+`21e58aa`, on that repo's trunk (and its origin) the same day. This table
+said `NOT SUBMITTED` for all six until the reconciliation of 2026-08-27 in
+le01. Each row below was re-verified against facsimile trunk source; the
+commit message was not taken as evidence.
 
 | PR | change | state | note |
 |---|---|---|---|
@@ -74,9 +70,9 @@ commit message.
 | PR-compat version check | the same one-shot comparison, into facsimile's log surface | `NOT SUBMITTED` | **offered, not written**, same reasoning as fackr's |
 | PR6 multiline-string exit fix | trim the blank-padded stored `"""` so multiline string mode exits; regression test; python triple-quote ordering | `MERGED` | **re-verified at le05:** both commits are in trunk — `c6f8878` ("Exit multiline string mode at the closing delimiter") and `d9fafb3` ("List python triple-quote delimiters before the single forms"), 2026-08-27. Found and fixed by le01 on branch `le01-wolf-multiline-string`; the merged PR3 table had shipped with the bug, and every line after the first block rendered as string |
 
-**A second facsimile change set landed that this repo did not write.** Its
-PR **#5** (merge `2f5d5f4`, the `wolf-fx01` lane, in trunk `a121ab3` /
-v0.35.0) closed FortranGoingOnForty/facsimile#4 — the issue le04 filed about
+A second facsimile change set landed that this repo did not write. Its
+PR #5 (merge `2f5d5f4`, the `wolf-fx01` lane, in trunk `a121ab3` /
+v0.35.0) closed FortranGoingOnForty/facsimile#4, the issue filed in le04 about
 the static capability table and the `linkSupport`/`Location[]` mismatch. It
 moved routing onto the server's advertised `supports_*` capabilities, taught
 the definition parser `LocationLink`, taught the completion popup a bare
@@ -87,12 +83,12 @@ not ours; it is recorded here because three claims in
 Note the number collision: `PR5` in the table above is this series' own fifth
 group, still unwritten, and unrelated.
 
-The fackr series (and facsimile's three unwritten offers) carry a **standing
-re-verification obligation**: each was written against one upstream commit,
+The fackr series (and facsimile's three unwritten offers) have a standing
+re-verification obligation: each was written against one upstream commit,
 and neither upstream is pinned by anything in this repository. A patch series
 against a moved `trunk` is a merge conflict somebody discovers during review.
-Re-apply and re-run the gates in `STATUS.md` before opening anything. (le01
-re-verified fackr's: trunk is still `496c7e2`, so the series applies as a
+Re-apply and re-run the gates in `STATUS.md` before opening anything. (fackr's
+was re-verified in le01: trunk is still `496c7e2`, so the series applies as a
 fast-forward today.)
 
 ## Registries and downstream entries
@@ -109,14 +105,14 @@ fast-forward today.)
 ## What refreshes this file, and when
 
 `cargo xtask release-check` verifies that every row uses the vocabulary. It
-**cannot** verify that a row is true — nothing in this repository can observe a
-PR moving from open to merged. So step 9b of the checklist is permanently
-`PENDING`: before tagging, open each link and re-read the state. A `SUBMITTED`
-row that quietly became `MERGED` is exactly the drift this table exists to
-catch, and the only mechanism that catches it is a person.
+cannot verify that a row is true, because nothing in this repository can
+observe a PR moving from open to merged. So step 9b of the checklist is
+permanently `PENDING`: before tagging, open each link and re-read the state. A
+`SUBMITTED` row that became `MERGED` is the drift this table exists to catch,
+and a person is the only thing that catches it.
 
-That mechanism failed once already in each direction, which is why the
-paragraph above is not decoration: le01 found six facsimile rows reading
-`NOT SUBMITTED` while merged, and le04 found the tree-sitter-wolf row still
-describing an empty repo three sprints after this track filled it. **Re-read
-every row at every pin bump.** The rows are prose; no gate can check them.
+That has failed once in each direction: six facsimile rows read
+`NOT SUBMITTED` while merged until le01, and the tree-sitter-wolf row still
+described an empty repo three sprints after this track filled it, until le04.
+**Re-read every row at every pin bump.** The rows are prose; no gate can check
+them.

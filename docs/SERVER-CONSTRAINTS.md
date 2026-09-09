@@ -9,6 +9,11 @@ client needing it is gone.
 This file grows one client at a time (ls02–ls06). Nothing here is a request for
 a new capability. It is the list of things that must stay true.
 
+Each heading carries the sprint that added the section and the client version
+the constraint was *read from at that sprint*. Those stamps are a record and do
+not move; where the editor on the rig has since been upgraded, the heading says
+so and `docs/MATRIX.md` is the file that names what was last actually run.
+
 ## From fackr (ls02, `496c7e2`)
 
 **Publish diagnostics on open and on change, never only on save.** fackr
@@ -188,7 +193,7 @@ locations), and those transcripts were re-recorded byte-identical at pin
 caught up, and it is satisfied by both now.
 *Constraint satisfied by the protocol; the parser has since agreed.*
 
-## From Neovim (ls04, `v0.12.4`)
+## From Neovim (ls04, as read at `v0.12.4`; MATRIX runs `v0.12.5` since le07)
 
 Neovim is the first *well-behaved* client on this list (it answers
 server→client requests, cancels properly, closes documents, and shuts down
@@ -312,7 +317,7 @@ transcript contains no unrequested traffic of any kind. That is recorded as a
 is a VS Code property, not an LSP one, and a server tuned only against helix
 would be surprised by it.
 
-## From Emacs / eglot (ls06, `30.2`, eglot 1.17.30)
+## From Emacs / eglot (ls06, as read at `30.2` / eglot 1.17.30; MATRIX runs `31.1` / eglot 1.24.31 since le07)
 
 **Answer `utf-8` even though the client asks for `utf-32` first.** eglot
 declares `general.positionEncodings: ["utf-32", "utf-8", "utf-16"]`, and wolf

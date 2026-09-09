@@ -324,11 +324,15 @@ the ordering is: install it as a dev extension, record a session, derive
 Submitting an extension nobody has ever loaded is the fabrication `MATRIX.md`
 exists to prevent.
 
-A user who installs it today gets a working language server and no syntax
-highlighting: `[grammars.wolf]` ships commented out because Zed builds every
-grammar named in the manifest *at install time*, and pointing it at the empty
-`wolffe-lang/tree-sitter-wolf` would fail the install and take the language
-server down with it.
+A user who installs it today gets a working language server *and* syntax
+highlighting. This paragraph read "`[grammars.wolf]` ships commented out because
+Zed builds every grammar named in the manifest *at install time*, and pointing
+it at the empty `wolffe-lang/tree-sitter-wolf` would fail the install and take
+the language server down with it" — true until le02 wrote that grammar. The
+block has been live since le02 and is pinned at rev `bba5274` (le04);
+`clients/zed/extension.toml` carries it uncommented, `config-check` asserts the
+pin, and `MATRIX.md` records the same for Helix's `[[grammar]]`. What Zed still
+owes is a *session*, not a grammar.
 
 ---
 

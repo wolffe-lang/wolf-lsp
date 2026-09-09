@@ -10,10 +10,12 @@
 >
 > `wolf-lang` is no longer the missing half. That sentence read "and
 > `wolf-lang` has no tagged release" through le04; the claim was retired in
-> le05 and the consequence measured in le06. `v0.2.3` is published, Latest,
-> with four tier-1 archives, and this repository's CI now acquires one: the
-> `server-lane` job resolved a binary and reported `doctor` READY for the first
-> time on 2026-09-02.
+> le05 and the consequence measured in le06. Measured 2026-09-08: eight
+> published releases stand, `v0.2.6` is Latest with four tier-1 archives, and
+> this repository's CI acquires one — the `server-lane` job resolved a binary
+> and reported `doctor` READY for the first time on 2026-09-02. This repository
+> pins `v0.2.5` (`vendor/upstream/PIN`, le08); Latest and the pin are allowed to
+> differ and today they do.
 
 Editor tooling drifts out of compatibility with its server. This file,
 `clients/*/compat.json` and the runtime check in the two clients that can carry
@@ -33,8 +35,11 @@ The rule is enforced. `cargo xtask compat-check` derives the *earned set* from
 it. It runs in `cargo xtask ci`, on every push, so a range that outruns its
 evidence turns the build red as soon as somebody edits the file.
 
-Today the earned set has one member. wolf-lang does publish releases: as of
-2026-09-02 `v0.2.2` is Latest with three tier-1 archives. The set is one member
+Today the earned set has one member. wolf-lang does publish releases:
+measured 2026-09-08, `v0.2.6` is Latest with four tier-1 archives. (This
+paragraph read "as of 2026-09-02 `v0.2.2` is Latest with three tier-1
+archives", which was true for the ten hours v0.2.2 held Latest that day and
+false by 17:09Z, when v0.2.3 took it with four.) The set is one member
 because this repository pins one commit, `wolf --version` at that commit prints
 one string, and every transcript under `transcripts/` was recorded against it.
 The schema supports ranges; the data claims a point. Widening `max_tested` to a

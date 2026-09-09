@@ -35,12 +35,17 @@ release that was verified against something other than what shipped.
 
 ### 0. There is a `wolf` to be compatible *with*
 
-`PENDING`, and everything else hangs off it. `wolf-lang` tags no release, so the
-pin in `vendor/upstream/PIN` is a private-repo sha that a user cannot acquire.
-Until wolf-lang s66 publishes an artifact, "install the extension" has no
-coherent second half.
+`CLEARED 2026-08-12`, and everything else hangs off it. This step read
+"`PENDING` — `wolf-lang` tags no release, so the pin in `vendor/upstream/PIN`
+is a private-repo sha that a user cannot acquire" through le04. wolf-lang s66
+published `v0.1.0` on 2026-08-12 and has tagged seven releases since; the pin
+is a release tag, and `release-check` has reported step 0 as `PASS` since le05.
+Measured 2026-09-08: `gh release list --repo wolffe-lang/wolf-lang` reports
+eight published releases, `v0.2.6` Latest with four tier-1 archives.
 
-*Clears when:* `gh release list --repo wolffe-lang/wolf-lang` is non-empty.
+*Cleared when:* `gh release list --repo wolffe-lang/wolf-lang` went non-empty.
+What still keeps `server-lane` dark is this repository's own acquire glob, not
+the artifact (wolf-lsp#3) — a separate fact, tracked at step 3b.
 
 ### 1. Bump the pin, re-vendor, in its own commit
 

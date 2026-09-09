@@ -3,14 +3,18 @@
 > # NOTHING IN THIS REPOSITORY HAS BEEN PUBLISHED ANYWHERE.
 >
 > No marketplace listing, no Open VSX namespace, no `wolf.nvim` mirror, no
-> registry entry, no tag. Every pipeline below is built, exercised offline
-> and switched off; each one stops at a gate that needs a human, a credential,
-> or a `wolf` a stranger can install, and none of the three exists today.
+> registry entry, no tag of this repository's own. Every pipeline below is
+> built, exercised offline and switched off; each one stops at a gate that needs
+> a human or a credential, and neither exists today.
 >
-> The blocker is not polish. `wolf-lang` publishes no release, so
-> "install the extension" has no coherent second half: whatever a user installed
-> would have no server to talk to. Every channel here is downstream of that one
-> fact, and it is step 0 of [`RELEASE.md`](RELEASE.md).
+> The blocker is not polish, and it is no longer the server. This paragraph read
+> "`wolf-lang` publishes no release, so 'install the extension' has no coherent
+> second half" through le04; that stopped being true on 2026-08-12, when
+> wolf-lang s66 published `v0.1.0`. Measured 2026-09-08: eight published
+> releases, `v0.2.6` Latest with four tier-1 archives, and step 0 of
+> [`RELEASE.md`](RELEASE.md) has reported `PASS` since le05. What remains is the
+> human half — a registered publisher identity, an Open VSX namespace, a mirror
+> repository that exists — and every channel below is downstream of those.
 
 What this file is for: when the gates *do* open, the person opening them should
 have a rehearsed procedure to read. So every section below states the channel,

@@ -72,8 +72,8 @@ impl Report {
         if pending > 0 {
             println!(
                 "PENDING is not a pass. Nothing in this repository can clear those steps: they\n\
-                 need a registered publisher, a tagged wolf-lang release, or a person at a clean\n\
-                 machine. See docs/RELEASE.md and docs/DISTRIBUTION.md."
+                 need a registered publisher, a mirror repository that exists, or a person at a\n\
+                 clean machine. See docs/RELEASE.md and docs/DISTRIBUTION.md."
             );
         }
         failed
@@ -119,8 +119,10 @@ pub fn check(root: &Path) -> Report {
         "0. wolf-lang has a published release to be compatible WITH",
         format!(
             "the pin is a release tag ({}, {pin_version}), and wolf-lang's release for \
-             it is PUBLISHED (measured 2026-09-02: `gh release list` reports v0.2.2 as \
-             Latest, three tier-1 archives, unauthenticated download URL answers 200). \
+             it is PUBLISHED (measured 2026-09-08: `gh release list` reports eight \
+             published releases, v0.2.6 Latest with four tier-1 archives; the first \
+             measurement was 2026-09-02, v0.2.2 Latest with three, and an \
+             unauthenticated download URL answering 200). \
              wolf-lang#200 is resolved. What still keeps `server-lane` dark is this \
              repo's own acquire glob, not the artifact: ci.yml asks for \
              `wolf-<shortsha>-linux-x86_64.tar.gz`, `xtask dist` publishes \

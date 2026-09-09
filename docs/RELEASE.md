@@ -143,13 +143,28 @@ is permanently `PENDING`: open each link and re-read the state before tagging.
 
 ## Reading the output
 
-Today, on a clean tree, `release-check` prints roughly:
+There are twenty-two steps, and the split between them depends on one thing:
+whether a `wolf` resolves on this box. Measured 2026-09-08, on a clean tree with
+no `wolf` on `PATH`:
 
 ```
-13 checked, 0 failed, 9 pending a human action.
+14 checked, 0 failed, 8 pending a human action.
 ```
+
+With a `wolf` on `PATH`, step 3b stops being pending and gets checked, so the
+same tree prints:
+
+```
+15 checked, 1 failed, 7 pending a human action.
+```
+
+and the failure is `3b`'s — `lspconf doctor` refusing a binary that is not the
+pinned one. (This box carries `wolf 0.2.6`; the pin is `v0.2.5`. That refusal is
+the pin doing its job, not a regression.) A box holding the pinned binary reads
+`15 checked, 0 failed, 7 pending`.
 
 The pending count is the interesting number, and it should shrink for reasons
-somebody can name. Most of it collapses the moment step 0 clears: 3b, 3d, 7a,
-7b, 7d and 8 are all waiting, directly or transitively, on a `wolf` a stranger
-can install.
+somebody can name. Step 0 has cleared since le05, which is why the count came
+down from the `9 pending` this section used to print; what is left is 3d, 4b,
+7a, 7b, 7d, 8 and 9b, and every one of them needs a human, a credential or CI
+evidence this box cannot produce.

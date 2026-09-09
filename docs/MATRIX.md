@@ -212,8 +212,8 @@ forced the cleanup.
 
 ### What the rows still do NOT claim
 
-The rows below are re-stamped from local captures at le07, and that is all
-they claim. D35 and `release-check 3d` want the three-OS claim made from CI,
+The rows below are re-stamped from local captures at le08 (2026-09-05, pin
+`6ade878`), and that is all they claim. D35 and `release-check 3d` want the three-OS claim made from CI,
 and a local run cannot make it. `server-lane` was measured green on all three
 tier-1 OSes on le06's branch; the row to re-stamp from is still a merge
 commit's run.

@@ -58,8 +58,17 @@ digits. At `v0.2.2` it ends `pin 8cda3aa`, seven. The commits did not change
 shape; the clause is `git rev-parse --short`'s AUTO abbreviation, and git sizes
 that to the object count of the repository it runs in. The width therefore
 comes from the builder's clone, suspected in le04 and measured in le05 on
-nomad-1 (a 2086-object clone of wolf-lang abbreviates `8cda3aa41…` to
-`8cda3aa`, and the binary built there prints `pin 8cda3aa` to match).
+nomad-1, where a clone of wolf-lang abbreviates `8cda3aa41…` to `8cda3aa` and
+the binary built there prints `pin 8cda3aa` to match. The "2086-object clone"
+this paragraph used to cite is not the number that decides it: le08 measured
+the mechanism to a threshold — `git`'s AUTO abbreviation counts **packed**
+objects only and steps from seven to eight hex digits at **16,384 (2^14)**
+(three scratch repositories at 16,383 / 16,384 / 16,385 answer 7 / 8 / 8 under
+git 2.50.1). Re-measured 2026-09-08, that clone holds **12,257 packed** objects
+(plus 3,634 loose, which do not count) and still answers seven, while this
+repository's own `upstream/` submodule holds 23,626 packed and answers
+`6ade878c`, eight. The packed count, not the clone's total, is the test; see
+`vendor/upstream/PIN`, which carries the full le08 derivation.
 
 If you *acquire* the published artifact for the pin, this never bites: one
 build, one string, and `doctor` is green. If you BUILD your own `wolf` from a

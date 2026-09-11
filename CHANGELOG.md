@@ -1,5 +1,53 @@
 # Changelog
 
+## tl01 — 2026-09-11 — `then`, classified before the pin that carries it
+
+s151 (wolf-lang#307, `v0.2.9`) gave `if` a second spelling — `if c then a else
+b` — and `then` is a **contextual** keyword: `[gram.expr.if]` says so twice,
+and `reserved_kw`'s checksum stays at 50 with `'then'` appearing in `if_expr`
+alone.
+
+That makes `then` a word terminal outside `reserved_kw`, and
+`xtask::vscode::inventory` refuses to generate against one nobody has
+classified. The refusal is deliberate — it forces a human decision instead of
+letting a new keyword become neither coloured nor declared — and it would
+otherwise stop the next pin bump on a question that can be answered now. So it
+is answered now: `then` joins `CONTEXTUAL`, and a test of its own feeds the
+`v0.2.11` `if_expr` production through the partition and asserts that `then`
+classifies, that it does not reach the keyword set, and that it is not an
+operator.
+
+`CONTEXTUAL` is where it belongs **because the grammars this repo generates are
+regular**. A TextMate `match`, a vim `syn keyword` and an emacs `regexp-opt`
+can only ask whether the word is `then`, and the answer is wrong in three of
+the spec's own witnesses: `let then = true` binds it, `if then { … }` reads it
+as the condition, and `less.then(greater)` is std's `Ordering.then` after a
+`.`. Painting it from a word list would colour a method call as control flow in
+every file that calls one.
+
+`then` is nevertheless a keyword on screen, and it is the only entry in that
+list of which that is true. The **server** paints it, through semantic tokens —
+the one surface here that knows where a token stands. tree-sitter-wolf paints
+it from the other side for the same reason (tree-sitter-wolf#5, its grammar is
+context-sensitive where these are not). The split is not a compromise between
+the layers; it is which layer can see the position.
+
+`clients/vscode/inventory.md` listed fourteen contextual names against the
+code's eighteen: `cap`, `n`, `r` and `t` were classified at the v0.2.2 and
+83f83bb pins and the prose was never re-read. Re-derived from `CONTEXTUAL`, and
+the same stale-facts family as wolf-lsp#10.
+
+**Not taken here.** The pin is still `v0.2.5`, so the vendored EBNF has no
+`then` and no client's generated artifact changes. The bump to `v0.2.11` is six
+releases of `vendor/upstream/**` plus the `upstream` gitlink plus re-recording
+every transcript against a `v0.2.11` binary — the pin-bump ritual, one commit,
+and an le lane's worth of work rather than a subwave's. Filed.
+
+wolf-lsp#7 and wolf-lsp#10 were both already resolved on trunk and are closed
+against their shas, not by this branch: the `NEEDS_RECAPTURE` waiver has been
+empty since le07 and all 75 committed transcripts carry no absolute path, and
+`d194486` finished the eighth of #10's stale facts.
+
 ## le08 — 2026-09-05 — five calls, six smokes, and a red that was not one
 
 The pin moves to wolf-lang v0.2.5 (`6ade878`, `lspconf doctor` READY), the

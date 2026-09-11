@@ -75,6 +75,34 @@ use serde_json::{Value, json};
 /// and `[gram.inv.ctx]` names it contextual beside `rc` and `pool` — which it
 /// has to be, since `cap` is an ordinary local in any code that measures one.
 ///
+/// `then` is classified here ahead of the pin that will carry it, and it is
+/// the one entry whose reason is not "never paint this". s151 (wolf-lang#307,
+/// `v0.2.9`) gave `if` a second spelling — `if c then a else b` — and
+/// `[gram.expr.if]` says twice that `then` is **contextual, not reserved**;
+/// `reserved_kw`'s checksum stays at 50 and `'then'` appears in `if_expr`
+/// alone. So it is a word terminal outside `reserved_kw`, and the partition
+/// below would refuse the next pin bump without a decision. This is the
+/// decision.
+///
+/// It belongs here rather than in [`KEYWORD_SCOPES`] **because the grammars
+/// this file generates are regular**. A TextMate rule can only ask whether the
+/// word is `then`, and the answer is wrong in three of the spec's own
+/// witnesses: `let then = true` binds it, `if then { … }` reads it as the
+/// condition, and `less.then(greater)` is std's `Ordering.then` after a `.`
+/// (wolf-lang `corpus/grammar/if_then_ident.lu`, `if_then_member.lu`). The
+/// same is true of `syntax/wolf.vim`'s `syn keyword` and `wolf-mode`'s
+/// `regexp-opt`. Painting `then` from a word list would colour a method call
+/// as control flow in every file that uses one.
+///
+/// `then` is nevertheless a keyword on screen, and this is the only entry in
+/// this list of which that is true. It is painted by the **server**, through
+/// semantic tokens, which is the one surface here that knows where a token
+/// stands: `wolf lsp` classifies the parser's `then` token as `keyword` and
+/// leaves an `Ident` spelled `then` alone (wolf-lsp#11). tree-sitter-wolf
+/// paints it for the same reason from the other side — its grammar is
+/// context-sensitive where these are not. The split is not a compromise
+/// between the two; it is which layer can see the position.
+///
 /// This list is **exhaustive over the pin**, and generation fails when a word
 /// terminal appears in neither it nor `reserved_kw`. That failure is the point:
 /// a contextual keyword added upstream (`sync`, say) forces a human decision
@@ -82,7 +110,7 @@ use serde_json::{Value, json};
 /// neither.
 const CONTEXTUAL: &[&str] = &[
     "E", "_", "c", "cap", "e", "from", "inout", "lateout", "n", "noalias", "out", "pkg", "pool",
-    "r", "rc", "self", "t", "timeout",
+    "r", "rc", "self", "t", "then", "timeout",
 ];
 
 /// Symbolic terminals that are **delimiters or literal-form fragments**, not
@@ -763,6 +791,46 @@ mod tests {
             inv.keywords.len(),
             50,
             "`reserved_kw` is the spec's own checksum; it carries 50 names at this pin"
+        );
+    }
+
+    /// s151's `then`, classified ahead of the pin that carries it.
+    ///
+    /// The vendored grammar is still at `v0.2.5` and has no `then`, so the
+    /// exhaustiveness test above cannot see this. `v0.2.9` gives `if_expr` a
+    /// second alternative and `'then'` becomes a word terminal outside
+    /// `reserved_kw` — which the partition refuses unless somebody has
+    /// decided. The decision is CONTEXTUAL, and this asserts both halves of
+    /// it: the generator accepts the production, and `then` does not reach
+    /// the keyword set a TextMate/vim/emacs word list is built from.
+    #[test]
+    fn s151_then_is_contextual_and_does_not_reach_the_keyword_set() {
+        // `reserved_kw` verbatim from `v0.2.11` is 50 names and holds no
+        // `then`; two names are enough to exercise the partition.
+        let ebnf = "reserved_kw ::= 'if' | 'else'\n\
+                    if_expr ::= 'if' expr 'then'? block ('else' (if_expr | block))?\n\
+                              | 'if' expr 'then' expr  ('else' (if_expr | expr))?\n";
+
+        assert!(
+            terminals(ebnf).contains("then"),
+            "the production really does carry the terminal this test is about"
+        );
+
+        let inv = inventory(ebnf)
+            .expect("`then` is classified, so the generator runs; an unclassified word aborts it");
+        assert!(
+            !inv.keywords.contains("then"),
+            "`then` is contextual: a word list cannot tell `if c then a` from \
+             `less.then(greater)`, and the server's semantic tokens paint it instead"
+        );
+        assert!(
+            !inv.operators.iter().any(|o| o == "then"),
+            "`then` is a word, not an operator: {:?}",
+            inv.operators
+        );
+        assert!(
+            CONTEXTUAL.contains(&"then"),
+            "the classification is the list entry, not this test's opinion"
         );
     }
 

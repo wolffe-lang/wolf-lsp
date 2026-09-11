@@ -119,7 +119,8 @@ the scope, not to refuse to generate.
 word terminals that are *not* in `reserved_kw`:
 
 ```
-E  _  c  e  from  inout  lateout  noalias  out  pkg  pool  rc  self  timeout
+E  _  c  cap  e  from  inout  lateout  n  noalias  out  pkg  pool  r  rc
+self  t  then  timeout
 ```
 
 Each is an ordinary identifier everywhere except one position, and a TextMate
@@ -127,7 +128,31 @@ Each is an ordinary identifier everywhere except one position, and a TextMate
 method signature the language has; colouring it would also colour `self` as a
 field name, a parameter and a local. `E`, `e` and `_` are there for a different
 reason — they are fragments of `EXPONENT` and `closed_pattern`, matched by the
-numeric rules rather than as words.
+numeric rules rather than as words; `n`, `r` and `t` are the escape letters of
+`CHAR_ESC`, matched inside the char-literal rule. `cap` is a region's byte
+budget (`region_cap ::= 'cap' ':' expr`) and an ordinary local in any code that
+measures one.
+
+(This paragraph listed fourteen names and the code carried eighteen: `cap`,
+`n`, `r` and `t` were classified at the v0.2.2 and 83f83bb pins and the prose
+was not re-read. Re-derived from `xtask::vscode::CONTEXTUAL` at tl01.)
+
+`then` is classified **ahead of the pin that carries it** — the vendored EBNF
+is still at `v0.2.5` and has no `then` — because the partition above refuses a
+word terminal nobody has decided about, and deciding it now is what keeps the
+next pin bump from stopping on it. It is also the one entry here that IS a
+keyword on screen, which is worth saying. s151 (wolf-lang#307, `v0.2.9`) gave
+`if` a second spelling — `if c then a else b` — and `[gram.expr.if]` says
+twice that `then` is contextual, not reserved: `reserved_kw`'s checksum stays
+at 50. A
+TextMate `match` can only ask whether the word is `then`, and the answer is
+wrong in three of the spec's own witnesses — `let then = true` binds it,
+`if then { … }` reads it as the condition, and `less.then(greater)` is std's
+`Ordering.then` after a `.`. So this grammar declines it, and the **server**
+paints it through semantic tokens, which is the one surface here that knows
+where a token stands (wolf-lsp#11). tree-sitter-wolf paints it from the other
+side for the same reason: its grammar is context-sensitive where this one is
+not. The split is not a compromise; it is which layer can see the position.
 
 That list is **machine-checked and exhaustive**: generation *fails* when a word
 terminal appears in neither it nor `reserved_kw`. A contextual keyword added

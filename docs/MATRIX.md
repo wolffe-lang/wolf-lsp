@@ -439,8 +439,29 @@ forced the cleanup.
 ### What the rows still do NOT claim
 
 The six captured rows below are re-stamped from local captures at tl03
-(2026-09-12, pin `a7f517e`), on **one host, darwin arm64**, and that is all
-they claim. D35 and `release-check 3d` want the three-OS claim made from CI,
+(2026-09-12, pin `a7f517e`), on **one host, darwin arm64**. The CAPTURE is
+that one host's and cannot be more: driving six real editors needs those six
+editors on the machine, and no CI runner here has them.
+
+**The REPLAY of those captures is a three-OS claim, and it is made from CI.**
+Run `34670147485` on branch `tl03` replays all six on every tier-1 runner —
+`server lane (ubuntu-latest)`, `(macos-latest)` and `(windows-latest)`, each
+printing the same six lines in its *Conformance replay (server-dependent)*
+step:
+
+```
+ok  emacs/smoke — 10 record(s) matched
+ok  fackr/smoke — 9 record(s) matched
+ok  facsimile/smoke — 7 record(s) matched
+ok  helix/smoke — 9 record(s) matched
+ok  nvim/smoke — 15 record(s) matched
+ok  vscode/smoke — 25 record(s) matched
+```
+
+Keep the two apart. "This editor's real traffic at this pin" is one host's
+measurement. "The server answers that traffic identically on three OSes" is
+CI's, and D35 / `release-check 3d` want the second — which is now satisfied for
+the captured half as well as the scripted one. D35 and `release-check 3d` want the three-OS claim made from CI,
 and a local run cannot make it. `server-lane` was measured green on all three
 tier-1 OSes on le06's branch; the row to re-stamp from is still a merge
 commit's run.

@@ -4,19 +4,19 @@
   "artifact": "wasm32-wasip2 component + manifest \u2014 clients/zed/",
   "wolf": {
     "min": "0.2.5",
-    "max_tested": "0.2.5",
-    "pin": "6ade878c1f5f48bcb5c9ee804c749fbbc8634a02",
-    "pin_version_string": "wolf 0.2.5 (wolfgang, pin 6ade878)"
+    "max_tested": "0.2.12",
+    "pin": "a7f517e1f667f142ffaf61b57aa2bff06e32b520",
+    "pin_version_string": "wolf 0.2.12 (wolfgang, pin a7f517e)"
   },
   "verified": {
-    "date": "2026-09-05",
-    "host": "local (macos arm64)",
+    "date": "2026-09-12",
+    "host": "local (macos arm64), against the ACQUIRED v0.2.12 darwin artifact (sha256 6be493a9\u2026), not a local build",
     "evidence": [
       "cargo build --target wasm32-wasip2 (CI job `zed-extension`)",
       "cargo xtask config-check",
-      "lspconf replay + onetruth at pin 6ade878 (v0.2.5), 2026-09-05 \u2014 under the OTHER clients' derived profiles; Zed still has no recorded session of its own"
+      "lspconf replay + onetruth at pin a7f517e (v0.2.12), 2026-09-12 \u2014 under the OTHER clients' derived profiles; Zed still has no recorded session of its own"
     ],
-    "caveat": "NO SESSION HAS EVER BEEN RECORDED. Zed has never been run against this extension by CI or by hand (docs/MATRIX.md). Its row inherits the range from the pin the other clients were verified at; a Zed session did not earn it \u2014 profiles/zed.json and transcripts/zed/smoke.jsonl are still owed. Read the row as 'the wasm builds and the config is statically consistent at this pin', which is the whole T2 claim."
+    "caveat": "NO SESSION HAS EVER BEEN RECORDED. Zed has never been run against this extension by CI or by hand (docs/MATRIX.md). Its row inherits the range from the pin the other clients' scripted suites were verified at; a Zed session did not earn it \u2014 profiles/zed.json and transcripts/zed/smoke.jsonl are still owed. Read the row as 'the wasm builds and the config is statically consistent at this pin', which is the whole T2 claim."
   },
   "warning_surface": "none \u2014 the extension's wasm entry point is `language_server_command`, which Zed calls before any place a notification could be raised"
 }

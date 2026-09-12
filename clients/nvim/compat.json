@@ -4,18 +4,18 @@
   "artifact": "plugin tree \u2014 clients/nvim/, published as the generated wolf.nvim mirror",
   "wolf": {
     "min": "0.2.5",
-    "max_tested": "0.2.5",
-    "pin": "6ade878c1f5f48bcb5c9ee804c749fbbc8634a02",
-    "pin_version_string": "wolf 0.2.5 (wolfgang, pin 6ade878)"
+    "max_tested": "0.2.12",
+    "pin": "a7f517e1f667f142ffaf61b57aa2bff06e32b520",
+    "pin_version_string": "wolf 0.2.12 (wolfgang, pin a7f517e)"
   },
   "verified": {
-    "date": "2026-09-05",
-    "host": "local (macos arm64)",
+    "date": "2026-09-12",
+    "host": "local (macos arm64), against the ACQUIRED v0.2.12 darwin artifact (sha256 6be493a9\u2026), not a local build",
     "evidence": [
-      "transcripts/nvim/smoke.jsonl (RE-CAPTURED at this pin, le08: NVIM v0.12.5 driven by `nvim --headless`, 7/7 assertions passing while recording; the capture is a HEADER-ONLY diff against le07's \u2014 33 records, bodies byte-identical, so s137 moved nothing this editor can see)",
+      "transcripts/nvim/smoke.jsonl is STILL AT 6ade878 (v0.2.5) and was NOT re-captured at this pin \u2014 tl02 had no Neovim on the box, and a capture needs the real editor (docs/RELEASE.md step 3b). `lspconf replay` SKIPS it by name. The le08 capture it carries \u2014 NVIM v0.12.5 under `nvim --headless`, 33 records \u2014 is evidence about v0.2.5, not about this pin",
       "profiles/nvim.json (re-read at v0.12.5 \u2014 unchanged since le07's re-derivation)",
       "clients/nvim/tests/plugin_spec.lua",
-      "lspconf replay + onetruth under this client's derived profile at pin 6ade878 (v0.2.5), 2026-09-05 \u2014 69 scripted transcripts matched, 12 samples \u00d7 9 profiles with zero divergences"
+      "lspconf replay + onetruth under this client's derived profile at pin a7f517e (v0.2.12), 2026-09-12 \u2014 69 scripted transcripts re-recorded and matched, 12 samples \u00d7 9 profiles with zero divergences. The re-record is a HEADER-ONLY diff across all 69 files: 69 insertions, 69 deletions, every one of them line 1's `wolf_pin` and `recorded`, so no response body moved between v0.2.5 and v0.2.12"
     ]
   },
   "warning_surface": ":checkhealth wolf"

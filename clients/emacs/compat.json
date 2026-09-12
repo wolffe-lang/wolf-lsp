@@ -4,18 +4,18 @@
   "artifact": "elisp file \u2014 clients/emacs/wolf-mode.el, also quoted verbatim in its README",
   "wolf": {
     "min": "0.2.5",
-    "max_tested": "0.2.5",
-    "pin": "6ade878c1f5f48bcb5c9ee804c749fbbc8634a02",
-    "pin_version_string": "wolf 0.2.5 (wolfgang, pin 6ade878)"
+    "max_tested": "0.2.12",
+    "pin": "a7f517e1f667f142ffaf61b57aa2bff06e32b520",
+    "pin_version_string": "wolf 0.2.12 (wolfgang, pin a7f517e)"
   },
   "verified": {
-    "date": "2026-09-05",
-    "host": "local (macos arm64)",
+    "date": "2026-09-12",
+    "host": "local (macos arm64), against the ACQUIRED v0.2.12 darwin artifact (sha256 6be493a9\u2026), not a local build",
     "evidence": [
-      "transcripts/emacs/smoke.jsonl (RE-CAPTURED at this pin, le08: emacs 31.1 / eglot 1.24.31 driven by `emacs --batch`, the server-test.el suite passing while recording; 24 records, HEADER-ONLY diff against le07's)",
+      "transcripts/emacs/smoke.jsonl is STILL AT 6ade878 (v0.2.5) and was NOT re-captured at this pin \u2014 tl02 had no emacs on the box, and a capture needs the real editor (docs/RELEASE.md step 3b). `lspconf replay` SKIPS it by name. The le08 capture it carries \u2014 emacs 31.1 / eglot 1.24.31 under `emacs --batch`, 24 records \u2014 is evidence about v0.2.5, not about this pin",
       "profiles/emacs.json (re-read at emacs 31.1 \u2014 unchanged since le07's re-derivation)",
       "clients/emacs/tests/mode-test.el",
-      "lspconf replay + onetruth under this client's derived profile at pin 6ade878 (v0.2.5), 2026-09-05 \u2014 69 scripted transcripts matched, 12 samples \u00d7 9 profiles with zero divergences"
+      "lspconf replay + onetruth under this client's derived profile at pin a7f517e (v0.2.12), 2026-09-12 \u2014 69 scripted transcripts re-recorded and matched, 12 samples \u00d7 9 profiles with zero divergences. The re-record is a HEADER-ONLY diff across all 69 files: 69 insertions, 69 deletions, every one of them line 1's `wolf_pin` and `recorded`, so no response body moved between v0.2.5 and v0.2.12"
     ]
   },
   "warning_surface": "none \u2014 the mode is a copy-pasteable snippet, and a snippet that phones a version check is a snippet nobody pastes"

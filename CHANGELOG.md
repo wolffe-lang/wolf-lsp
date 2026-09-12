@@ -1,5 +1,90 @@
 # Changelog
 
+## tl03 — 2026-09-12 — all six captured smokes driven again at `a7f517e`
+
+tl02 moved the pin and could not take the captured half with it: a captured
+transcript is the one artifact a pin bump cannot re-record, because no script
+decided what the editor sent, so only the editor can say it again. All six were
+left at `6ade878` and `lspconf replay` named them in a SKIP line. tl03 drove
+all six.
+
+**Before:** `lspconf --require-server replay` exits 0, replays 70, and prints
+
+```
+SKIP: 6 captured transcript(s) are at another pin and cannot be re-recorded — they need a re-CAPTURE from the real editor (docs/MATRIX.md, docs/RELEASE.md step 3b):
+  transcripts/emacs/smoke.jsonl (captured at 6ade878, pin is a7f517e)
+  transcripts/fackr/smoke.jsonl (captured at 6ade878, pin is a7f517e)
+  transcripts/facsimile/smoke.jsonl (captured at 6ade878, pin is a7f517e)
+  transcripts/helix/smoke.jsonl (captured at 6ade878, pin is a7f517e)
+  transcripts/nvim/smoke.jsonl (captured at 6ade878, pin is a7f517e)
+  transcripts/vscode/smoke.jsonl (captured at 6ade878, pin is a7f517e)
+```
+
+**After:** exit 0, **76 replayed, and no SKIP line at all.**
+
+Each was driven by its own README's documented procedure with that client's
+capture shim first on `PATH`, and every assertion ran while the session was
+being recorded:
+
+| smoke | editor | records | diff against le08 |
+|---|---|---|---|
+| emacs | GNU Emacs 31.1, eglot, 1/1 | 24 | **header-only** |
+| fackr | fackr 1.2.1 at `496c7e2` + the mirror patch, 1 passed | 19 | **header-only**, 3 runs byte-identical |
+| facsimile | `fac` v0.35.0 built at `a121ab3`, pty | 15 | **header-only**, 3 runs byte-identical |
+| helix | helix 25.07.1, pty | 19 | **header-only**, 2 runs byte-identical |
+| nvim | NVIM v0.12.5, 7/7 | 33 | header-only **+ `clientInfo.version`** |
+| vscode | VS Code 1.120.0, 16/16 | 53 | method multiset: one background rung |
+
+"Header-only" is asserted field by field over every record, not by line count:
+the only fields that moved are `recorded` and `wolf_pin`. So the real editors'
+real traffic is unchanged across `v0.2.5..v0.2.12`, which is the same answer
+the sixty-nine scripted transcripts gave at tl02 — now earned the expensive way
+as well.
+
+**The two that are not header-only are not the server.** nvim's extra field is
+`clientInfo.version`, `0.12.5` → `0.12.5+v0.12.5`: Homebrew's neovim will not
+start on this box (it links `libtree-sitter.0.26.dylib` against an installed
+`tree-sitter` 0.27.0 and dies in dyld before `main`), so the official
+self-contained v0.12.5 tarball drove it, and that build stamps
+`NVIM_VERSION_BUILD` from the tag where Homebrew leaves it empty. vscode is not
+byte-reproducible by construction, so the claim is the method multiset: every
+test-driven rung identical to le08's, exactly one background rung moved
+(`codeAction` 9 → 8).
+
+**Three driver traps, written down because the two pty drivers are not
+committed** and each cost a run: helix's pty must be DRAINED as well as sized
+(unread, it blocks in `write()` and the session records startup only — 5
+records — while the driver exits 0); helix's `i` and `x` must leave in one
+`write()` (typed apart, `signatureHelp` fires ahead of the edit and rotates two
+rungs); and facsimile's `// EOF` is a VIRTUAL line that becomes real document
+text the moment the cursor touches it, which is what a RIGHT arrow used as the
+debounce-flush key does after the repairing backspace.
+
+**One claim was corrected rather than confirmed.** `clients/helix/README.md`
+and `docs/SERVER-CONSTRAINTS.md` said helix never sends `shutdown` or `exit`,
+verified across `:q`, `:qa` and `:q!`. One `:q!` capture in three here recorded
+a `shutdown`. It is a race on teardown, not an absence — **wolf-lsp#17**. The
+server-side constraint is unchanged and firmer: both endings come out of the
+same quit path.
+
+**wolf-lsp#11 stays open, and the blocker is confirmed at this pin.** One live
+`textDocument/semanticTokens/full` over `grammar/if_then_ident.lu` answers, on
+`    let n = if then then 1 else 0`: `let` `keyword`, `n` `variable`, `if`
+`keyword`, `then` (the condition, an identifier) `variable`, **`then` (the
+contextual keyword) nothing emitted**, `else` `keyword`. Every `then` that is
+an identifier is classified, nothing is painted that should not be, and the
+keyword is simply absent from the stream. That is **wolf-lang#356**, it cannot
+be fixed in this repository, and nothing here patches around it.
+
+Also filed: **wolf-lsp#18** — `lspconf capture` elides the repo root in URIs
+but not in `workspaceFolders[].name`, so a re-capture from a worktree not named
+`wolf-lsp` shows a spurious field diff. The same field was waived once before,
+at wolf-lsp#7.
+
+`cargo xtask ci` green on darwin arm64: `16 checked, 0 failed, 7 pending a
+human action`, `onetruth: 13 sample(s) x 9 profile(s); 0 known divergence(s),
+zero unfiled`, and all six smokes replaying inside the gate.
+
 ## tl02 — 2026-09-12 — the pin moves to `v0.2.12`, and the `then` it was waiting for is not painted
 
 `vendor/upstream/PIN` had sat at `6ade878` / `v0.2.5` since le08. It is now

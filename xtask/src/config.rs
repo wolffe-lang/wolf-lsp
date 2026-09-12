@@ -361,6 +361,34 @@ fn zed(root: &Path, errors: &mut Vec<String>) -> Option<String> {
             )),
             Err(e) => errors.push(format!("{hl_rel}: {e}")),
         }
+        // The builtin TYPE list zed paints `@type.builtin`. Until wolf-lsp#21
+        // the only assertion made about this file was that it contained SOME
+        // pattern, and under that assertion the list had carried `usize` and
+        // `isize` — names wolf does not have — since it was written, while
+        // lacking `wrapping` and `Self`, which it does.
+        if let Ok(hl) = std::fs::read_to_string(root.join(hl_rel)) {
+            match crate::builtin_types::scm_types(&hl) {
+                Some(found) => {
+                    // A QUERY, not a regular matcher: `Self` is expected to be
+                    // absent from the any-of list and painted structurally
+                    // instead (le06's ruling, carried in tree-sitter-wolf's
+                    // own queries/highlights.scm).
+                    crate::builtin_types::compare_query(hl_rel, &found, errors);
+                    if !crate::builtin_types::query_paints_self_structurally(&hl) {
+                        errors.push(format!(
+                            "{hl_rel}: `Self` is left out of the `@type.builtin` list on the \
+                             grounds that `(type_path (path (identifier) @type))` paints it, \
+                             and that rule is not in this file — so `Self` paints as nothing"
+                        ));
+                    }
+                }
+                None => errors.push(format!(
+                    "{hl_rel}: no `(#any-of? @type.builtin …)` predicate — the builtin type \
+                     drift check reads the type set from it, and without it zed paints no \
+                     builtin type at all"
+                )),
+            }
+        }
         if lines.iter().any(|l| l.starts_with("block_comment")) {
             errors.push(format!(
                 "{cfg_rel}: `block_comment` is set — wolf has no block comment form, and \
@@ -484,6 +512,26 @@ pub fn emacs(root: &Path) -> Vec<String> {
         None => errors.push(format!(
             "{el_rel} has no `reserved-kw-begin`/`reserved-kw-end` markers — the drift check \
              reads the keyword set from between them"
+        )),
+    }
+
+    // The builtin TYPE list, which lives OUTSIDE the markers because these
+    // names are not reserved words — and so the keyword check above never saw
+    // it. Ungated from the day it was written until wolf-lsp#21.
+    match crate::builtin_types::elisp_types(&el) {
+        Some(found) => {
+            let before = errors.len();
+            crate::builtin_types::compare(el_rel, &found, &mut errors);
+            if errors.len() == before {
+                eprintln!(
+                    "emacs: wolf-mode.el carries all {} builtin types, and no others",
+                    found.len()
+                );
+            }
+        }
+        None => errors.push(format!(
+            "{el_rel} has no `(defconst wolf-mode-builtin-types …)` form — the builtin type \
+             drift check reads the type set from it"
         )),
     }
 

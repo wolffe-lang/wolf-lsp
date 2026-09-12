@@ -100,8 +100,17 @@ pub fn expected_for_queries() -> BTreeSet<String> {
 /// Without this, "zed is allowed to leave `Self` out" decays into "zed does
 /// not paint `Self`", which is the drift this module exists to catch, arrived
 /// at by a different road.
+///
+/// Matched as a TOP-LEVEL form, never as a substring. The substring spelling
+/// was written first and a planted break proved it could not go red:
+/// `(type_path (path (identifier) @type))` also occurs *nested* inside
+/// `(struct_expression name: (type_path (path (identifier) @type)))`, so a
+/// `contains` was satisfied by a rule that paints struct-literal names and
+/// says nothing about `Self` in type position. Query forms nest; a substring
+/// test over a query file is blind by construction.
 pub fn query_paints_self_structurally(scm: &str) -> bool {
-    scm.contains("(type_path (path (identifier) @type))")
+    scm.lines()
+        .any(|l| l.trim() == "(type_path (path (identifier) @type))")
 }
 
 /// Set-equality against an expectation, **both directions**.
@@ -313,6 +322,19 @@ mod tests {
         assert!(errors.iter().any(|e| e.contains("missing the builtin type `wrapping`")));
         assert!(errors.iter().any(|e| e.contains("paints `usize`")));
         assert!(errors.iter().any(|e| e.contains("paints `isize`")));
+    }
+
+    /// The substring spelling of the `Self` check was GREEN with the rule
+    /// deleted, because the same text nests inside the struct-literal rule.
+    /// Found by a planted break; kept as a test so it cannot come back.
+    #[test]
+    fn nested_type_path_does_not_satisfy_the_self_check() {
+        let nested_only = "(struct_expression name: (type_path (path (identifier) @type)))\n";
+        // The trap, stated: a `contains` is satisfied by this file.
+        assert!(nested_only.contains("(type_path (path (identifier) @type))"));
+        assert!(!query_paints_self_structurally(nested_only));
+        let real = format!("{nested_only}(type_path (path (identifier) @type))\n");
+        assert!(query_paints_self_structurally(&real));
     }
 
     #[test]

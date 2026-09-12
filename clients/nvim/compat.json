@@ -15,7 +15,7 @@
       "transcripts/nvim/smoke.jsonl is STILL AT 6ade878 (v0.2.5) and was NOT re-captured at this pin \u2014 tl02 had no Neovim on the box, and a capture needs the real editor (docs/RELEASE.md step 3b). `lspconf replay` SKIPS it by name. The le08 capture it carries \u2014 NVIM v0.12.5 under `nvim --headless`, 33 records \u2014 is evidence about v0.2.5, not about this pin",
       "profiles/nvim.json (re-read at v0.12.5 \u2014 unchanged since le07's re-derivation)",
       "clients/nvim/tests/plugin_spec.lua",
-      "lspconf replay + onetruth under this client's derived profile at pin a7f517e (v0.2.12), 2026-09-12 \u2014 69 scripted transcripts re-recorded and matched, 12 samples \u00d7 9 profiles with zero divergences. The re-record is a HEADER-ONLY diff across all 69 files: 69 insertions, 69 deletions, every one of them line 1's `wolf_pin` and `recorded`, so no response body moved between v0.2.5 and v0.2.12"
+      "lspconf replay + onetruth under this client's derived profile at pin a7f517e (v0.2.12), 2026-09-12 \u2014 69 scripted transcripts re-recorded and matched, plus a 70th written here (annotate/semanticTokens-then), 13 samples \u00d7 9 profiles with zero divergences (the 13th is grammar/if_then_ident.lu, vendored here). The re-record is a HEADER-ONLY diff across all 69 files: 69 insertions, 69 deletions, every one of them line 1's `wolf_pin` and `recorded`, so no response body moved between v0.2.5 and v0.2.12"
     ]
   },
   "warning_surface": ":checkhealth wolf"

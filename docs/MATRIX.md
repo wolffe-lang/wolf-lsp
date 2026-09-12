@@ -22,8 +22,11 @@ the two claims separately, because they are not the same claim:
   is a **HEADER-ONLY diff across all sixty-nine files** — `69 files changed, 69
   insertions(+), 69 deletions(-)`, every hunk `@@ -1 +1 @@`, every changed field
   `wolf_pin` and `recorded`. No response body moved anywhere between `v0.2.5`
-  and `v0.2.12`, capability answers included. `onetruth` ran 12 samples × 9
-  profiles with **zero divergences** and none filed.
+  and `v0.2.12`, capability answers included. A **70th** transcript was written
+  here, `annotate/semanticTokens-then`, and it is the one measurement in this
+  bump that came back wrong — see below. `onetruth` ran **13** samples × 9
+  profiles with **zero divergences** and none filed; the 13th sample is
+  `grammar/if_then_ident.lu`, vendored at this pin.
 - **The six captured smokes are STILL AT `6ade878`.** They cannot be
   re-recorded, only re-CAPTURED by driving the real editor again (below), and
   tl02 had no editor on the box to drive. `lspconf replay` prints a SKIP naming
@@ -31,6 +34,34 @@ the two claims separately, because they are not the same claim:
   closed is **open again at this pin** — that is what a captured transcript
   costs, and the honest place to say so is here and in each
   `clients/*/compat.json`. Filed as **wolf-lsp#14**.
+
+### The contextual `then` is NOT painted, and that is this bump's one finding
+
+wolf-lsp#11 said the remaining half of the contextual `then` was "two lines" in
+the server's semantic-token walk and needed only a `v0.2.11`+ binary. It has a
+binary now, and the measurement says the change has not landed upstream. On
+`let n = if then then 1 else 0` the server answers:
+
+| col | text | token |
+|---|---|---|
+| 12 | `if` | `keyword` |
+| 15 | `then` (the condition — an identifier) | `variable` |
+| **20** | **`then` (the contextual keyword)** | **nothing emitted** |
+| 27 | `else` | `keyword` |
+
+Every `then` that is an identifier is classified correctly, including the two in
+condition position, and nothing is painted as a keyword that should not be — so
+the walk is not naively matching the word. The keyword is simply **absent from
+the stream**: a hole, not a miscolouring, and an editor renders it as plain
+text between two coloured siblings. The `/range` request over that line alone
+returns the same five tokens, so it is not a full-document artifact.
+
+Nothing in this repository can fix it. A TextMate grammar and a `syn keyword`
+list are regular and cannot tell this file's four `then`s apart, which is
+exactly why `then` is `CONTEXTUAL` here and the painting is the server's.
+Filed as **wolf-lang#356**; `transcripts/annotate/semanticTokens-then` pins the
+defect so the fix announces itself as a red here. wolf-lsp#11 does not close on
+this pin bump.
 
 The grammar delta across `v0.2.6..v0.2.12` moved nothing this repository
 generates. `spec/grammar.ebnf` gained four things — `fn_body` (s154, a

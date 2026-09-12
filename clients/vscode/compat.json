@@ -15,7 +15,7 @@
       "transcripts/vscode/smoke.jsonl is STILL AT 6ade878 (v0.2.5) and was NOT re-captured at this pin \u2014 tl02 had no VS Code on the box, and a capture needs the real editor (docs/RELEASE.md step 3b). `lspconf replay` SKIPS it by name. The le08 capture it carries \u2014 the extension's own test runner against the installed VS Code via WOLF_VSCODE_EXECUTABLE \u2014 is evidence about v0.2.5, not about this pin",
       "profiles/vscode.json",
       "clients/vscode/src/test/suite/extension.test.ts (both halves \u2014 the server half has run at every pin since le07 repaired the two defects that had kept it dark)",
-      "lspconf replay + onetruth under this client's derived profile at pin a7f517e (v0.2.12), 2026-09-12 \u2014 69 scripted transcripts re-recorded and matched, 12 samples \u00d7 9 profiles with zero divergences. The re-record is a HEADER-ONLY diff across all 69 files: 69 insertions, 69 deletions, every one of them line 1's `wolf_pin` and `recorded`, so no response body moved between v0.2.5 and v0.2.12"
+      "lspconf replay + onetruth under this client's derived profile at pin a7f517e (v0.2.12), 2026-09-12 \u2014 69 scripted transcripts re-recorded and matched, plus a 70th written here (annotate/semanticTokens-then), 13 samples \u00d7 9 profiles with zero divergences (the 13th is grammar/if_then_ident.lu, vendored here). The re-record is a HEADER-ONLY diff across all 69 files: 69 insertions, 69 deletions, every one of them line 1's `wolf_pin` and `recorded`, so no response body moved between v0.2.5 and v0.2.12"
     ]
   },
   "warning_surface": "one notification at activation, plus `Wolf: Show Version`"

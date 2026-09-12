@@ -6,7 +6,74 @@ verified at, the evidence for that tier, and (for T1 and T2) the CI job that
 re-checks the evidence on every push. A row that claims a verification it does
 not have is a bug in this file.
 
-**Last reviewed against wolf pin `6ade878`, 2026-09-05** (le08). That is the
+**Last reviewed against wolf pin `a7f517e`, 2026-09-12** (tl02, wolf-lsp#12).
+That is the wolf-lang release tag `v0.2.12`, seven releases on from the `v0.2.5`
+this file was stamped at, so the pinned version string is the bare
+`wolf 0.2.12 (wolfgang, pin a7f517e)` and `lspconf doctor` reports READY here.
+The binary it reports is the **acquired release artifact** — the darwin arm64
+archive of release 387405402, sha256 `6be493a9…` — not a local build, which is
+what makes the seven-hex pin clause in `PIN` the artifact's own answer rather
+than this box's (wolf-lang#199).
+
+**The scripted half was re-verified in full; the captured half was not.** Read
+the two claims separately, because they are not the same claim:
+
+- **69 scripted transcripts re-recorded and replayed green**, and the re-record
+  is a **HEADER-ONLY diff across all sixty-nine files** — `69 files changed, 69
+  insertions(+), 69 deletions(-)`, every hunk `@@ -1 +1 @@`, every changed field
+  `wolf_pin` and `recorded`. No response body moved anywhere between `v0.2.5`
+  and `v0.2.12`, capability answers included. `onetruth` ran 12 samples × 9
+  profiles with **zero divergences** and none filed.
+- **The six captured smokes are STILL AT `6ade878`.** They cannot be
+  re-recorded, only re-CAPTURED by driving the real editor again (below), and
+  tl02 had no editor on the box to drive. `lspconf replay` prints a SKIP naming
+  all six, and exits 0 having replayed 69 of 75. The le01 obligation that le08
+  closed is **open again at this pin** — that is what a captured transcript
+  costs, and the honest place to say so is here and in each
+  `clients/*/compat.json`. Filed as **wolf-lsp#14**.
+
+The grammar delta across `v0.2.6..v0.2.12` moved nothing this repository
+generates. `spec/grammar.ebnf` gained four things — `fn_body` (s154, a
+nonterminal), `trait_item`'s alias bound `'=' bound TERM?` (s155),
+`if_expr`'s `'then'` (s151) and `closed_pattern`'s literal range (s147) — and
+`reserved_kw` is byte-identical at fifty names. `'then'` is the one that could
+have stopped the bump, because the vscode generator refuses to run on a word
+terminal nobody has classified; tl01 classified it `CONTEXTUAL` ahead of the
+pin (`39b9449`), so this bump met no unclassified word. `'..'` and `'..='` were
+already terminals at `v0.2.5` (`range_expr`), so the operator inventory did not
+move either. **Exactly one derived artifact drifted** — `clients/vscode/src/pin.ts`,
+which embeds the pin — and `grammar-drift` said so in those words: `1
+problem(s)`. `nvim-check` said the same about `clients/nvim/lua/wolf/pin.lua`.
+
+The fifth delta is not in the EBNF at all, and wolf-lsp#12 warned about it:
+wolf-lang#276 retired E0005, so no terminator is inserted at a newline whose
+next token is `else`. That is a LEXER rule; `spec/01-grammar.md` §1.6 carries
+it and the EBNF does not. tree-sitter-wolf#6 met it as real work because its
+external scanner decides terminator insertion itself. **This repository has no
+lexer**, nothing it generates or tests inserts a terminator, and `E0005` does
+not appear anywhere in the tree — measured, not assumed.
+
+`crates/wolf_lsp/` is **one line** different across the whole `v0.2.5..v0.2.12`
+span, and it is a completion snapshot expectation rather than server code.
+`BUILTIN_TYPES` is byte-identical. Both are consistent with sixty-nine
+header-only transcripts, which is the point of measuring them separately.
+
+The archive is whole at this tag: release 387405402 is published, is Latest,
+and carries the same four-triple asset set `v0.2.3` first carried, so the
+acquire step repaired at le06 needs no change. **The upstream wart reproduces a
+fourth time**, unchanged and unreaped: `v0.2.12` has FOUR releases behind it,
+the published one plus THREE empty drafts (ids 387405642, 387406020, 387406415;
+`assets=0`, `published=null`). That is wolf-lang#226's self-publishing release
+racing. Acquisition resolves the published one; `gh release list` shows three
+Draft rows above it, which is the shape a human misreads.
+
+`v0.2.12` is an ANNOTATED tag, so `git rev-parse v0.2.12` answers the tag
+object and `v0.2.12^{commit}` is what `PIN` records — the unpeeled form is a
+sha no `wolf --version` will ever print.
+
+## le08's review, at pin `6ade878` (v0.2.5) — kept as the record
+
+**le08 stamped this file against wolf pin `6ade878`, 2026-09-05.** That is the
 wolf-lang release tag `v0.2.5`, so the pinned version string is the bare
 `wolf 0.2.5 (wolfgang, pin 6ade878)`, and `lspconf doctor` reports READY
 here. The scripted transcript library was re-recorded at that pin and
@@ -72,7 +139,7 @@ answers the TAG OBJECT (`0bb51c03…`), which peels to the commit `6ade878c…`.
 The pin records the peeled commit, because the unpeeled form is a sha no
 `wolf --version` will ever print.
 
-## THE SIX CAPTURED SMOKES: ALL SIX, AND THE OBLIGATION IS CLOSED
+## THE SIX CAPTURED SMOKES AT le08: ALL SIX, AND THE OBLIGATION WAS CLOSED THERE
 
 This obligation has been owed since le01 and named by this file every
 sprint since. The captured smokes are the transcripts no script decided (a
@@ -230,13 +297,13 @@ commit's run.
 
 | editor | tier | CI job | evidence | last verified |
 |---|---|---|---|---|
-| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | **2026-09-05, pin `6ade878`** — RE-CAPTURED at le08; header-only |
-| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | **2026-09-05, pin `6ade878`, fac v0.35.0** — RE-CAPTURED at le08, rung for rung with the `70bdd35` session; the le01 obligation is CLOSED |
-| [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.5`) | **2026-09-05, pin `6ade878`, NVIM v0.12.5** — RE-CAPTURED at le08; 7/7, header-only |
-| [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 16 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | **2026-09-05, pin `6ade878`** — RE-CAPTURED at le08; 16/16, and the capture is not byte-reproducible (see above) |
-| [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | **2026-09-05, pin `6ade878`, helix 25.07.1** — RE-CAPTURED at le08; header-only |
-| [Emacs (eglot)](../clients/emacs/README.md) | **T2** | `emacs-mode` (3 OS, 9 cases) + `emacs-check` | `clients/emacs/wolf-mode.el` loaded by `emacs --batch`; `transcripts/emacs/smoke` · `profiles/emacs.json` (`emacs@31.1`, eglot 1.24.31) | **2026-09-05, pin `6ade878`, GNU Emacs 31.1** — RE-CAPTURED at le08; header-only |
-| [Zed](../clients/zed/README.md) | **T2** | `zed-extension` (wasm build) + `config-check` | wasm component builds; config statically checked | **wasm build: 2026-08-10.** **Manual run: NEVER — see below** |
+| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | **2026-09-05, pin `6ade878`** — RE-CAPTURED at le08; header-only. **tl02 did NOT re-capture at `a7f517e`; `replay` SKIPS this smoke (wolf-lsp#14).** The scripted library beside it IS at `a7f517e`, header-only. |
+| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | **2026-09-05, pin `6ade878`, fac v0.35.0** — RE-CAPTURED at le08, rung for rung with the `70bdd35` session. **tl02 did NOT re-capture at `a7f517e`; `replay` SKIPS this smoke (wolf-lsp#14).** The scripted library beside it IS at `a7f517e`, header-only. |
+| [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.5`) | **2026-09-05, pin `6ade878`, NVIM v0.12.5** — RE-CAPTURED at le08; 7/7, header-only. **tl02 did NOT re-capture at `a7f517e`; `replay` SKIPS this smoke (wolf-lsp#14).** The scripted library beside it IS at `a7f517e`, header-only. |
+| [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 16 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | **2026-09-05, pin `6ade878`** — RE-CAPTURED at le08; 16/16, and the capture is not byte-reproducible (see above). **tl02 did NOT re-capture at `a7f517e`; `replay` SKIPS this smoke (wolf-lsp#14).** The scripted library beside it IS at `a7f517e`, header-only. |
+| [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | **2026-09-05, pin `6ade878`, helix 25.07.1** — RE-CAPTURED at le08; header-only. **tl02 did NOT re-capture at `a7f517e`; `replay` SKIPS this smoke (wolf-lsp#14).** The scripted library beside it IS at `a7f517e`, header-only. |
+| [Emacs (eglot)](../clients/emacs/README.md) | **T2** | `emacs-mode` (3 OS, 9 cases) + `emacs-check` | `clients/emacs/wolf-mode.el` loaded by `emacs --batch`; `transcripts/emacs/smoke` · `profiles/emacs.json` (`emacs@31.1`, eglot 1.24.31) | **2026-09-05, pin `6ade878`, GNU Emacs 31.1** — RE-CAPTURED at le08; header-only. **tl02 did NOT re-capture at `a7f517e`; `replay` SKIPS this smoke (wolf-lsp#14).** The scripted library beside it IS at `a7f517e`, header-only. |
+| [Zed](../clients/zed/README.md) | **T2** | `zed-extension` (wasm build) + `config-check` | wasm component builds; config statically checked | **wasm build: 2026-08-10.** **Manual run: NEVER — see below.** Config re-checked at pin `a7f517e` (tl02). |
 | [JetBrains (LSP4IJ)](../clients/jetbrains/README.md) | **T3** | *(none, by design)* | a written recipe | **NEVER — see below** |
 | Emacs (lsp-mode) | **T3** | *(none)* | a three-line `lsp-register-client` snippet in `clients/emacs/README.md` | **NEVER — no `lsp-mode` on any machine this repo runs on** |
 

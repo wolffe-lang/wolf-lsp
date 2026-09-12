@@ -144,19 +144,25 @@ is permanently `PENDING`: open each link and re-read the state before tagging.
 ## Reading the output
 
 There are twenty-two steps, and the split between them depends on one thing:
-whether a `wolf` resolves on this box. Measured 2026-09-08, on a clean tree with
-no `wolf` on `PATH`:
+whether a `wolf` resolves on this box. Re-measured 2026-09-12 at pin `a7f517e`
+(tl02), on a clean tree with no `wolf` on `PATH`:
 
 ```
 14 checked, 0 failed, 8 pending a human action.
 ```
 
-With a `wolf` on `PATH`, step 3b stops being pending and gets checked, so the
-same tree prints:
+With a `wolf` resolving — tl02 used `WOLF_BIN` pointed at the **acquired**
+v0.2.12 darwin artifact, not a local build — step 3b stops being pending and
+gets checked, so the same tree prints:
 
 ```
-15 checked, 1 failed, 7 pending a human action.
+16 checked, 0 failed, 7 pending a human action.
 ```
+
+The 2026-09-08 reading of that second block was `15 checked, 1 failed, 7
+pending`. Both numbers moved for the same reason and neither is a regression:
+the failure was step 5b, `docs/MATRIX.md`'s stamp, which a pin bump is what
+clears — and it is now checked rather than failing, which is the extra row.
 
 and the failure is `3b`'s — `lspconf doctor` refusing a binary that is not the
 pinned one. (This box carries `wolf 0.2.6`; the pin is `v0.2.5`. That refusal is

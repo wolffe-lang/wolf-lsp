@@ -60,6 +60,10 @@ reason = "the byte tier's type display: the s136/#231 witness that `str.bytes()`
 path = "net/wait_readiness.lu"
 reason = "s137's readiness call, and the ONE surface v0.2.5 could have moved. le08's question was whether five new builtin FUNCTIONS reach a server whose type-printing surfaces key on TYPES. Added because no sample bound a net handle at all, so `net_wait` — the only s137 call whose signature is interesting (`List[int] -> List[int]`, both ends a list) — could not be hovered anywhere. `let set = List[int]()` and `let woke = net_wait(set, 5000)?` put the same type on both sides of the call; `net_wait(set, 20)?.len == 0` puts `?` immediately before a field access; `woke[0] == b` indexes the answer. `phase: run`, so it is a clean-diagnostics document like the rest. Pairs with `strings/bytes_roundtrip.lu`: that one is the pin where a TYPE moved, this one the pin where only FUNCTIONS did, and the two transcripts are meant to be read together."
 
+[[sample]]
+path = "grammar/if_then_ident.lu"
+reason = "the contextual `then` (s151, wolf-lang#307, wolf-lsp#11): the ONE surface in this repository that can paint `then` as a keyword is the SERVER's semantic-token walk, because a TextMate grammar and a `syn keyword` list are regular and can only ask whether the word is `then` — which is wrong in this very file three times. `let then = true` binds it, `if then { … }` reads it as the condition, and `if then then 1 else 0` has the identifier and the keyword adjacent on one line, so a correct answer and a word-list answer differ by exactly one token and the transcript pins which one the server gives. Vendored at the v0.2.12 pin, where `if_expr`'s second alternative first appears in the EBNF."
+
 # --- Known gap, deliberately not papered over -------------------------------
 #
 # ls01 §5 requires **astral-plane** text (an emoji: one char, two UTF-16 units,
@@ -95,3 +99,4 @@ needed_by = "ls01 §5 (UTF-16 / positionEncoding correctness)"
 status = "requested upstream; astral-only samples exist at this pin (s120's wolf-emoji witnesses; re-checked at 83f83bb, where the s121 char-era witnesses add astral CHAR LITERALS too; re-checked again at 75fd2d0 / v0.2.1) but none has combining marks or ZWJ — measured, not assumed: a sweep of the whole 467-file corpus finds zero U+200D and zero U+0300..U+036F, in raw bytes or escape-spelled. The spec now USES a combining pair as an example ('[gram.lex.char]' calls 'e\\u{301}' two scalars) without a corpus file carrying one, so the fixture's coverage is still unmatched"
 local_stopgap = "fixtures/astral.lu"
 retire_when = "a corpus sample carries astral-plane, combining-mark, and ZWJ text; then delete fixtures/astral.lu in the same commit as the pin bump"
+

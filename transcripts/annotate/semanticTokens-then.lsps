@@ -1,0 +1,40 @@
+#! The contextual `then` (s151, wolf-lang#307), through the ONE surface in
+#! this repository that can paint it: the server's semantic-token walk.
+#!
+#! `grammar/if_then_ident.lu` spells `then` four times in three positions —
+#! `let then = true` binds it, `if then { … }` reads it as the condition, and
+#! `if then then 1 else 0` puts the identifier and the keyword ADJACENT on one
+#! line. A regular grammar cannot tell those apart (clients/vscode/inventory.md
+#! says so, and is why `then` is CONTEXTUAL rather than a keyword scope), so
+#! this transcript is the measurement of what the server actually answers.
+#!
+#! The whole document first, then line 12 alone as a range request — that is
+#! `let n = if then then 1 else 0`, the line where a word-list answer and a
+#! position-aware answer differ.
+#!
+#! WHAT IT MEASURED, at pin a7f517e (v0.2.12), and it is NOT what wolf-lsp#11
+#! predicted. The server gets the IDENTIFIER half exactly right and emits
+#! NOTHING AT ALL for the keyword half:
+#!
+#!   L10 C8  `then`  variable  (the binding)
+#!   L11 C7  `then`  variable  (the condition)
+#!   L12 C15 `then`  variable  (the condition, again)
+#!   L12 C20 `then`  — NO TOKEN. `if` at C12 and `else` at C27 are both
+#!                    `keyword`; the contextual `then` between them is absent
+#!                    from the stream, so an editor paints it as plain text.
+#!
+#! So the two-line change wolf-lsp#11 describes has not landed upstream: this
+#! is a HOLE, not a miscolouring, and it is the server's — `wolf lsp` lives in
+#! wolf-lang, and `crates/wolf_lsp/` is one line different across the whole
+#! v0.2.5..v0.2.12 span. Filed upstream. This transcript pins the defect on
+#! purpose, so the fix announces itself as a red here and is re-recorded with
+#! a diff that names exactly one new token.
+name      annotate/semanticTokens-then
+profile   minimal
+
+initialize
+open      grammar/if_then_ident.lu
+wait      diagnostics grammar/if_then_ident.lu
+req       semanticTokens grammar/if_then_ident.lu
+req       semanticTokens grammar/if_then_ident.lu 11:0-12:0
+shutdown

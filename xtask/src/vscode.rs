@@ -103,14 +103,34 @@ use serde_json::{Value, json};
 /// context-sensitive where these are not. The split is not a compromise
 /// between the two; it is which layer can see the position.
 ///
+/// `error` is classified here for the same reason and ahead of the same kind
+/// of pin. s158 (wolf-lang#36, on trunk at `c1e62fa` and in no release yet)
+/// adds `error_item ::= 'error' IDENT '=' error_row TERM?` to `bare_item`, and
+/// `[gram.inv.ctx]` names it contextual: `reserved_kw`'s checksum stays at 50.
+/// Measured by feeding that grammar through [`inventory`]: `error` is the
+/// **only** unclassified word terminal s158 introduces. Its other two surface
+/// additions add no word at all — a list literal's `[`, `,` and `]` are
+/// already [`DELIMITERS`], the brace-less alias tail's `!` is already an
+/// operator, and `range[int]` is an ordinary `path type_args?` whose `range`
+/// is an IDENT and never a terminal.
+///
+/// It is contextual rather than a keyword by a wider margin than `then`, not a
+/// narrower one. wolfc decides it on THREE tokens — `Ident("error")` then an
+/// `Ident` then `=`, and nothing shorter — so a regular grammar cannot even
+/// approximate the test, and `corpus/rows/error_alias_ident.lu` spends its
+/// whole length on the cost of getting it wrong: a field named `error`, a
+/// function named `error`, a binding named `error`, and `error` as both a
+/// field-init key and a value, in one file. A `syn keyword` or a `regexp-opt`
+/// would paint every one of them.
+///
 /// This list is **exhaustive over the pin**, and generation fails when a word
 /// terminal appears in neither it nor `reserved_kw`. That failure is the point:
 /// a contextual keyword added upstream (`sync`, say) forces a human decision
 /// about whether it is contextual or reserved, instead of silently becoming
 /// neither.
 const CONTEXTUAL: &[&str] = &[
-    "E", "_", "c", "cap", "e", "from", "inout", "lateout", "n", "noalias", "out", "pkg", "pool",
-    "r", "rc", "self", "t", "then", "timeout",
+    "E", "_", "c", "cap", "e", "error", "from", "inout", "lateout", "n", "noalias", "out", "pkg",
+    "pool", "r", "rc", "self", "t", "then", "timeout",
 ];
 
 /// Symbolic terminals that are **delimiters or literal-form fragments**, not
@@ -831,6 +851,64 @@ mod tests {
         assert!(
             CONTEXTUAL.contains(&"then"),
             "the classification is the list entry, not this test's opinion"
+        );
+    }
+
+    /// s158's `error`, classified ahead of the pin that will carry it.
+    ///
+    /// The vendored grammar is at `v0.2.12` and has no `error_item`, so the
+    /// exhaustiveness test above cannot see this either. Same shape as
+    /// `then` above, and the same reason: the partition refuses a word
+    /// nobody has decided, and that refusal would land on whoever bumps the
+    /// pin rather than on the lane that read the production.
+    #[test]
+    fn s158_error_is_contextual_and_does_not_reach_the_keyword_set() {
+        let ebnf = "reserved_kw ::= 'fn' | 'let'\n\
+                    bare_item ::= fn_item | error_item\n\
+                    error_item ::= 'error' IDENT '=' error_row TERM?\n";
+
+        assert!(
+            terminals(ebnf).contains("error"),
+            "the production really does carry the terminal this test is about"
+        );
+
+        let inv = inventory(ebnf)
+            .expect("`error` is classified, so the generator runs; an unclassified word aborts it");
+        assert!(
+            !inv.keywords.contains("error"),
+            "`error` is contextual: wolfc decides it on `Ident Ident =`, three tokens, \
+             and a word list cannot tell `error IoErrors = {{…}}` from `let error = 1`"
+        );
+        assert!(
+            !inv.operators.iter().any(|o| o == "error"),
+            "`error` is a word, not an operator: {:?}",
+            inv.operators
+        );
+        assert!(
+            CONTEXTUAL.contains(&"error"),
+            "the classification is the list entry, not this test's opinion"
+        );
+    }
+
+    /// s158's other two surface additions introduce no word terminal at all,
+    /// which is why `error` is the whole of this lane's partition work.
+    #[test]
+    fn s158_list_literals_and_the_alias_tail_add_no_word_terminal() {
+        let ebnf = "reserved_kw ::= 'fn'\n\
+                    primary ::= literal | list_lit | path\n\
+                    list_lit ::= '[' (expr (',' expr)* ','?)? ']'\n\
+                    type ::= path type_args? | type '!' error_row | type '!' path\n";
+
+        let inv =
+            inventory(ebnf).expect("no word terminal here is unclassified, so the generator runs");
+        let words: Vec<_> = inv
+            .operators
+            .iter()
+            .filter(|o| o.starts_with(|c: char| c.is_alphabetic() || c == '_'))
+            .collect();
+        assert!(
+            words.is_empty(),
+            "these productions are punctuation and `!` only: {words:?}"
         );
     }
 

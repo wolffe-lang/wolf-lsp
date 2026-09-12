@@ -10,6 +10,7 @@ use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
+mod builtin_types;
 mod compat;
 mod config;
 mod release;
@@ -540,7 +541,7 @@ fn fixtures_check() -> ExitCode {
 
 /// **Everything derived in `clients/nvim/` still agrees with the pin.**
 ///
-/// The Neovim plugin carries two artifacts that are *read off* the pinned
+/// The Neovim plugin carries three artifacts that are *read off* the pinned
 /// toolchain rather than authored:
 ///
 /// 1. `syntax/wolf.vim`'s keyword set, which must be exactly `reserved_kw`
@@ -549,6 +550,11 @@ fn fixtures_check() -> ExitCode {
 ///    `clients/facsimile/inventory.md` record for their token tables. Three
 ///    independently-written tables from one pinned grammar cross-check the
 ///    extraction; a drift in one is a drift in all three.
+/// 1b. `syntax/wolf.vim`'s builtin TYPE row (`syn keyword wolfType …`), which
+///    must equal [`crate::vscode::TYPE_NAMES`]. It sits OUTSIDE the
+///    `reserved-kw-*` markers because these names are not reserved words, and
+///    that is precisely why check (1) never saw it: the row was ungated from
+///    the day it was written until wolf-lsp#21. See [`crate::builtin_types`].
 /// 2. `lua/wolf/pin.lua`, generated from `vendor/upstream/PIN` so
 ///    `:checkhealth wolf` can compare a user's `wolf --version` against the
 ///    build this plugin was verified with. A hand-maintained copy of the pin
@@ -622,6 +628,32 @@ fn nvim_derived(write: bool) -> ExitCode {
             }
         }
         Err(e) => errors.push(format!("{}: {e}", slash(&ebnf))),
+    }
+
+    // --- (1b) the builtin TYPE row -------------------------------------
+    // Outside the `reserved-kw-*` markers on purpose — these names are not
+    // reserved words — which is exactly why (1) above never saw it and
+    // wolf-lsp#21 could happen. Checked against the one source instead.
+    let syntax = nvim.join("syntax").join("wolf.vim");
+    match std::fs::read_to_string(&syntax) {
+        Ok(vim) => match builtin_types::vim_types(&vim) {
+            Some(found) => {
+                let before = errors.len();
+                builtin_types::compare("syntax/wolf.vim", &found, &mut errors);
+                if errors.len() == before {
+                    eprintln!(
+                        "nvim: syntax/wolf.vim carries all {} builtin types, and no others",
+                        found.len()
+                    );
+                }
+            }
+            None => errors.push(
+                "syntax/wolf.vim has no `syn keyword wolfType` row — the builtin type drift \
+                 check reads the type set from it"
+                    .to_string(),
+            ),
+        },
+        Err(e) => errors.push(format!("{}: {e}", slash(&syntax))),
     }
 
     // --- (2) the generated pin constant --------------------------------

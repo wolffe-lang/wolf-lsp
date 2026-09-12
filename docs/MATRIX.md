@@ -6,7 +6,8 @@ verified at, the evidence for that tier, and (for T1 and T2) the CI job that
 re-checks the evidence on every push. A row that claims a verification it does
 not have is a bug in this file.
 
-**Last reviewed against wolf pin `a7f517e`, 2026-09-12** (tl02, wolf-lsp#12).
+**Last reviewed against wolf pin `a7f517e`, 2026-09-12** (tl02, wolf-lsp#12;
+the captured half re-CAPTURED at tl03, wolf-lsp#14).
 That is the wolf-lang release tag `v0.2.12`, seven releases on from the `v0.2.5`
 this file was stamped at, so the pinned version string is the bare
 `wolf 0.2.12 (wolfgang, pin a7f517e)` and `lspconf doctor` reports READY here.
@@ -15,8 +16,11 @@ archive of release 387405402, sha256 `6be493a9…` — not a local build, which 
 what makes the seven-hex pin clause in `PIN` the artifact's own answer rather
 than this box's (wolf-lang#199).
 
-**The scripted half was re-verified in full; the captured half was not.** Read
-the two claims separately, because they are not the same claim:
+**Both halves are now at this pin.** tl02 re-verified the scripted half and
+left the captured half behind; tl03 drove all six real editors and closed the
+gap. `lspconf --require-server replay` prints **no SKIP line at all**: 76
+transcripts, 76 replayed, zero skipped, exit 0. Read the two claims
+separately anyway, because they are earned differently:
 
 - **69 scripted transcripts re-recorded and replayed green**, and the re-record
   is a **HEADER-ONLY diff across all sixty-nine files** — `69 files changed, 69
@@ -26,14 +30,17 @@ the two claims separately, because they are not the same claim:
   here, `annotate/semanticTokens-then`, and it is the one measurement in this
   bump that came back wrong — see below. `onetruth` ran **13** samples × 9
   profiles with **zero divergences** and none filed; the 13th sample is
-  `grammar/if_then_ident.lu`, vendored at this pin.
-- **The six captured smokes are STILL AT `6ade878`.** They cannot be
-  re-recorded, only re-CAPTURED by driving the real editor again (below), and
-  tl02 had no editor on the box to drive. `lspconf replay` prints a SKIP naming
-  all six, and exits 0 having replayed 69 of 75. The le01 obligation that le08
-  closed is **open again at this pin** — that is what a captured transcript
-  costs, and the honest place to say so is here and in each
-  `clients/*/compat.json`. Filed as **wolf-lsp#14**.
+  `grammar/if_then_ident.lu`, vendored at this pin. With the 70th transcript
+  committed the library is **76 files**, not the 75 tl02's report named.
+- **All six captured smokes are RE-CAPTURED at `a7f517e`** (tl03,
+  wolf-lsp#14). They cannot be re-recorded, only re-CAPTURED by driving the
+  real editor again, and all six editors were driven here — see
+  [the tl03 section](#the-six-captured-smokes-at-tl03-all-six-driven-again-at-a7f517e)
+  for how, and for the three driver traps that cost a run each. **Five of the
+  six are a HEADER-ONLY diff** (`recorded` and `wolf_pin`, and nothing else,
+  asserted field by field over every record); nvim adds one field and vscode
+  moves one background rung, both explained there and neither a server change.
+  The le01 obligation is **closed again at this pin**.
 - **The declared range MOVED, it did not widen.** `min` and `max_tested` are
   both `0.2.12`: pre-1.0 the range is a PIN RANGE, one version wide, and both
   client suites assert exactly that. Leaving `min` at `0.2.5` reds the Neovim
@@ -175,6 +182,115 @@ answers the TAG OBJECT (`0bb51c03…`), which peels to the commit `6ade878c…`.
 The pin records the peeled commit, because the unpeeled form is a sha no
 `wolf --version` will ever print.
 
+## THE SIX CAPTURED SMOKES AT tl03: ALL SIX, DRIVEN AGAIN AT `a7f517e`
+
+The pin bump at tl02 stranded all six at `6ade878`, because a captured
+transcript is the one artifact a pin bump cannot re-record: no script decided
+what the editor sent, so only the editor can say it again. tl03 drove all six
+on nomad-1 (darwin arm64) against the acquired `wolf 0.2.12 (wolfgang, pin
+a7f517e)`, by each client README's own documented procedure, with that
+client's capture shim first on `PATH`.
+
+`lspconf --require-server replay` before: exit 0, 70 replayed, **six SKIPPED**.
+After: exit 0, **76 replayed, no SKIP line at all.**
+
+| smoke | driven at tl03? | how, and what moved |
+|---|---|---|
+| **nvim** | **RE-CAPTURED** | `nvim --headless` with the documented shim, NVIM **v0.12.5**, 7/7 `smoke.lua` assertions passing while recording. 33 records. THREE fields moved across all 33: the two header fields and `clientInfo.version`, `0.12.5` → `0.12.5+v0.12.5`. Every server response body is byte-identical. See *the neovim on this box* below — the suffix is the client's build stamp, not the server's answer. |
+| **fackr** | **RE-CAPTURED** | `cargo test lsp::smoke_wolf::wolf_lsp_corpus_session` in a clean clone at `496c7e2` with `patches/wolf-integration.diff` applied — `git apply --check` exits 0, so the series still applies. 19 records, **header-only**, three consecutive runs byte-identical. The user's own fackr worktree was never touched: the clone is a `git clone --no-local` into scratch. |
+| **helix** | **RE-CAPTURED** | Driven through a pty, helix **25.07.1**, the shipped `languages.toml` dropped into a throwaway `XDG_CONFIG_HOME`. 19 records, **header-only**, two consecutive runs byte-identical. Two driver facts beyond the documented window size, each of which cost a run — see below. |
+| **emacs** | **RE-CAPTURED** | `emacs --batch -l clients/emacs/tests/server-test.el -f ert-run-tests-batch-and-exit`, GNU Emacs **31.1** with built-in eglot, 1/1 passing while recording. 24 records, **header-only**. |
+| **vscode** | **RE-CAPTURED** | The extension's own test runner against the installed VS Code, **16/16**, `VSCODE_CLI=1` set. 53 records. Not byte-reproducible by construction, so the claim is the METHOD MULTISET — see below. |
+| **facsimile** | **RE-CAPTURED** | Driven through a pty, `fac` **v0.35.0** built with `fpm` from a clean clone at `a121ab3`, the exact commit the docs pin. 15 records, rung for rung with le08's, **header-only**, three consecutive runs byte-identical. A third driver trap found here — see below. |
+
+### The neovim on this box will not start, and that is why one field moved
+
+Homebrew's `neovim` 0.12.5 is installed and **cannot be launched**: it links
+`libtree-sitter.0.26.dylib`, Homebrew has upgraded `tree-sitter` to 0.27.0, and
+nothing relinked neovim, so `nvim --version` dies in dyld before `main`. The
+capture therefore used the **official self-contained `nvim-macos-arm64` release
+tarball for v0.12.5**, unpacked in scratch — the same NVIM version, a different
+build of it, and nothing under `/opt/homebrew` was touched.
+
+That is the whole of the one extra field. Neovim composes `clientInfo.version`
+from its build stamp; the official release tarball sets `NVIM_VERSION_BUILD`
+from the tag and Homebrew leaves it empty, so the same editor reports
+`0.12.5+v0.12.5` where le08 recorded `0.12.5`. No server answer moved with it.
+
+**Cold start reorders the first publish.** The very first capture on a cold
+server put the initial `publishDiagnostics` *after* both `semanticTokens`
+round-trips; three warm runs are byte-identical to each other and carry le08's
+ordering, and the warm one is what is committed. `clients/nvim/README.md`'s
+"three byte-identical files" holds for warm runs and does not describe the
+first one.
+
+### Three driver traps, one per pty client, each of which cost a run
+
+The two pty drivers are not committed — they are scaffolding, and the
+transcript is the artifact — so these belong here and in the client READMEs.
+
+1. **helix: the pty must be DRAINED, not merely sized.** The documented
+   `TIOCSWINSZ` is necessary and not sufficient. helix redraws the whole screen
+   on every keystroke; with no reader on the master side the pty buffer fills,
+   helix blocks in `write()` and stops consuming keys, and the session records
+   **startup only** — 5 records, no hover, no `didChange`, and a driver that
+   exits 0. Read continuously from a thread.
+2. **helix: `i` and `x` must leave in ONE `write()`.** Typed 150 ms apart,
+   entering insert mode fires `signatureHelp` at column 8 *before* the edit
+   lands, and the transcript rotates two rungs against le08's and shifts that
+   request's position by one column. One write reproduces le08's order exactly
+   and makes the diff header-only. Note this is the opposite of facsimile's
+   rule, and for a different reason: facsimile coalesces a buffered burst into
+   one flush, helix does not.
+3. **facsimile: `// EOF` is a VIRTUAL line, and touching it makes it real.**
+   `fac` draws a `// EOF` sentinel below the last line of the buffer. Moving
+   the cursor onto it **materializes it as document text**. After the backspace
+   that repairs the broken file the cursor sits at the start of the last real
+   line, so a RIGHT arrow used as the debounce-flush key wraps onto the
+   sentinel and the session records a third `didChange` whose text ends
+   `}\n// EOF`, with the republish that follows it. Use a flush key that
+   cannot cross the last line; `ctrl-home` works.
+
+Everything `clients/facsimile/README.md` already records held at this pin and
+all of it was load-bearing: one key per `write()` more than the 0.5 s
+`sync_delay` apart, a non-edit key after each edit to give the loop the
+iteration its debounce needs, `;` rather than a word character so no completion
+popup opens, and `-w <workspace>` so no absolute path survives the elision.
+
+### The VS Code lane at tl03
+
+`VSCODE_CLI=1` was set, per le08, and this run was **not** the silent no-op
+that flag prevents: the transcript moved to pin `a7f517e`, which is the only
+proof that matters. The capture is not byte-reproducible, so the claim is the
+method multiset against le08's:
+
+- **Every test-driven rung has an identical count** — `didOpen` 2, `hover` 1,
+  `formatting` 1, `publishDiagnostics` 2, `semanticTokens/full` 2,
+  `semanticTokens/range` 1, `documentSymbol` 3, `inlayHint` 5, and
+  `initialize` / `initialized` / `shutdown` / `exit` / `$/setTrace` 1 each.
+- **Exactly one rung moved, and it is a background one**: `codeAction` 9 → 8,
+  with its response. 55 → 53 records. That is the variance this file predicts.
+- Across three consecutive runs here the multiset is identical and the record
+  count is a constant **53**, where le08 measured 56 / 54 / 58. Runs 2 and 3
+  are byte-identical; run 1 differs only by `inlayHint` and `documentSymbol`
+  swapping places.
+
+`clientInfo.version` is `1.120.0`, unchanged from le08 — the same VS Code
+build drove both captures. It is also, by luck, the last VS Code that ships the
+`Contents/MacOS/Electron` alias `@vscode/test-electron` 2.5.2 hardcodes, so the
+`WOLF_VSCODE_EXECUTABLE` path in `clients/vscode/README.md` still resolves
+here; the `code` CLI is not on `PATH` and is not needed.
+
+### One claim in `clients/helix/README.md` is wrong, and this is the measurement
+
+That file says helix "never sends `shutdown`/`exit`", verified across `:q`,
+`:qa` and `:q!`. In three consecutive `:q!` captures here, **one recorded a
+`shutdown` request** as a twentieth record; the other two ended at the
+`formatting` response, which is le08's shape and the one committed. So helix
+does send `shutdown` and usually kills the server before the frame can be
+read — a race, not an absence. Filed as **wolf-lsp#17**; the committed
+transcript is unaffected.
+
 ## THE SIX CAPTURED SMOKES AT le08: ALL SIX, AND THE OBLIGATION WAS CLOSED THERE
 
 This obligation has been owed since le01 and named by this file every
@@ -315,8 +431,9 @@ forced the cleanup.
 
 ### What the rows still do NOT claim
 
-The rows below are re-stamped from local captures at le08 (2026-09-05, pin
-`6ade878`), and that is all they claim. D35 and `release-check 3d` want the three-OS claim made from CI,
+The six captured rows below are re-stamped from local captures at tl03
+(2026-09-12, pin `a7f517e`), on **one host, darwin arm64**, and that is all
+they claim. D35 and `release-check 3d` want the three-OS claim made from CI,
 and a local run cannot make it. `server-lane` was measured green on all three
 tier-1 OSes on le06's branch; the row to re-stamp from is still a merge
 commit's run.
@@ -333,12 +450,12 @@ commit's run.
 
 | editor | tier | CI job | evidence | last verified |
 |---|---|---|---|---|
-| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | **2026-09-05, pin `6ade878`** — RE-CAPTURED at le08; header-only. **tl02 did NOT re-capture at `a7f517e`; `replay` SKIPS this smoke (wolf-lsp#14).** The scripted library beside it IS at `a7f517e`, header-only. |
-| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | **2026-09-05, pin `6ade878`, fac v0.35.0** — RE-CAPTURED at le08, rung for rung with the `70bdd35` session. **tl02 did NOT re-capture at `a7f517e`; `replay` SKIPS this smoke (wolf-lsp#14).** The scripted library beside it IS at `a7f517e`, header-only. |
-| [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.5`) | **2026-09-05, pin `6ade878`, NVIM v0.12.5** — RE-CAPTURED at le08; 7/7, header-only. **tl02 did NOT re-capture at `a7f517e`; `replay` SKIPS this smoke (wolf-lsp#14).** The scripted library beside it IS at `a7f517e`, header-only. |
-| [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 16 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | **2026-09-05, pin `6ade878`** — RE-CAPTURED at le08; 16/16, and the capture is not byte-reproducible (see above). **tl02 did NOT re-capture at `a7f517e`; `replay` SKIPS this smoke (wolf-lsp#14).** The scripted library beside it IS at `a7f517e`, header-only. |
-| [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | **2026-09-05, pin `6ade878`, helix 25.07.1** — RE-CAPTURED at le08; header-only. **tl02 did NOT re-capture at `a7f517e`; `replay` SKIPS this smoke (wolf-lsp#14).** The scripted library beside it IS at `a7f517e`, header-only. |
-| [Emacs (eglot)](../clients/emacs/README.md) | **T2** | `emacs-mode` (3 OS, 9 cases) + `emacs-check` | `clients/emacs/wolf-mode.el` loaded by `emacs --batch`; `transcripts/emacs/smoke` · `profiles/emacs.json` (`emacs@31.1`, eglot 1.24.31) | **2026-09-05, pin `6ade878`, GNU Emacs 31.1** — RE-CAPTURED at le08; header-only. **tl02 did NOT re-capture at `a7f517e`; `replay` SKIPS this smoke (wolf-lsp#14).** The scripted library beside it IS at `a7f517e`, header-only. |
+| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | **2026-09-12, pin `a7f517e`, fackr 1.2.1 at `496c7e2`** — RE-CAPTURED at tl03; header-only, three runs byte-identical. `replay` no longer skips it. |
+| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | **2026-09-12, pin `a7f517e`, fac v0.35.0** — RE-CAPTURED at tl03, rung for rung with le08's; header-only, three runs byte-identical. `replay` no longer skips it. |
+| [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.5`) | **2026-09-12, pin `a7f517e`, NVIM v0.12.5** — RE-CAPTURED at tl03; 7/7. Header-only **plus `clientInfo.version`**, which is the client's build stamp and not a server change (see above). `replay` no longer skips it. |
+| [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 16 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | **2026-09-12, pin `a7f517e`, VS Code 1.120.0** — RE-CAPTURED at tl03; 16/16. Not byte-reproducible by construction, so the claim is the method multiset: every test-driven rung identical, one background `codeAction` rung fewer (see above). `replay` no longer skips it. |
+| [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | **2026-09-12, pin `a7f517e`, helix 25.07.1** — RE-CAPTURED at tl03; header-only, two runs byte-identical. `replay` no longer skips it. One row-adjacent correction: this client DOES sometimes send `shutdown` (wolf-lsp#17). |
+| [Emacs (eglot)](../clients/emacs/README.md) | **T2** | `emacs-mode` (3 OS, 9 cases) + `emacs-check` | `clients/emacs/wolf-mode.el` loaded by `emacs --batch`; `transcripts/emacs/smoke` · `profiles/emacs.json` (`emacs@31.1`, eglot 1.24.31) | **2026-09-12, pin `a7f517e`, GNU Emacs 31.1** — RE-CAPTURED at tl03; header-only. `replay` no longer skips it. |
 | [Zed](../clients/zed/README.md) | **T2** | `zed-extension` (wasm build) + `config-check` | wasm component builds; config statically checked | **wasm build: 2026-08-10.** **Manual run: NEVER — see below.** Config re-checked at pin `a7f517e` (tl02). |
 | [JetBrains (LSP4IJ)](../clients/jetbrains/README.md) | **T3** | *(none, by design)* | a written recipe | **NEVER — see below** |
 | Emacs (lsp-mode) | **T3** | *(none)* | a three-line `lsp-register-client` snippet in `clients/emacs/README.md` | **NEVER — no `lsp-mode` on any machine this repo runs on** |

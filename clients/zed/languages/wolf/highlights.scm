@@ -70,10 +70,28 @@
 (row_entry (path (identifier) @type.enum.variant))
 (struct_expression name: (type_path (path (identifier) @type)))
 
+;; The builtin scalar names, CLOSED because the language's set is, and gated
+;; since wolf-lsp#21 by `cargo xtask config-check` against the one source
+;; (`xtask/src/vscode.rs`'s TYPE_NAMES).
+;;
+;; `usize` and `isize` rode in with the first queries commit as unexamined
+;; Rust-isms: no `spec/*.md` names either one, and neither is in the
+;; compiler's closed builtin set. Painting them taught a reader two types
+;; wolf does not have. tree-sitter-wolf made exactly this correction at le06
+;; and it was never applied to this copy, because nothing gated this copy.
+;;
+;; `wrapping` joins them: D56's wrapping-arithmetic constructor is a builtin
+;; type name (`wrapping[u32]`), and it is the one name in the set this list
+;; had never carried.
+;;
+;; `Self` stays out deliberately — it is not a builtin type NAME but a
+;; context-bound alias, and it paints through the `(type_path …)` rule below
+;; wherever it can legally appear. config-check asserts that rule is present
+;; precisely because this line leans on it.
 ((identifier) @type.builtin
   (#any-of? @type.builtin
     "int" "uint" "i8" "i16" "i32" "i64" "u8" "u16" "u32" "u64"
-    "f32" "f64" "bool" "str" "byte" "usize" "isize" "char"))
+    "f32" "f64" "bool" "str" "byte" "char" "wrapping"))
 
 (type_path (path (identifier) @type))
 (dyn_type (path (identifier) @type))

@@ -1,7 +1,7 @@
 {
   "client": "helix config fragment",
   "client_version": "0.0.1",
-  "artifact": "TOML fragment \u2014 clients/helix/languages.toml, copied into the user's config",
+  "artifact": "TOML fragment — clients/helix/languages.toml, copied into the user's config",
   "wolf": {
     "min": "0.2.12",
     "max_tested": "0.2.12",
@@ -10,13 +10,13 @@
   },
   "verified": {
     "date": "2026-09-12",
-    "host": "local (macos arm64), against the ACQUIRED v0.2.12 darwin artifact (sha256 6be493a9\u2026), not a local build",
+    "host": "local (macos arm64), against the ACQUIRED v0.2.12 darwin artifact (sha256 6be493a9…), not a local build",
     "evidence": [
-      "transcripts/helix/smoke.jsonl is STILL AT 6ade878 (v0.2.5) and was NOT re-captured at this pin \u2014 tl02 had no helix on the box, and a capture needs the real editor (docs/RELEASE.md step 3b). `lspconf replay` SKIPS it by name. The le08 capture it carries \u2014 helix 25.07.1 through a pty, 20 records \u2014 is evidence about v0.2.5, not about this pin",
-      "profiles/helix.json (re-read at 25.07.1 \u2014 byte-identical to the capture, no re-derivation needed)",
+      "transcripts/helix/smoke.jsonl was RE-CAPTURED at this pin (tl03, wolf-lsp#14): helix 25.07.1 driven through a pty by the documented key table, 19 records, two consecutive runs byte-identical. A field-by-field comparison over every record finds exactly two changed fields, `recorded` and `wolf_pin` — HEADER-ONLY. `lspconf --require-server replay` no longer skips it (ok, 9 records matched)",
+      "profiles/helix.json (re-read at 25.07.1 — byte-identical to the capture, no re-derivation needed)",
       "cargo xtask helix-health",
-      "lspconf replay + onetruth under this client's derived profile at pin a7f517e (v0.2.12), 2026-09-12 \u2014 69 scripted transcripts re-recorded and matched, plus a 70th written here (annotate/semanticTokens-then), 13 samples \u00d7 9 profiles with zero divergences (the 13th is grammar/if_then_ident.lu, vendored here). The re-record is a HEADER-ONLY diff across all 69 files: 69 insertions, 69 deletions, every one of them line 1's `wolf_pin` and `recorded`, so no response body moved between v0.2.5 and v0.2.12"
+      "lspconf replay + onetruth under this client's derived profile at pin a7f517e (v0.2.12), 2026-09-12 — 69 scripted transcripts re-recorded and matched, plus a 70th written at tl02 (annotate/semanticTokens-then); with the six captured smokes re-captured at tl03 the whole library is 76 files and `replay` skips none of them, 13 samples × 9 profiles with zero divergences (the 13th is grammar/if_then_ident.lu, vendored here). The re-record is a HEADER-ONLY diff across all 69 files: 69 insertions, 69 deletions, every one of them line 1's `wolf_pin` and `recorded`, so no response body moved between v0.2.5 and v0.2.12"
     ]
   },
-  "warning_surface": "none \u2014 a TOML fragment cannot run code; docs/COMPAT.md is the whole statement"
+  "warning_surface": "none — a TOML fragment cannot run code; docs/COMPAT.md is the whole statement"
 }

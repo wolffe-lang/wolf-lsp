@@ -1,7 +1,7 @@
 {
   "client": "wolf (VS Code extension)",
   "client_version": "0.0.1",
-  "artifact": "vsix \u2014 clients/vscode/, packaged by @vscode/vsce",
+  "artifact": "vsix — clients/vscode/, packaged by @vscode/vsce",
   "wolf": {
     "min": "0.2.12",
     "max_tested": "0.2.12",
@@ -10,12 +10,12 @@
   },
   "verified": {
     "date": "2026-09-12",
-    "host": "local (macos arm64), against the ACQUIRED v0.2.12 darwin artifact (sha256 6be493a9\u2026), not a local build",
+    "host": "local (macos arm64), against the ACQUIRED v0.2.12 darwin artifact (sha256 6be493a9…), not a local build",
     "evidence": [
-      "transcripts/vscode/smoke.jsonl is STILL AT 6ade878 (v0.2.5) and was NOT re-captured at this pin \u2014 tl02 had no VS Code on the box, and a capture needs the real editor (docs/RELEASE.md step 3b). `lspconf replay` SKIPS it by name. The le08 capture it carries \u2014 the extension's own test runner against the installed VS Code via WOLF_VSCODE_EXECUTABLE \u2014 is evidence about v0.2.5, not about this pin",
+      "transcripts/vscode/smoke.jsonl was RE-CAPTURED at this pin (tl03, wolf-lsp#14): the extension's own test runner against the installed VS Code 1.120.0, 16/16 passing while recording with VSCODE_CLI=1, 53 records. This capture is not byte-reproducible by construction, so the claim is the METHOD MULTISET: every test-driven rung has a count identical to le08's, and exactly one background rung moved (codeAction 9 -> 8). Three consecutive runs here agree on the multiset and on 53 records. `lspconf --require-server replay` no longer skips it (ok, 25 records matched)",
       "profiles/vscode.json",
-      "clients/vscode/src/test/suite/extension.test.ts (both halves \u2014 the server half has run at every pin since le07 repaired the two defects that had kept it dark)",
-      "lspconf replay + onetruth under this client's derived profile at pin a7f517e (v0.2.12), 2026-09-12 \u2014 69 scripted transcripts re-recorded and matched, plus a 70th written here (annotate/semanticTokens-then), 13 samples \u00d7 9 profiles with zero divergences (the 13th is grammar/if_then_ident.lu, vendored here). The re-record is a HEADER-ONLY diff across all 69 files: 69 insertions, 69 deletions, every one of them line 1's `wolf_pin` and `recorded`, so no response body moved between v0.2.5 and v0.2.12"
+      "clients/vscode/src/test/suite/extension.test.ts (both halves — the server half has run at every pin since le07 repaired the two defects that had kept it dark)",
+      "lspconf replay + onetruth under this client's derived profile at pin a7f517e (v0.2.12), 2026-09-12 — 69 scripted transcripts re-recorded and matched, plus a 70th written at tl02 (annotate/semanticTokens-then); with the six captured smokes re-captured at tl03 the whole library is 76 files and `replay` skips none of them, 13 samples × 9 profiles with zero divergences (the 13th is grammar/if_then_ident.lu, vendored here). The re-record is a HEADER-ONLY diff across all 69 files: 69 insertions, 69 deletions, every one of them line 1's `wolf_pin` and `recorded`, so no response body moved between v0.2.5 and v0.2.12"
     ]
   },
   "warning_surface": "one notification at activation, plus `Wolf: Show Version`"

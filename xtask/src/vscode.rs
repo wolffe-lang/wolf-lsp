@@ -206,7 +206,7 @@ const DELIMITERS: &[&str] = &[
 /// only a surface that knows where a token stands can paint it: the server's
 /// semantic tokens here, and a context-sensitive grammar in tree-sitter-wolf,
 /// which scopes it to `(type_path …)` for this reason (tree-sitter-wolf#7).
-const TYPE_NAMES: &[&str] = &[
+pub(crate) const TYPE_NAMES: &[&str] = &[
     "Self", "bool", "byte", "char", "f32", "f64", "i16", "i32", "i64", "i8", "int", "str", "u16",
     "u32", "u64", "u8", "uint", "wrapping",
 ];

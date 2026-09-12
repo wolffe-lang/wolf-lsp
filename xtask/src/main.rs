@@ -550,12 +550,12 @@ fn fixtures_check() -> ExitCode {
 ///    `clients/facsimile/inventory.md` record for their token tables. Three
 ///    independently-written tables from one pinned grammar cross-check the
 ///    extraction; a drift in one is a drift in all three.
-/// 1b. `syntax/wolf.vim`'s builtin TYPE row (`syn keyword wolfType …`), which
+/// 2. `syntax/wolf.vim`'s builtin TYPE row (`syn keyword wolfType …`), which
 ///    must equal [`crate::vscode::TYPE_NAMES`]. It sits OUTSIDE the
 ///    `reserved-kw-*` markers because these names are not reserved words, and
 ///    that is precisely why check (1) never saw it: the row was ungated from
 ///    the day it was written until wolf-lsp#21. See [`crate::builtin_types`].
-/// 2. `lua/wolf/pin.lua`, generated from `vendor/upstream/PIN` so
+/// 3. `lua/wolf/pin.lua`, generated from `vendor/upstream/PIN` so
 ///    `:checkhealth wolf` can compare a user's `wolf --version` against the
 ///    build this plugin was verified with. A hand-maintained copy of the pin
 ///    is a copy that goes stale on the first pin bump, silently, in the one
@@ -630,7 +630,7 @@ fn nvim_derived(write: bool) -> ExitCode {
         Err(e) => errors.push(format!("{}: {e}", slash(&ebnf))),
     }
 
-    // --- (1b) the builtin TYPE row -------------------------------------
+    // --- (2) the builtin TYPE row --------------------------------------
     // Outside the `reserved-kw-*` markers on purpose — these names are not
     // reserved words — which is exactly why (1) above never saw it and
     // wolf-lsp#21 could happen. Checked against the one source instead.
@@ -656,7 +656,7 @@ fn nvim_derived(write: bool) -> ExitCode {
         Err(e) => errors.push(format!("{}: {e}", slash(&syntax))),
     }
 
-    // --- (2) the generated pin constant --------------------------------
+    // --- (3) the generated pin constant --------------------------------
     let pin_path = root.join("vendor").join("upstream").join("PIN");
     match std::fs::read_to_string(&pin_path) {
         Ok(text) => {

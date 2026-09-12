@@ -271,7 +271,10 @@ mod tests {
         let el = "(defconst wolf-mode-builtin-types\n  '(\"Self\" \"bool\")\n  \"A docstring \
                   naming \\\"int\\\" in prose.\")\n";
         let got = elisp_types(el).unwrap();
-        assert_eq!(got, ["Self", "bool"].iter().map(|s| s.to_string()).collect());
+        assert_eq!(
+            got,
+            ["Self", "bool"].iter().map(|s| s.to_string()).collect()
+        );
     }
 
     #[test]
@@ -310,7 +313,11 @@ mod tests {
         let mut errors = Vec::new();
         compare("zed", &zed_before, &mut errors);
         assert_eq!(errors.len(), 4, "{errors:#?}");
-        assert!(errors.iter().any(|e| e.contains("missing the builtin type `Self`")));
+        assert!(
+            errors
+                .iter()
+                .any(|e| e.contains("missing the builtin type `Self`"))
+        );
 
         // As a QUERY is judged: three, and `Self` is NOT owed. The difference
         // between these two numbers is le06's ruling, and #21's suggested
@@ -319,7 +326,11 @@ mod tests {
         compare_query("zed", &zed_before, &mut errors);
         assert_eq!(errors.len(), 3, "{errors:#?}");
         assert!(!errors.iter().any(|e| e.contains("`Self`")));
-        assert!(errors.iter().any(|e| e.contains("missing the builtin type `wrapping`")));
+        assert!(
+            errors
+                .iter()
+                .any(|e| e.contains("missing the builtin type `wrapping`"))
+        );
         assert!(errors.iter().any(|e| e.contains("paints `usize`")));
         assert!(errors.iter().any(|e| e.contains("paints `isize`")));
     }
@@ -355,10 +366,13 @@ mod tests {
         compare("nvim", &vim_types(&vim).unwrap(), &mut errors);
         let el = std::fs::read_to_string(root.join("clients/emacs/wolf-mode.el")).unwrap();
         compare("emacs", &elisp_types(&el).unwrap(), &mut errors);
-        let scm =
-            std::fs::read_to_string(root.join("clients/zed/languages/wolf/highlights.scm")).unwrap();
+        let scm = std::fs::read_to_string(root.join("clients/zed/languages/wolf/highlights.scm"))
+            .unwrap();
         compare_query("zed", &scm_types(&scm).unwrap(), &mut errors);
-        assert!(query_paints_self_structurally(&scm), "zed must paint Self structurally");
+        assert!(
+            query_paints_self_structurally(&scm),
+            "zed must paint Self structurally"
+        );
         assert!(errors.is_empty(), "{errors:#?}");
     }
 }

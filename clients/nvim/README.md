@@ -256,8 +256,26 @@ recorded tail is a real `shutdown`/`exit` pair.
 **Every assertion runs while the session is being recorded.** A transcript of a
 broken session is worse than none, because it replays green forever.
 
-Recording it three times in a row produces three byte-identical files, and
-getting there found a bug in the harness rather than in the plugin. `lspconf
+Recording it three times in a row produces three byte-identical files — but
+only once the server is WARM, and tl03 found the exception. The very first
+capture on a cold server put the initial `publishDiagnostics` *after* both
+`semanticTokens` round-trips: the first compile of the sample outran Neovim's
+two token requests. Three warm runs after it were byte-identical to each other
+and carried the committed ordering. Discard the first capture on a cold box,
+or compare the method multiset rather than the bytes.
+
+**A note on `clientInfo.version`, for whoever re-captures next.** Neovim
+composes that string from its build stamp, so the same NVIM version reports
+differently depending on who built it: the official self-contained release
+tarball sets `NVIM_VERSION_BUILD` from the tag and reports
+`0.12.5+v0.12.5`, where a Homebrew build leaves it empty and reports
+`0.12.5`. A diff confined to that field is a change of packaging, not of
+editor behaviour, and no server answer moves with it. tl03 recorded the
+tarball's string because Homebrew's neovim would not start on that box at all
+(it links `libtree-sitter.0.26.dylib` against an installed `tree-sitter`
+0.27.0, and dies in dyld before `main`).
+
+Getting to byte-identity found a bug in the harness rather than in the plugin. `lspconf
 capture`'s pumps forward a frame before recording it — correctly, so the proxy
 never changes a session's timing — which left a window in which the server
 could answer a request and the downward pump could record the *response* before

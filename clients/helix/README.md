@@ -116,10 +116,18 @@ without tree-sitter. helix cannot, so a third language here would carry a
 comment token and an indent width and nothing else. It can be added the day the
 grammar lands.
 
-**helix never sends `shutdown` or `exit`.** Verified across `:q`, `:qa` and
-`:q!` — it drops the server process instead. That is a constraint on the server,
-not a bug in this config, and it is filed in
-[`docs/SERVER-CONSTRAINTS.md`](../../docs/SERVER-CONSTRAINTS.md).
+**helix's `shutdown` is a RACE, not an absence — corrected at tl03.** This
+paragraph used to read "helix never sends `shutdown` or `exit`", verified
+across `:q`, `:qa` and `:q!`. That is wrong, and the correction is a
+measurement: in three consecutive `:q!` captures at tl03, **one recorded a
+`shutdown` request** as a twentieth record and the other two ended at the
+`formatting` response. helix sends it and then drops the server process fast
+enough that the frame is usually never read. So a capture that ends without
+`shutdown` is the common case and a capture that carries one is not a
+regression — but a client that "never sends `shutdown`" is not a constraint
+this server can rely on. Filed as **wolf-lsp#17**;
+[`docs/SERVER-CONSTRAINTS.md`](../../docs/SERVER-CONSTRAINTS.md) carries the
+server-side half.
 
 **Only linux was exercised locally.** `cargo xtask helix-health` self-checks
 that helix actually loaded the fragment from `$XDG_CONFIG_HOME` and **skips
@@ -199,6 +207,24 @@ lays its UI out from that, and it panics inside its own prompt
 (`helix-term/src/ui/prompt.rs`, `Option::unwrap()` on `None`) the moment `:` is
 typed — which looks exactly like a wolf failure and is not one. `TIOCSWINSZ` to
 something like 120×40 before writing any keys is mandatory.
+
+**The pty must also be DRAINED, continuously, and that is a second rule.**
+Sizing it is not enough. helix redraws the whole screen on every keystroke, so
+with no reader on the master side the pty buffer fills, helix blocks in
+`write()`, and it stops consuming keys. The session then records **startup
+only** — 5 records, no hover, no `didChange` — and the driver still exits 0,
+which is the shape that wastes a run. Read from a thread for the whole session
+and keep what you read; the screen dump is also how you diagnose the next
+trap. Measured at tl03.
+
+**`i` and `x` must leave in ONE `write()`.** Typed 150 ms apart, entering
+insert mode fires `textDocument/signatureHelp` at column 8 *before* the edit
+lands, and the transcript rotates that request/response pair ahead of the
+`didChange`/publish pair and shifts the position by a column. One write
+reproduces the committed order exactly. Note that this is the OPPOSITE of
+facsimile's "type, do not paste" rule, and for a different reason: facsimile
+coalesces a buffered burst into a single flush, helix does not. Measured at
+tl03.
 
 The driver script is not committed: it is scaffolding, and the transcript is the
 artifact. The recipe above plus the key table reproduce it.

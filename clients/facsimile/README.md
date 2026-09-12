@@ -174,7 +174,7 @@ priority over every other branch, and reproduces the `file://$WS` root the
 `70bdd35` capture recorded. Note that opening the file by an ABSOLUTE path is
 NOT enough: the workspace-mode branch is tested before the filename branch.
 
-Two smaller traps, both measured at le08:
+Three smaller traps — two measured at le08, the third at tl03:
 
 - **`Home` is a SMART home**: it lands on the first non-blank column (4 on
   `    let who = "wolf"`), not column 0. A driver that assumes column 0 hovers
@@ -185,6 +185,17 @@ Two smaller traps, both measured at le08:
   and every key after it is then interpreted against a popup that did not exist
   when the original sequence was written. `;` is not a word character, produces
   a clean `E0002`, and is what the nvim and helix smokes already use.
+- **`// EOF` is a VIRTUAL line, and touching it makes it real.** `fac` draws a
+  `// EOF` sentinel below the last line of the buffer. It is not in the
+  document — until the cursor moves onto it, at which point `fac`
+  **materializes it as document text**. This bites precisely where a driver
+  cannot see it coming: after the backspace that repairs the broken file the
+  cursor sits at the start of the last real line, so a RIGHT arrow used as the
+  debounce-flush key wraps onto the sentinel, and the session records a THIRD
+  `didChange` whose text ends `}\n// EOF`, with the republish behind it. The
+  assertion that the fix publish is clean still passes, so nothing announces
+  the damage. Use a flush key that cannot cross the last line — `ctrl-home`
+  works. Measured at tl03.
 
 The driver script is not committed to either repo: it is scaffolding, and the
 transcript is the artifact. The recipe above, the key table in `CLIENT.md`, and

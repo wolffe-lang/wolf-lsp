@@ -194,12 +194,19 @@ client's capture shim first on `PATH`.
 `lspconf --require-server replay` before: exit 0, 70 replayed, **six SKIPPED**.
 After: exit 0, **76 replayed, no SKIP line at all.**
 
+**A counting convention, because the le08 table below uses a different one.**
+Every count in this section is PROTOCOL RECORDS — the `.jsonl` lines minus the
+header line, which is metadata and not a record. le08's table counts the file's
+LINES, so each of its numbers reads one higher for the same session: its
+"nvim, 33 records" and this section's "nvim, 32 records" are the same 33-line
+file, unchanged in length. Only the counting differs.
+
 | smoke | driven at tl03? | how, and what moved |
 |---|---|---|
-| **nvim** | **RE-CAPTURED** | `nvim --headless` with the documented shim, NVIM **v0.12.5**, 7/7 `smoke.lua` assertions passing while recording. 33 records. THREE fields moved across all 33: the two header fields and `clientInfo.version`, `0.12.5` → `0.12.5+v0.12.5`. Every server response body is byte-identical. See *the neovim on this box* below — the suffix is the client's build stamp, not the server's answer. |
+| **nvim** | **RE-CAPTURED** | `nvim --headless` with the documented shim, NVIM **v0.12.5**, 7/7 `smoke.lua` assertions passing while recording. **32 records**. THREE fields moved across all 32: the two header fields and `clientInfo.version`, `0.12.5` → `0.12.5+v0.12.5`. Every server response body is byte-identical. See *the neovim on this box* below — the suffix is the client's build stamp, not the server's answer. |
 | **fackr** | **RE-CAPTURED** | `cargo test lsp::smoke_wolf::wolf_lsp_corpus_session` in a clean clone at `496c7e2` with `patches/wolf-integration.diff` applied — `git apply --check` exits 0, so the series still applies. 19 records, **header-only**, three consecutive runs byte-identical. The user's own fackr worktree was never touched: the clone is a `git clone --no-local` into scratch. |
 | **helix** | **RE-CAPTURED** | Driven through a pty, helix **25.07.1**, the shipped `languages.toml` dropped into a throwaway `XDG_CONFIG_HOME`. 19 records, **header-only**, two consecutive runs byte-identical. Two driver facts beyond the documented window size, each of which cost a run — see below. |
-| **emacs** | **RE-CAPTURED** | `emacs --batch -l clients/emacs/tests/server-test.el -f ert-run-tests-batch-and-exit`, GNU Emacs **31.1** with built-in eglot, 1/1 passing while recording. 24 records, **header-only**. |
+| **emacs** | **RE-CAPTURED** | `emacs --batch -l clients/emacs/tests/server-test.el -f ert-run-tests-batch-and-exit`, GNU Emacs **31.1** with built-in eglot, 1/1 passing while recording. **23 records**, **header-only**. |
 | **vscode** | **RE-CAPTURED** | The extension's own test runner against the installed VS Code, **16/16**, `VSCODE_CLI=1` set. 53 records. Not byte-reproducible by construction, so the claim is the METHOD MULTISET — see below. |
 | **facsimile** | **RE-CAPTURED** | Driven through a pty, `fac` **v0.35.0** built with `fpm` from a clean clone at `a121ab3`, the exact commit the docs pin. 15 records, rung for rung with le08's, **header-only**, three consecutive runs byte-identical. A third driver trap found here — see below. |
 

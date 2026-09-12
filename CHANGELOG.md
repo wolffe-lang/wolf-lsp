@@ -28,12 +28,16 @@ being recorded:
 
 | smoke | editor | records | diff against le08 |
 |---|---|---|---|
-| emacs | GNU Emacs 31.1, eglot, 1/1 | 24 | **header-only** |
+| emacs | GNU Emacs 31.1, eglot, 1/1 | 23 | **header-only** |
 | fackr | fackr 1.2.1 at `496c7e2` + the mirror patch, 1 passed | 19 | **header-only**, 3 runs byte-identical |
 | facsimile | `fac` v0.35.0 built at `a121ab3`, pty | 15 | **header-only**, 3 runs byte-identical |
 | helix | helix 25.07.1, pty | 19 | **header-only**, 2 runs byte-identical |
-| nvim | NVIM v0.12.5, 7/7 | 33 | header-only **+ `clientInfo.version`** |
+| nvim | NVIM v0.12.5, 7/7 | 32 | header-only **+ `clientInfo.version`** |
 | vscode | VS Code 1.120.0, 16/16 | 53 | method multiset: one background rung |
+
+Counts are protocol records — `.jsonl` lines minus the header line. `MATRIX.md`'s
+le08 table counts lines instead, so its numbers read one higher for the same
+sessions.
 
 "Header-only" is asserted field by field over every record, not by line count:
 the only fields that moved are `recorded` and `wolf_pin`. So the real editors'

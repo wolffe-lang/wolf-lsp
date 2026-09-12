@@ -179,6 +179,33 @@ const DELIMITERS: &[&str] = &[
 /// appear here on its own; re-read `wolf_sema/src/prelude.rs` at each pin.
 /// `type` and `region` are type-level too, but they are reserved keywords and
 /// are already coloured as such.
+///
+/// **s158's `range` does NOT belong here**, and the decision is worth writing
+/// down because both wolf-lsp#16 and tl04's contract say the opposite — that
+/// "`BUILTIN_TYPES` gains `range`" and that `range` "joins `List`, `Map`,
+/// `Pool`, `channel` there". Neither is true of this repository. Read at
+/// wolf-lang `c1e62fa`, `wolf_sema/src/prelude.rs` leaves `BUILTIN_TYPES` at
+/// the same seventeen prims and puts `range` in `PRELUDE`, beside `List` and
+/// `channel`, *because it takes an argument*; it then adds
+/// `PRELUDE_TYPE_ONLY`, whose entire contents is `range`. And there is no
+/// list here holding `List`, `Map`, `Pool` or `channel` for it to join —
+/// this one mirrors `BUILTIN_TYPES` and nothing else, which is why those four
+/// names are absent from it and from all four artifacts derived off it
+/// (`clients/vscode/syntaxes/wolf.tmLanguage.json`,
+/// `clients/nvim/syntax/wolf.vim`, `clients/emacs/wolf-mode.el`, and
+/// `clients/nvim/inventory.md`).
+///
+/// Adding it would repeat le06's `usize`/`isize` correction in
+/// tree-sitter-wolf exactly: names painted `@type.builtin` that the
+/// compiler's closed set does not have, teaching a reader a type wolf does
+/// not carry. And it would be wrong a second way, for the reason [`CONTEXTUAL`]
+/// gives about `then` and `error` — these four artifacts are REGULAR. A
+/// `syn keyword` can only ask whether the word is `range`, and wolf-lang's own
+/// corpus binds `var range = true` twice (`corpus/os/random_differs.lu`,
+/// `corpus/os/random_edges.lu`). The name resolves in TYPE position only, so
+/// only a surface that knows where a token stands can paint it: the server's
+/// semantic tokens here, and a context-sensitive grammar in tree-sitter-wolf,
+/// which scopes it to `(type_path …)` for this reason (tree-sitter-wolf#7).
 const TYPE_NAMES: &[&str] = &[
     "Self", "bool", "byte", "char", "f32", "f64", "i16", "i32", "i64", "i8", "int", "str", "u16",
     "u32", "u64", "u8", "uint", "wrapping",
@@ -909,6 +936,33 @@ mod tests {
         assert!(
             words.is_empty(),
             "these productions are punctuation and `!` only: {words:?}"
+        );
+    }
+
+    /// s158's `range` is a prelude name, not a prim, and stays out of the
+    /// word lists. Encoded so a later lane reading wolf-lsp#16's "`range`
+    /// joins `List`, `Map`, `Pool`, `channel` there" does not add it on the
+    /// issue's word: no list here holds those four names either.
+    #[test]
+    fn s158_range_is_not_a_builtin_scalar() {
+        assert!(
+            !TYPE_NAMES.contains(&"range"),
+            "`range` takes an argument and is a PRELUDE name upstream, not one \
+             of `BUILTIN_TYPES`' seventeen prims; and these artifacts are \
+             regular, so a word list would paint `var range = true` too"
+        );
+        for prelude_generic in ["List", "Map", "Pool", "Mutex", "channel"] {
+            assert!(
+                !TYPE_NAMES.contains(&prelude_generic),
+                "this list mirrors `BUILTIN_TYPES`, so `{prelude_generic}` is \
+                 absent — which is why there is no list here for `range` to join"
+            );
+        }
+        assert_eq!(
+            TYPE_NAMES.len(),
+            18,
+            "seventeen prims plus `Self`; a name added here must move all four \
+             derived artifacts with it"
         );
     }
 

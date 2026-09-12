@@ -1,5 +1,83 @@
 # Changelog
 
+## tl04 — 2026-09-12 — s158 classified ahead of its pin, and the mirror it cannot have yet
+
+wolf-lsp#16 asks for s158's three additions "in the highlighter and wherever
+the server's type and completion surfaces name builtin types". Neither half
+can land here today, and both reasons are worth writing down rather than
+working around.
+
+**The highlighter half is blocked on a pin this lane must not move.** Every
+derived artifact in this repository is read off
+`vendor/upstream/spec/grammar.ebnf`, and that file is at `a7f517e` (v0.2.12),
+which carries none of s158's productions — measured, not assumed: `list_lit`,
+`error_item` and the brace-less alias tail are all absent from it. s158 is on
+wolf-lang trunk at `c1e62fa` and in no release. Picking it up means a PIN
+bump, and `replay.rs`'s only stranding condition is `wolf_pin`: a bump
+immediately SKIPs all six captured smokes, which tl03 spent a sprint
+re-driving through six real editors and which no script can re-record. So the
+bump is its own lane with its own re-capture, exactly as tl02 → tl03 was, and
+tl04 does not take it.
+
+**The server half is not in this repository at all**, and the premise it was
+handed is false. Both wolf-lsp#16 and tl04's contract say `BUILTIN_TYPES`
+gains `range`. Read at `c1e62fa`, it does not: `wolf_sema/src/prelude.rs`
+leaves `BUILTIN_TYPES` at the same seventeen prims and puts `range` in
+`PRELUDE` beside `List` and `channel`, because it takes an argument, then adds
+`PRELUDE_TYPE_ONLY` whose entire contents is `range` — the name resolves in
+type position only. The issue also says `range` "joins `List`, `Map`, `Pool`,
+`channel`" in a list here; there is no such list. `TYPE_NAMES` mirrors
+`BUILTIN_TYPES` and nothing else, which is why those four names are absent
+from it and from all four artifacts derived off it.
+
+So `range` stays out, and `xtask/src/vscode.rs` now says so with a test. It
+would be wrong twice over: it would paint a builtin scalar the compiler's
+closed set does not have — le06's `usize`/`isize` correction in
+tree-sitter-wolf, repeated — and these artifacts are REGULAR, so a
+`syn keyword` can only ask whether the word is `range`, and wolf-lang's corpus
+binds `var range = true` twice. tree-sitter-wolf#7 could take it because that
+grammar is context-sensitive and scopes the paint to `(type_path …)`. Here the
+surface that knows where a token stands is the server's semantic tokens.
+
+**What did land is the classification, ahead of the pin, the way tl01 did it
+for `then` at `39b9449`.** `inventory()` refuses to generate against a word
+terminal nobody has classified, and that refusal is the design — so the
+decision belongs to the lane that read the production, not to whoever bumps
+the pin. Measured by feeding wolf-lang `c1e62fa`'s `spec/grammar.ebnf` through
+`inventory()`: exactly ONE unclassified word terminal, `error`. s158's other
+two additions introduce no word at all — a list literal's `[`, `,` and `]` are
+already `DELIMITERS`, the alias tail's `!` is already an operator, and
+`range[int]` is an ordinary `path type_args?` whose `range` is an IDENT and
+never a terminal. Both facts now have tests.
+
+`error` is contextual by a wider margin than `then`, not a narrower one.
+wolfc decides it on THREE tokens — `Ident("error")`, an `Ident`, then `=` —
+so a regular grammar cannot approximate the test at all, and
+`corpus/rows/error_alias_ident.lu` spends its whole length on the cost of
+getting it wrong.
+
+**Measured at this pin, so the next lane has a before.** The box carries the
+pinned `wolf 0.2.12 (wolfgang, pin a7f517e)`, so the three type-printing
+surfaces could be probed against s158 syntax directly. `range[int]` PARSES —
+the type production did not move — and fails at resolve with **E0301,
+`nothing named `range` is in scope`**. `error IoErrors = {none, parse}` and
+`[1, 2, 3]` do not reach resolve at all: E0203 and E0201, parse tier. So
+hover, inlay hints and completion detail have nothing new to print here, and
+the byte transcripts would have re-recorded header-only had anything moved
+them.
+
+The prediction for the lane that does bump the pin, stated now so it can be
+checked then: hover and inlay hints WILL move — `range[int]` is a type the
+server can print once it resolves — and completion detail will NOT, because
+the prelude is missing from completion entirely. That last is not a guess:
+`docs/MATRIX.md`'s completion row measures it by set intersection, and of the
+**90** names in `PRELUDE` and the **17** in `BUILTIN_TYPES`, the call-position
+answer offers **zero and zero**. `range` is a `PRELUDE` name, so it joins the
+ninety that are already not offered.
+
+Nothing here touches `PIN`, a transcript, a derived artifact or
+`docs/MATRIX.md`'s stamp. The branch is one file.
+
 ## tl03 — 2026-09-12 — all six captured smokes driven again at `a7f517e`
 
 tl02 moved the pin and could not take the captured half with it: a captured

@@ -1,5 +1,62 @@
 # Changelog
 
+## tl02 — 2026-09-12 — the pin moves to `v0.2.12`, and the `then` it was waiting for is not painted
+
+`vendor/upstream/PIN` had sat at `6ade878` / `v0.2.5` since le08. It is now
+`a7f517e` / **`v0.2.12`**, seven releases on, and the `version` line was read
+off the **acquired** darwin artifact (release 387405402, sha256 `6be493a9…`)
+rather than any clone on the box — which is what makes its seven-hex pin clause
+the artifact's own answer and not this box's (wolf-lang#199).
+
+**The re-vendor touched one file.** All twelve paths in `samples.toml` are
+byte-identical at the two commits, so `spec/grammar.ebnf` and this PIN are the
+whole of it. The EBNF's four deltas are `fn_body` (s154, a nonterminal),
+`trait_item`'s alias bound `'=' bound TERM?` (s155), `if_expr`'s `'then'`
+(s151) and `closed_pattern`'s literal range (s147) — and `reserved_kw` is
+byte-identical at fifty names. `'..'` and `'..='` were already terminals at
+`v0.2.5` in `range_expr`, so the operator inventory did not move; `'then'` was
+classified `CONTEXTUAL` by tl01 ahead of the pin, so the generator met no
+unclassified word. **Predicted one drifted artifact and measured one:**
+`grammar-drift` reported `1 problem(s)`, `clients/vscode/src/pin.ts`, and
+`nvim-check` reported the matching one for `pin.lua`.
+
+**The fifth delta is not in the EBNF**, and wolf-lsp#12 warned about it:
+wolf-lang#276 retired E0005, so no terminator is inserted at a newline whose
+next token is `else`. It is a lexer rule, and tree-sitter-wolf#6 met it as real
+work because its external scanner decides terminator insertion itself. **This
+repository has no lexer** — nothing it generates or tests inserts a terminator,
+and `E0005` appears nowhere in the tree. Measured, not assumed.
+
+**Sixty-nine scripted transcripts re-recorded header-only.** `69 files changed,
+69 insertions(+), 69 deletions(-)`, every hunk `@@ -1 +1 @@`, every changed
+field `wolf_pin` and `recorded`. No response body moved anywhere across
+`v0.2.5..v0.2.12`, capability answers included — consistent with
+`crates/wolf_lsp/` being one line different across that whole span and
+`BUILTIN_TYPES` being byte-identical. `replay` and `onetruth` are green, 13
+samples × 9 profiles, zero divergences.
+
+**The one thing that came back wrong.** wolf-lsp#11's remaining half was the
+server painting the contextual `then`, and it needed exactly this binary. It has
+it, and the server does not paint it. On `let n = if then then 1 else 0` the
+`if` at column 12 and the `else` at column 27 are both `keyword`, the `then` at
+column 15 (the condition — an identifier) is correctly `variable`, and the
+`then` at column 20 — the contextual keyword — produces **no token at all**. A
+hole, not a miscolouring; an editor renders it as plain text between two
+coloured siblings. Filed as **wolf-lang#356**.
+`transcripts/annotate/semanticTokens-then` and the newly vendored
+`grammar/if_then_ident.lu` pin the defect so the fix announces itself as a red
+here. **wolf-lsp#11 does not close on this bump.**
+
+**The six captured smokes are back at an old pin.** They cannot be re-recorded,
+only re-CAPTURED by driving the real editor, and this lane had no editor on the
+box. `replay` exits 0 having replayed 69 of 75 and SKIPs all six by name. The
+le01 obligation le08 closed is open again — that is what a captured transcript
+costs at every bump. `docs/MATRIX.md` and every `clients/*/compat.json` say so
+in those words, and it is filed as **wolf-lsp#14**. `max_tested` moved to
+`0.2.12` on the scripted evidence, which is what `compat-check`'s earned set is
+derived from; `min` stays at `0.2.5`, so the declared range widened rather than
+moved.
+
 ## tl01 — 2026-09-11 — `then`, classified before the pin that carries it
 
 s151 (wolf-lang#307, `v0.2.9`) gave `if` a second spelling — `if c then a else

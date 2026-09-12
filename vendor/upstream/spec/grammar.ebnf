@@ -42,7 +42,8 @@ use_item ::= 'use' path ( '.' '{' IDENT (',' IDENT)* ','? '}' )? ('as' IDENT)? T
 import_c_item ::= 'import' 'c' STRING TERM
 path ::= IDENT ('.' IDENT)*
 
-fn_item   ::= fn_qual* 'fn' IDENT generics? '(' params? ')' fn_ret? (block | TERM)
+fn_item   ::= fn_qual* 'fn' IDENT generics? '(' params? ')' fn_ret? fn_body?
+fn_body   ::= block | TERM   /* absent only before the enclosing '}' */
 fn_qual   ::= 'comptime' | 'extern' STRING | 'export'
 generics  ::= '[' generic_param (',' generic_param)* ','? ']'
 generic_param ::= IDENT (':' bound)? | IDENT ':' 'type'
@@ -69,7 +70,7 @@ variant     ::= IDENT ('(' type (',' type)* ')')?
 struct_item ::= 'struct' IDENT generics? '{' field* '}'
 enum_item   ::= 'enum' IDENT generics? '{' variant (',' variant)* ','? '}'
 
-trait_item ::= 'trait' IDENT generics? '{' trait_member* '}'
+trait_item ::= 'trait' IDENT generics? ('{' trait_member* '}' | '=' bound TERM?)
 trait_member ::= fn_item | type_item | const_item
 impl_item  ::= 'impl' generics? type ('for' type)? '{' impl_member* '}'
 impl_member ::= fn_item | type_item | const_item
@@ -136,7 +137,8 @@ field_init ::= IDENT ':' expr | IDENT
 literal ::= INT | FLOAT | CHAR_LIT | STRING | MULTILINE_STRING | RAW_STRING
           | GENERALIZED_STRING | 'true' | 'false'
 
-if_expr    ::= 'if' expr block ('else' (if_expr | block))?
+if_expr    ::= 'if' expr 'then'? block ('else' (if_expr | block))?
+             | 'if' expr 'then' expr  ('else' (if_expr | expr))?
 match_expr ::= 'match' expr '{' arm* '}'
 match_arm  ::= pattern ('if' expr)? '=>' (expr | block)
 arm        ::= match_arm arm_sep?
@@ -200,6 +202,7 @@ closed_pattern ::= '_' | literal | IDENT
           | path '{' field_pat (',' field_pat)* (',' '..'?)? '}'
           | '(' pattern (',' pattern)* ','? ')'
           | IDENT '@' closed_pattern
+          | literal ('..' | '..=') literal    /* [gram.pat.range] */
 field_pat ::= IDENT (':' pattern)?
 
 reserved_kw ::= 'as' | 'asm' | 'assume' | 'borrow' | 'break' | 'comptime'

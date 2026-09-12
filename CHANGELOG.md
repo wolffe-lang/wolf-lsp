@@ -54,8 +54,17 @@ le01 obligation le08 closed is open again — that is what a captured transcript
 costs at every bump. `docs/MATRIX.md` and every `clients/*/compat.json` say so
 in those words, and it is filed as **wolf-lsp#14**. `max_tested` moved to
 `0.2.12` on the scripted evidence, which is what `compat-check`'s earned set is
-derived from; `min` stays at `0.2.5`, so the declared range widened rather than
-moved.
+derived from, and **`min` moved with it**. Pre-1.0 the declared range is a PIN
+RANGE, one version wide — `health.lua` says so and both client suites assert it
+(`eq(compat.min, compat.max_tested, 'pre-1.0 the range is a pin range, one
+version wide')`, and `assert.strictEqual(COMPAT.min, COMPAT.maxTested)`). tl02
+first left `min` at `0.2.5` on the reasoning that a range should widen rather
+than move, and CI was right and that reasoning was wrong: the Neovim lane failed
+with `expected "0.2.5", got "0.2.12"` and `tsc` refused `extension.ts:171` with
+`TS2367` because the two literal types no longer overlap. Worth recording
+because `cargo xtask ci` is green on a box with no Neovim and no VS Code — the
+editor lanes SKIP politely there, so the local gate could not have caught it and
+CI is the only place that could.
 
 ## tl01 — 2026-09-11 — `then`, classified before the pin that carries it
 

@@ -34,6 +34,11 @@ the two claims separately, because they are not the same claim:
   closed is **open again at this pin** — that is what a captured transcript
   costs, and the honest place to say so is here and in each
   `clients/*/compat.json`. Filed as **wolf-lsp#14**.
+- **The declared range MOVED, it did not widen.** `min` and `max_tested` are
+  both `0.2.12`: pre-1.0 the range is a PIN RANGE, one version wide, and both
+  client suites assert exactly that. Leaving `min` at `0.2.5` reds the Neovim
+  lane (`expected "0.2.5", got "0.2.12"`) and stops `tsc` with `TS2367`. Neither
+  is reachable from `cargo xtask ci` on a box with no editors installed.
 
 ### The contextual `then` is NOT painted, and that is this bump's one finding
 

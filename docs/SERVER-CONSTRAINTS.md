@@ -287,16 +287,21 @@ the recorded transcript ends on the `shutdown` response followed by `exit`.*
 Helix is the first client that is *neither* hand-rolled nor well-behaved: it
 implements the protocol competently and then declines to finish it.
 
-**Survive a client that never sends `shutdown` or `exit`, leaving no orphan.**
-Helix sends neither, and this was verified across all three quit paths
-(`:q`, `:qa` and `:q!`), each producing a recorded session that ends at the last
-response with no handshake at all. It is a different shape from facsimile's
-(which SIGTERMs then SIGKILLs) and fackr's (which sends both and then kills):
-helix simply drops the process. So the server must treat stdin EOF as a normal
-end of session and exit cleanly on it. *Holds today; asserted by
+**Survive a client that MAY NOT send `shutdown` or `exit`, leaving no orphan.**
+Read at ls06 as "helix sends neither", verified across all three quit paths
+(`:q`, `:qa` and `:q!`). **tl03 narrows that: it is a race, not an absence.**
+Of three consecutive `:q!` captures at pin `a7f517e`, one recorded a
+`shutdown` request and two ended at the `formatting` response — helix sends it
+and then drops the process fast enough that the frame is usually never read.
+
+The constraint on the server is unchanged and if anything firmer, because both
+endings are reachable from the same quit path: treat stdin EOF as a normal end
+of session and exit cleanly on it, and do not depend on a handshake arriving.
+It remains a different shape from facsimile's (which SIGTERMs then SIGKILLs)
+and fackr's (which sends both and then kills). *Holds today; asserted by
 `tests/semantics.rs::a_client_that_vanishes_leaves_no_orphan`, and confirmed by
 `transcripts/helix/smoke.jsonl` ending on the `formatting` response with no
-orphaned process left behind.*
+orphaned process left behind. The racing `shutdown` is wolf-lsp#17.*
 
 **Answer `utf-8` when the client offers all three with utf-8 first.** Helix
 declares `general.positionEncodings: ["utf-8", "utf-32", "utf-16"]`. Note the

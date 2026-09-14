@@ -10,12 +10,11 @@
 >
 > `wolf-lang` is no longer the missing half. That sentence read "and
 > `wolf-lang` has no tagged release" through le04; the claim was retired in
-> le05 and the consequence measured in le06. Measured 2026-09-08: eight
-> published releases stand, `v0.2.6` is Latest with four tier-1 archives, and
-> this repository's CI acquires one — the `server-lane` job resolved a binary
-> and reported `doctor` READY for the first time on 2026-09-02. This repository
-> pins `v0.2.5` (`vendor/upstream/PIN`, le08); Latest and the pin are allowed to
-> differ and today they do.
+> le05 and the consequence measured in le06. Measured 2026-09-14: `v0.2.14` is
+> Latest with four tier-1 archives, and this repository's CI acquires one — the
+> `server-lane` job resolved a binary and reported `doctor` READY for the first
+> time on 2026-09-02. This repository pins `v0.2.14` (`vendor/upstream/PIN`,
+> tl07); Latest and the pin are allowed to differ and today they coincide.
 
 Editor tooling drifts out of compatibility with its server. This file,
 `clients/*/compat.json` and the runtime check in the two clients that can carry
@@ -96,11 +95,11 @@ usually mostly works, and blocking a user's editor is worse than warning them.
 
 | client | version | artifact | wolf min | wolf max_tested | pin | verified | warning surface |
 |---|---|---|---|---|---|---|---|
-| [wolf-mode.el](../clients/emacs/README.md) | 0.0.1 | elisp file — clients/emacs/wolf-mode.el, also quoted verbatim in its README | 0.2.12 | 0.2.12 | `a7f517e` | 2026-09-12 (local (macos arm64), against the ACQUIRED v0.2.12 darwin artifact (sha256 6be493a9…), not a local build) | none — the mode is a copy-pasteable snippet, and a snippet that phones a version check is a snippet nobody pastes |
-| [helix config fragment](../clients/helix/README.md) | 0.0.1 | TOML fragment — clients/helix/languages.toml, copied into the user's config | 0.2.12 | 0.2.12 | `a7f517e` | 2026-09-12 (local (macos arm64), against the ACQUIRED v0.2.12 darwin artifact (sha256 6be493a9…), not a local build) | none — a TOML fragment cannot run code; docs/COMPAT.md is the whole statement |
-| [wolf.nvim](../clients/nvim/README.md) | 0.0.1 | plugin tree — clients/nvim/, published as the generated wolf.nvim mirror | 0.2.12 | 0.2.12 | `a7f517e` | 2026-09-12 (local (macos arm64), against the ACQUIRED v0.2.12 darwin artifact (sha256 6be493a9…), not a local build) | :checkhealth wolf |
-| [wolf (VS Code extension)](../clients/vscode/README.md) | 0.0.1 | vsix — clients/vscode/, packaged by @vscode/vsce | 0.2.12 | 0.2.12 | `a7f517e` | 2026-09-12 (local (macos arm64), against the ACQUIRED v0.2.12 darwin artifact (sha256 6be493a9…), not a local build) | one notification at activation, plus `Wolf: Show Version` |
-| [zed_wolf](../clients/zed/README.md) | 0.0.1 | wasm32-wasip2 component + manifest — clients/zed/ | 0.2.12 | 0.2.12 | `a7f517e` | 2026-09-12 (local (macos arm64), against the ACQUIRED v0.2.12 darwin artifact (sha256 6be493a9…), not a local build) | none — the extension's wasm entry point is `language_server_command`, which Zed calls before any place a notification could be raised |
+| [wolf-mode.el](../clients/emacs/README.md) | 0.0.1 | elisp file — clients/emacs/wolf-mode.el, also quoted verbatim in its README | 0.2.14 | 0.2.14 | `30731a6` | 2026-09-14 (local (macos arm64), against the ACQUIRED v0.2.14 darwin artifact (sha256 80407e31…), not a local build) | none — the mode is a copy-pasteable snippet, and a snippet that phones a version check is a snippet nobody pastes |
+| [helix config fragment](../clients/helix/README.md) | 0.0.1 | TOML fragment — clients/helix/languages.toml, copied into the user's config | 0.2.14 | 0.2.14 | `30731a6` | 2026-09-14 (local (macos arm64), against the ACQUIRED v0.2.14 darwin artifact (sha256 80407e31…), not a local build) | none — a TOML fragment cannot run code; docs/COMPAT.md is the whole statement |
+| [wolf.nvim](../clients/nvim/README.md) | 0.0.1 | plugin tree — clients/nvim/, published as the generated wolf.nvim mirror | 0.2.14 | 0.2.14 | `30731a6` | 2026-09-14 (local (macos arm64), against the ACQUIRED v0.2.14 darwin artifact (sha256 80407e31…), not a local build) | :checkhealth wolf |
+| [wolf (VS Code extension)](../clients/vscode/README.md) | 0.0.1 | vsix — clients/vscode/, packaged by @vscode/vsce | 0.2.14 | 0.2.14 | `30731a6` | 2026-09-14 (local (macos arm64), against the ACQUIRED v0.2.14 darwin artifact (sha256 80407e31…), not a local build) | one notification at activation, plus `Wolf: Show Version` |
+| [zed_wolf](../clients/zed/README.md) | 0.0.1 | wasm32-wasip2 component + manifest — clients/zed/ | 0.2.14 | 0.2.14 | `30731a6` | 2026-09-14 (local (macos arm64), against the ACQUIRED v0.2.14 darwin artifact (sha256 80407e31…), not a local build) | none — the extension's wasm entry point is `language_server_command`, which Zed calls before any place a notification could be raised |
 
 **`zed_wolf` caveat.** NO SESSION HAS EVER BEEN RECORDED. Zed has never been run against this extension by CI or by hand (docs/MATRIX.md). Its row inherits the range from the pin the other clients' scripted suites were verified at; a Zed session did not earn it — profiles/zed.json and transcripts/zed/smoke.jsonl are still owed. Read the row as 'the wasm builds and the config is statically consistent at this pin', which is the whole T2 claim.
 <!-- compat-table-end -->

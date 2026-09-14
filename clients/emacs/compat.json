@@ -3,19 +3,19 @@
   "client_version": "0.0.1",
   "artifact": "elisp file — clients/emacs/wolf-mode.el, also quoted verbatim in its README",
   "wolf": {
-    "min": "0.2.12",
-    "max_tested": "0.2.12",
-    "pin": "a7f517e1f667f142ffaf61b57aa2bff06e32b520",
-    "pin_version_string": "wolf 0.2.12 (wolfgang, pin a7f517e)"
+    "min": "0.2.14",
+    "max_tested": "0.2.14",
+    "pin": "30731a6509443ade03724707345da9ceb86a88bf",
+    "pin_version_string": "wolf 0.2.14 (wolfgang, pin 30731a6)"
   },
   "verified": {
-    "date": "2026-09-12",
-    "host": "local (macos arm64), against the ACQUIRED v0.2.12 darwin artifact (sha256 6be493a9…), not a local build",
+    "date": "2026-09-14",
+    "host": "local (macos arm64), against the ACQUIRED v0.2.14 darwin artifact (sha256 80407e31…), not a local build",
     "evidence": [
-      "transcripts/emacs/smoke.jsonl was RE-CAPTURED at this pin (tl03, wolf-lsp#14): GNU Emacs 31.1 with built-in eglot under `emacs --batch`, the suite passing 1/1 while recording, 23 records. A field-by-field comparison over every record finds exactly two changed fields, `recorded` and `wolf_pin` — HEADER-ONLY. `lspconf --require-server replay` no longer skips it (ok, 10 records matched)",
+      "transcripts/emacs/smoke.jsonl was RE-CAPTURED at this pin (tl07): GNU Emacs 31.1 with built-in eglot under `emacs --batch`, the suite passing 1/1 while recording, 23 records. A field-by-field comparison over every record finds exactly two changed fields, `recorded` and `wolf_pin` — HEADER-ONLY. `lspconf --require-server replay` does not skip it (ok, 10 records matched)",
       "profiles/emacs.json (re-read at emacs 31.1 — unchanged since le07's re-derivation)",
       "clients/emacs/tests/mode-test.el",
-      "lspconf replay + onetruth under this client's derived profile at pin a7f517e (v0.2.12), 2026-09-12 — 69 scripted transcripts re-recorded and matched, plus a 70th written at tl02 (annotate/semanticTokens-then); with the six captured smokes re-captured at tl03 the whole library is 76 files and `replay` skips none of them, 13 samples × 9 profiles with zero divergences (the 13th is grammar/if_then_ident.lu, vendored here). The re-record is a HEADER-ONLY diff across all 69 files: 69 insertions, 69 deletions, every one of them line 1's `wolf_pin` and `recorded`, so no response body moved between v0.2.5 and v0.2.12"
+      "lspconf replay + onetruth under this client's derived profile at pin 30731a6 (v0.2.14), 2026-09-14 — 70 scripted transcripts re-recorded and matched, plus a 71st written at tl07 (annotate/semanticTokens-error, wolf-lsp#22); with the six captured smokes re-captured at tl07 the whole library is 77 files and `replay` skips none of them, 15 samples × 9 profiles with zero divergences (the 14th and 15th are rows/error_alias_union.lu and rows/error_alias_ident.lu, vendored here). The re-record is HEADER-ONLY across 69 of the 70 files and a ONE-TOKEN body diff in the 70th: 70 files, 72 insertions, 72 deletions, of which 69 are line 1's `wolf_pin` and `recorded` and the other three are annotate/semanticTokens-then's header and its two semantic-token answers, each gaining exactly the contextual `then` at line 12 column 20 as `keyword` — wolf-lang#356's fix (`928f9d9`), the one server change between v0.2.12 and v0.2.14 that any vendored sample can see. No other response body moved"
     ]
   },
   "warning_surface": "none — the mode is a copy-pasteable snippet, and a snippet that phones a version check is a snippet nobody pastes"

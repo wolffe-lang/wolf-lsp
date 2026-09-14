@@ -12,23 +12,31 @@
 #! `let n = if then then 1 else 0`, the line where a word-list answer and a
 #! position-aware answer differ.
 #!
-#! WHAT IT MEASURED, at pin a7f517e (v0.2.12), and it is NOT what wolf-lsp#11
-#! predicted. The server gets the IDENTIFIER half exactly right and emits
+#! WHAT IT MEASURED, at pin a7f517e (v0.2.12), and it was NOT what wolf-lsp#11
+#! predicted. The server got the IDENTIFIER half exactly right and emitted
 #! NOTHING AT ALL for the keyword half:
 #!
 #!   L10 C8  `then`  variable  (the binding)
 #!   L11 C7  `then`  variable  (the condition)
 #!   L12 C15 `then`  variable  (the condition, again)
-#!   L12 C20 `then`  — NO TOKEN. `if` at C12 and `else` at C27 are both
-#!                    `keyword`; the contextual `then` between them is absent
-#!                    from the stream, so an editor paints it as plain text.
+#!   L12 C20 `then`  — NO TOKEN. `if` at C12 and `else` at C27 were both
+#!                    `keyword`; the contextual `then` between them was absent
+#!                    from the stream, so an editor painted it as plain text.
 #!
-#! So the two-line change wolf-lsp#11 describes has not landed upstream: this
-#! is a HOLE, not a miscolouring, and it is the server's — `wolf lsp` lives in
-#! wolf-lang, and `crates/wolf_lsp/` is one line different across the whole
-#! v0.2.5..v0.2.12 span. Filed upstream. This transcript pins the defect on
-#! purpose, so the fix announces itself as a red here and is re-recorded with
-#! a diff that names exactly one new token.
+#! That was a HOLE, not a miscolouring, and it was the server's: the walk in
+#! `crates/wolf_query/src/annotate.rs` tested `AsKw..=WhileKw` and `ThenKw` is
+#! declared after that range. Filed as wolf-lang#356; this transcript pinned
+#! the defect on purpose so the fix would announce itself as a red here.
+#!
+#! RE-MEASURED at pin 30731a6 (v0.2.14), which carries the fix (wolf-lang
+#! `928f9d9`, s159): the re-record is the one-token diff it was set up to be.
+#! Sixteen tokens became SEVENTEEN for the document and five became SIX for the
+#! `/range` request over line 12, and the new token in both is
+#!
+#!   L12 C20 `then`  keyword  (length 4, no modifier)
+#!
+#! — the same type as the `if` and the `else` beside it. Every identifier
+#! `then` is still `variable`; nothing else in either stream moved.
 name      annotate/semanticTokens-then
 profile   minimal
 

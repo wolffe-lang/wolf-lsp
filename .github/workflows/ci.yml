@@ -513,6 +513,16 @@ jobs:
       # acquisition step above finds an artifact. `--require-server` turns the
       # skip into a failure, which is how a job that believes it has a binary
       # proves it had one.
+      # wolf-lsp#24: the builtin TYPE list against the compiler. Every name
+      # in TYPE_NAMES and TYPE_POSITION_UNPAINTED must resolve in type
+      # position at the pin, and every `type.<name>` anchor in the vendored
+      # spec index that resolves must be in one of the two lists. The oracle
+      # is the acquired binary, so this runs only where one resolved.
+      - name: type-names-check (server-dependent)
+        if: steps.acquire.outputs.server != 'none'
+        shell: bash
+        run: cargo xtask type-names-check --require-server
+
       - name: Conformance replay (server-dependent)
         if: steps.acquire.outputs.server != 'none'
         shell: bash

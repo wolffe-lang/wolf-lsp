@@ -14,6 +14,7 @@ mod builtin_types;
 mod compat;
 mod config;
 mod release;
+mod type_names;
 mod vscode;
 
 fn main() -> ExitCode {
@@ -42,6 +43,22 @@ fn main() -> ExitCode {
             }
         },
         Some("nvim-generate") => nvim_derived(true),
+        // wolf-lsp#24: TYPE_NAMES against the compiler, through the acquired
+        // binary and the vendored spec index. Server-dependent: exit 77 with
+        // a reason when no `wolf` resolves, a failure under --require-server.
+        Some("type-names-check") => match type_names::check(&repo_root()) {
+            type_names::Health::Ok(errors) => report("type-names-check", errors),
+            type_names::Health::Skip(reason) => {
+                if args.iter().any(|a| a == "--require-server") {
+                    eprintln!("type-names-check: {reason}");
+                    eprintln!("type-names-check: --require-server makes that a failure");
+                    ExitCode::FAILURE
+                } else {
+                    println!("SKIP: type-names-check — {reason}");
+                    ExitCode::from(77)
+                }
+            }
+        },
         // ls05 §2 names `grammar-drift`; `vscode-check` is the alias that
         // matches the `nvim-check`/`nvim-generate` family. Same command.
         Some("grammar-drift" | "vscode-check") => {
@@ -86,7 +103,7 @@ fn main() -> ExitCode {
             eprintln!(
                 "usage: cargo xtask \
                  <ci|sync-pin|vendor-check|independence|fixtures-check\
-                 |nvim-check|nvim-generate|grammar-drift|grammar-generate\
+                 |nvim-check|nvim-generate|type-names-check|grammar-drift|grammar-generate\
                  |config-check|emacs-check|helix-health\
                  |compat-check|compat-generate|nvim-split|release-check>"
             );

@@ -103,6 +103,7 @@ gated commands work:
 cargo run --bin lspconf -- --require-server replay     # the transcript library
 cargo run --bin lspconf -- --require-server onetruth   # D34
 cargo run --bin lspconf -- --require-server fuzz regions.lu --seed 1
+cargo xtask type-names-check --require-server          # TYPE_NAMES against the compiler (#24)
 cargo test                                             # the gated suites go live
 ```
 

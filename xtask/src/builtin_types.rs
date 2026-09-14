@@ -46,8 +46,11 @@
 //! `PIN` and no `prelude.rs`, and the type set is not derivable from the
 //! EBNF — `clients/nvim/syntax/wolf.vim` says so in its own comment ("Not
 //! derivable from the EBNF — re-read wolf_sema/src/prelude.rs at each pin").
-//! So this module makes the five copies agree with each other; it cannot yet
-//! make them agree with the compiler. Filed separately.
+//! So this module makes the five copies agree with each other. Making them
+//! agree with the COMPILER is `type_names.rs` (wolf-lsp#24, tl07): it asks the
+//! acquired binary whether each name resolves in type position, and asks it
+//! about every `type.<name>` anchor in the vendored `spec/anchors.json` too,
+//! so a prelude type name added upstream turns red here until it is classified.
 
 use std::collections::BTreeSet;
 

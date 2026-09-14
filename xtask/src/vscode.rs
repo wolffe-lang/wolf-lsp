@@ -211,6 +211,47 @@ pub(crate) const TYPE_NAMES: &[&str] = &[
     "u32", "u64", "u8", "uint", "wrapping",
 ];
 
+/// Names the pinned compiler resolves in TYPE position that the four REGULAR
+/// artifacts deliberately do NOT paint — each with the reason, because the row
+/// is the ruling (wolf-lsp#24, `cargo xtask type-names-check`).
+///
+/// The gate in `type_names.rs` asks the acquired binary about every name here
+/// and every name in [`TYPE_NAMES`], and about every `type.<name>` anchor in
+/// the vendored spec; a word that resolves and sits in neither list turns the
+/// gate red until somebody puts it in one. `range` was the first such word.
+pub(crate) const TYPE_POSITION_UNPAINTED: &[(&str, &str)] = &[
+    (
+        "range",
+        "s158 [type.range.name]: a prelude name bound in TYPE POSITION ONLY, and it takes an \
+         argument (`range[int]`, `range[char]`). wolf-lang's corpus binds `var range = true` \
+         twice; a `syn keyword` cannot tell the two apart — tl04's ruling (wolf-lsp#16).",
+    ),
+    (
+        "List",
+        "a prelude container that takes an argument (`List[int]`); not in wolfc's \
+         BUILTIN_TYPES, and painting the bare word would colour `List` in expression position \
+         too (`List[int]()` is an expression).",
+    ),
+    (
+        "Map",
+        "a prelude container that takes two arguments (`Map[str, int]`); not in BUILTIN_TYPES.",
+    ),
+    (
+        "Pool",
+        "a prelude concurrency type that takes an argument; not in BUILTIN_TYPES.",
+    ),
+    (
+        "Mutex",
+        "a prelude concurrency type that takes an argument; not in BUILTIN_TYPES.",
+    ),
+    (
+        "channel",
+        "a prelude name that resolves in type position with an argument (`channel[int]`); \
+         also the constructor's spelling in expression position, so a word list would paint \
+         every call.",
+    ),
+];
+
 /// Which scope each reserved keyword is painted with.
 ///
 /// **The split is cosmetic and the union is the claim** — the same sentence

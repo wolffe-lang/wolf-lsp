@@ -1,0 +1,68 @@
+#! The contextual `error` (s158, wolf-lang#36; wolf-lsp#22), through the ONE
+#! surface in this repository that can paint it: the server's semantic-token
+#! walk. `error` is contextual by a wider margin than `then` — wolfc decides
+#! it on THREE tokens, `Ident("error")`, an `IDENT`, then `=` — so a TextMate
+#! `match`, a `syn keyword` and an emacs word list cannot approximate the test
+#! at all (tl04 classified it `CONTEXTUAL`; clients/vscode/inventory.md), and
+#! `rows/error_alias_ident.lu` spends its whole length on what guessing costs:
+#! a FIELD, a FUNCTION, a BINDING and two expression uses, all spelled `error`
+#! and none of them the keyword.
+#!
+#! Two documents, so the transcript carries both halves of the claim.
+#! `rows/error_alias_union.lu` has TWO `error` items (the second names the
+#! first inside its row) and puts the alias in ROW position and in the
+#! brace-less TYPE tail `-> int ! ConfigErrors`; the whole document first,
+#! then each item's line alone as a `/range` request. `rows/error_alias_ident.lu`
+#! is the negative witness: every `error` in it must keep its identifier type.
+#!
+#! WHAT IT MEASURED, at pin 30731a6 (v0.2.14), the first pin whose server
+#! paints a contextual keyword at all (wolf-lang `928f9d9`, the fix for #356
+#! that closed the `then` hole — and, as its author said, the `error` hole
+#! beside it, "never measured"). This is the measurement. wolf-lsp#22 named
+#! three outcomes — `keyword`, some other type, or nothing — and it is the
+#! FIRST:
+#!
+#!   union L12 C0   `error`         keyword
+#!   union L12 C6   `IoErrors`      type  declaration
+#!   union L14 C0   `error`         keyword
+#!   union L14 C6   `ConfigErrors`  type  declaration
+#!
+#! 24 tokens for the document; the two `/range` requests answer exactly the
+#! two tokens of their line each, so it is not a full-document artifact. And
+#! the negative half holds — the walk is not matching the word:
+#!
+#!   ident L12 C4   `error`  property  declaration   (the field)
+#!   ident L15 C3   `error`  function  declaration   (the function)
+#!   ident L20 C8   `error`  variable  declaration,readonly   (the binding)
+#!   ident L21 C12  `error`  variable  readonly      (interpolated)
+#!   ident L22 C21  `error`  property                (the field init)
+#!   ident L22 C28  `error`  variable  readonly      (the initializer)
+#!   ident L23 C14  `error`  property                (the field read)
+#!
+#! 26 tokens, and not one of the seven is `keyword`. So #11 and #22 are NOT
+#! one bug with two witnesses at this pin: they were at v0.2.12, and one
+#! upstream commit closed both.
+#!
+#! ONE HOLE REMAINS, and it is a different one, filed rather than re-recorded:
+#! the alias NAME is painted `type` where it is DECLARED and painted NOTHING
+#! where it is USED. `IoErrors` inside `{IoErrors, closed}` (L14 C22) and
+#! `ConfigErrors` in `-> int ! ConfigErrors` (L16 C27) are both absent from
+#! the stream, while the `bool` (L16 C12) and `int` (L16 C21) beside them are
+#! `type`. Row TAGS (`none`, `parse`, `closed`, and `return closed`) were never
+#! tokenized at any pin and are not claimed here; the alias name is new at
+#! this pin and is the thing that reads inconsistently. Reported upstream
+#! with this stream; this transcript pins the current answer so the fix
+#! announces itself as a red here.
+name      annotate/semanticTokens-error
+profile   minimal
+
+initialize
+open      rows/error_alias_union.lu
+wait      diagnostics rows/error_alias_union.lu
+req       semanticTokens rows/error_alias_union.lu
+req       semanticTokens rows/error_alias_union.lu 11:0-12:0
+req       semanticTokens rows/error_alias_union.lu 13:0-14:0
+open      rows/error_alias_ident.lu
+wait      diagnostics rows/error_alias_ident.lu
+req       semanticTokens rows/error_alias_ident.lu
+shutdown

@@ -64,6 +64,14 @@ reason = "s137's readiness call, and the ONE surface v0.2.5 could have moved. le
 path = "grammar/if_then_ident.lu"
 reason = "the contextual `then` (s151, wolf-lang#307, wolf-lsp#11): the ONE surface in this repository that can paint `then` as a keyword is the SERVER's semantic-token walk, because a TextMate grammar and a `syn keyword` list are regular and can only ask whether the word is `then` — which is wrong in this very file three times. `let then = true` binds it, `if then { … }` reads it as the condition, and `if then then 1 else 0` has the identifier and the keyword adjacent on one line, so a correct answer and a word-list answer differ by exactly one token and the transcript pins which one the server gives. Vendored at the v0.2.12 pin, where `if_expr`'s second alternative first appears in the EBNF."
 
+[[sample]]
+path = "rows/error_alias_union.lu"
+reason = "the contextual `error` item (s158, wolf-lang#36, wolf-lsp#22): the ONE surface in this repository that can paint `error` as a keyword is the SERVER's semantic-token walk, for the same reason as `then` and by a wider margin — wolfc decides it on THREE tokens (`Ident(\"error\")`, an `IDENT`, then `=`), which no regular grammar or word list can approximate. This file has TWO `error` items at module position, and the second names the first inside its row (`{IoErrors, closed}`), so one transcript measures the keyword's column twice, an alias name in DECLARATION position twice, an alias name in ROW position once, and the brace-less alias tail `-> int ! ConfigErrors` in TYPE position once. Vendored at the v0.2.14 pin, where `error_item` first appears in the EBNF and wolf-lang `928f9d9` first paints it."
+
+[[sample]]
+path = "rows/error_alias_ident.lu"
+reason = "the cost of guessing `error` from a word list (s158, wolf-lang#36, wolf-lsp#22): a struct FIELD, a FUNCTION, a BINDING and two expression uses all named `error` in one file, and none of them is the keyword. The negative half of `rows/error_alias_union.lu`'s transcript — every one of these must keep its identifier token type (`property`, `function`, `variable`) at a pin whose server paints the item keyword, or the walk has started matching the word. `phase: run`, so it is also a clean-diagnostics document."
+
 # --- Known gap, deliberately not papered over -------------------------------
 #
 # ls01 §5 requires **astral-plane** text (an emoji: one char, two UTF-16 units,

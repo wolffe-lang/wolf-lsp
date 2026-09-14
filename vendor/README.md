@@ -3,11 +3,17 @@
 A tracked **data** snapshot of wolf-lang at the commit recorded in
 `upstream/PIN` — byte-identical to the `upstream/` submodule at that pin.
 
-It holds exactly three things:
+It holds exactly four things:
 
 - `PIN` — the sha, the `wolf --version` string that sha produces, and whether
   `wolf lsp` exists at it.
 - `spec/grammar.ebnf` — ls05's TextMate/tree-sitter drift check reads it.
+- `spec/anchors.json` — the spec's own index of clause anchors. The
+  type-names gate (`cargo xtask type-names-check`, wolf-lsp#24) reads its
+  `type.<name>` anchors as the candidate set of type-position names the spec
+  has introduced, and asks the ACQUIRED binary which of them resolve. Vendored
+  at tl07 because the builtin type set is not derivable from the EBNF and
+  `prelude.rs` is compiler source, which this directory never carries.
 - `samples/` + `samples.toml` — the only `.lu` files any test in this repo may
   touch, and the editor reason each was picked.
 
@@ -67,6 +73,7 @@ git -C upstream checkout <sha>
 #    mechanical copy — read samples.toml for the list, never improvise one.
 mkdir -p vendor/upstream/spec
 cp upstream/spec/grammar.ebnf vendor/upstream/spec/grammar.ebnf
+cp upstream/spec/anchors.json vendor/upstream/spec/anchors.json
 #    …and each `path` from samples.toml, from upstream/corpus/<path>
 #      to vendor/upstream/samples/<path>.
 

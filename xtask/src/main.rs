@@ -243,6 +243,13 @@ fn vendor_errors(root: &Path) -> Vec<String> {
                 .to_string(),
         );
     }
+    if !vendor.join("spec").join("anchors.json").is_file() {
+        errors.push(
+            "vendor/upstream/spec/anchors.json is missing (the type-names gate reads its \
+             `type.*` anchors — wolf-lsp#24)"
+                .to_string(),
+        );
+    }
 
     let manifest = vendor.join("samples.toml");
     let listed = match std::fs::read_to_string(&manifest) {
@@ -351,10 +358,16 @@ fn submodule_errors(root: &Path, submodule: &Path) -> Vec<String> {
     let mut errors = Vec::new();
     let vendor = root.join("vendor").join("upstream");
 
-    let mut pairs: Vec<(PathBuf, PathBuf)> = vec![(
-        submodule.join("spec").join("grammar.ebnf"),
-        vendor.join("spec").join("grammar.ebnf"),
-    )];
+    let mut pairs: Vec<(PathBuf, PathBuf)> = vec![
+        (
+            submodule.join("spec").join("grammar.ebnf"),
+            vendor.join("spec").join("grammar.ebnf"),
+        ),
+        (
+            submodule.join("spec").join("anchors.json"),
+            vendor.join("spec").join("anchors.json"),
+        ),
+    ];
     let listed = std::fs::read_to_string(vendor.join("samples.toml"))
         .map(|t| sample_paths(&t))
         .unwrap_or_default();

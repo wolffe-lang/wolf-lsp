@@ -1,5 +1,54 @@
 # Changelog
 
+## tl07 — 2026-09-14 — the pin that carries s158, and the gate that reads the compiler
+
+The pin moves `a7f517e` → `30731a6` (`v0.2.12` → `v0.2.14`), by
+`vendor/upstream/PIN`'s own rules: the annotated tag peeled, the seven hex
+digits read off the ACQUIRED darwin arm64 archive (release 388081784, sha256
+`80407e31…`), never off a clone. `lspconf doctor` was READY on that archive
+before the first transcript, and every server-dependent step here ran against
+it.
+
+**What the spec diff moves in this repo, by delta.** `spec/grammar.ebnf` is
++9 −2 in six hunks and all of them are s158's or s157's — `error_item`,
+`list_lit`, the `path` alternative after `'!'` in `ret_type` and `type`, the
+bare `path` in `closed_pattern`; s159 and s160 add no ebnf or lexer line, and
+`fn_body` predates the span. The word-terminal set goes 69 → 70 and the delta
+is exactly `'error'`, which tl04 classified `CONTEXTUAL` ahead of the pin, so
+the vscode generator met no unclassified word. `reserved_kw` is byte-identical
+at fifty. All thirteen previously vendored samples are byte-identical across
+the tags; the re-vendor is the ebnf, `PIN` and the gitlink.
+
+**The server moves for the first time since v0.2.5, and the re-record is the
+diff tl02 predicted.** 70 scripted transcripts re-recorded: 69 header-only,
+and `annotate/semanticTokens-then` gains exactly one token — the contextual
+`then` at line 12 column 20 as `keyword` (wolf-lang#356's fix, `928f9d9`).
+Nothing else the server answers moved. All six captured smokes re-captured by
+each client README's procedure: five header-only and byte-identical across
+consecutive runs; vscode 16/16 three times at 55 records, one background rung
+moved. The library is 77 files and `replay` skips none.
+
+**wolf-lsp#22, measured: the FIRST outcome.** `annotate/semanticTokens-error`
+over two new vendored samples — `rows/error_alias_union.lu` and the
+cost-of-guessing witness `rows/error_alias_ident.lu` — records `error` as
+`keyword` at both items and the alias names as `type` + `declaration`, while
+all seven identifier `error`s keep their `property`/`function`/`variable`
+types. #11 and #22 were one bug with two witnesses at v0.2.12; one upstream
+commit closed both. One different hole is filed upstream (wolf-lang#379): the
+alias name is painted where declared and not where used.
+
+**wolf-lsp#24, closed with a gate that reads the compiler.** `spec/anchors.json`
+joins the vendored snapshot (`sync-pin` compares it both ways), and
+`cargo xtask type-names-check` asks the acquired binary whether every name in
+`TYPE_NAMES`, every row in the new `TYPE_POSITION_UNPAINTED`, and every
+`type.<name>` anchor resolves in type position; a resolving word in neither
+list is red until classified. `range` is the first row it catches — proven by
+removing its row and reading the one-problem red. CI runs it in the server
+lane under `--require-server`. What it cannot see is written in the module.
+
+**tree-sitter-wolf** does not lag on the grammar; its floor under-claims by
+seven (584 gated at v0.2.14, floor 577) — tree-sitter-wolf#14.
+
 ## tl04 — 2026-09-12 — s158 classified ahead of its pin, and the mirror it cannot have yet
 
 wolf-lsp#16 asks for s158's three additions "in the highlighter and wherever

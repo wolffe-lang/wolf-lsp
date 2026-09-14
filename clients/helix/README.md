@@ -226,6 +226,16 @@ facsimile's "type, do not paste" rule, and for a different reason: facsimile
 coalesces a buffered burst into a single flush, helix does not. Measured at
 tl03.
 
+**The checkout's basename rides `workspaceFolders[0].name`.** helix names its
+workspace folder after the root directory's basename, and the capture
+normalizer elides the root's PATH to `$REPO` but not its NAME. A capture
+driven from a lane worktree at `/private/tmp/tl07` was byte-identical to the
+committed one in every record but that field (`"wolf-lsp"` → `"tl07"`), which
+is neither a server answer nor a helix change. Drive the capture from a
+checkout named `wolf-lsp` — a detached worktree at the same commit will do,
+with its own `lspconf` build, since `capture` writes into the repo root
+compiled into the binary. Measured at tl07.
+
 The driver script is not committed: it is scaffolding, and the transcript is the
 artifact. The recipe above plus the key table reproduce it.
 

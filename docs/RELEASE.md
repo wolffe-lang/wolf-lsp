@@ -144,16 +144,17 @@ is permanently `PENDING`: open each link and re-read the state before tagging.
 ## Reading the output
 
 There are twenty-two steps, and the split between them depends on one thing:
-whether a `wolf` resolves on this box. Re-measured 2026-09-12 at pin `a7f517e`
+whether a `wolf` resolves on this box. Measured 2026-09-12 at pin `a7f517e`
 (tl02), on a clean tree with no `wolf` on `PATH`:
 
 ```
 14 checked, 0 failed, 8 pending a human action.
 ```
 
-With a `wolf` resolving — tl02 used `WOLF_BIN` pointed at the **acquired**
-v0.2.12 darwin artifact, not a local build — step 3b stops being pending and
-gets checked, so the same tree prints:
+With a `wolf` resolving — re-measured 2026-09-14 at pin `30731a6` (tl07)
+against the **acquired** v0.2.14 darwin artifact in `.wolf-bin/`, not a local
+build, as tl02 did at v0.2.12 — step 3b stops being pending and gets checked,
+so the same tree prints:
 
 ```
 16 checked, 0 failed, 7 pending a human action.

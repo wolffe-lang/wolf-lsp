@@ -3,20 +3,21 @@
   "client_version": "0.0.1",
   "artifact": "plugin tree — clients/nvim/, published as the generated wolf.nvim mirror",
   "wolf": {
-    "min": "0.2.14",
-    "max_tested": "0.2.14",
-    "pin": "30731a6509443ade03724707345da9ceb86a88bf",
-    "pin_version_string": "wolf 0.2.14 (wolfgang, pin 30731a6)"
+    "min": "0.2.15",
+    "max_tested": "0.2.15",
+    "pin": "2e4ca769b396219585a07ff18492529c944672d9",
+    "pin_version_string": "wolf 0.2.15 (wolfgang, pin 2e4ca76)"
   },
   "verified": {
-    "date": "2026-09-14",
-    "host": "local (macos arm64), against the ACQUIRED v0.2.14 darwin artifact (sha256 80407e31…), not a local build",
+    "date": "2026-09-17",
+    "host": "kasumi (linux x86_64), against the ACQUIRED v0.2.15 x86_64-unknown-linux-gnu artifact (sha256 dd28150c…), not a local build — wave 45 puts every cargo invocation there; the PIN `version` string was read off the ACQUIRED darwin arm64 artifact (sha256 166004ee…), both digests matched against the release API's own",
     "evidence": [
-      "transcripts/nvim/smoke.jsonl was RE-CAPTURED at this pin (tl07): NVIM v0.12.5 headless with the documented shim — the official release tarball, as at tl03, since Homebrew's neovim still will not start on this box — 7/7 smoke.lua assertions passing while recording, 32 records, three consecutive runs byte-identical (the cold-start reorder tl03 saw did not recur; the scripted re-record had warmed the server). A field-by-field comparison against tl03's capture finds exactly two changed fields, `recorded` and `wolf_pin` — HEADER-ONLY; `clientInfo.version` stays `0.12.5+v0.12.5`. `lspconf --require-server replay` does not skip it (ok, 15 records matched)",
-      "profiles/nvim.json (re-read at v0.12.5 — unchanged since le07's re-derivation)",
+      "transcripts/nvim/smoke.jsonl was NOT re-captured at this pin and is still at 30731a6 (v0.2.14, tl07's capture). lspconf --require-server replay SKIPS it by name and exits 0; nothing in this row is earned by a nvim session at 2e4ca76. wolf-lsp#26 carries the measurement and why neither host this wave could drive all six editors",
+      "profiles/nvim.json (unchanged; not re-read at this pin — the nvim smoke was not re-driven)",
       "clients/nvim/tests/plugin_spec.lua",
-      "lspconf replay + onetruth under this client's derived profile at pin 30731a6 (v0.2.14), 2026-09-14 — 70 scripted transcripts re-recorded and matched, plus a 71st written at tl07 (annotate/semanticTokens-error, wolf-lsp#22); with the six captured smokes re-captured at tl07 the whole library is 77 files and `replay` skips none of them, 15 samples × 9 profiles with zero divergences (the 14th and 15th are rows/error_alias_union.lu and rows/error_alias_ident.lu, vendored here). The re-record is HEADER-ONLY across 69 of the 70 files and a ONE-TOKEN body diff in the 70th: 70 files, 72 insertions, 72 deletions, of which 69 are line 1's `wolf_pin` and `recorded` and the other three are annotate/semanticTokens-then's header and its two semantic-token answers, each gaining exactly the contextual `then` at line 12 column 20 as `keyword` — wolf-lang#356's fix (`928f9d9`), the one server change between v0.2.12 and v0.2.14 that any vendored sample can see. No other response body moved"
-    ]
+      "lspconf replay + onetruth under this client's derived profile at pin 2e4ca76 (v0.2.15), 2026-09-17 — the 71 scripted transcripts re-recorded and matched (replay: 71 ok, 0 mismatched; onetruth: 15 samples × 9 profiles, 0 known divergences, zero unfiled). The re-record is HEADER-ONLY across 70 of the 71 and a TWO-TOKEN body diff in the 71st: 71 files, 73 insertions, 73 deletions, of which 70 are line 1's wolf_pin and recorded and the other three are annotate/semanticTokens-error's header and its two semanticTokens answers, which gain IoErrors as `type` at 0-based line 13 column 22 and ConfigErrors as `type` at line 15 column 27 — wolf-lang#379's fix (b2ad629, s165), whose closing comment predicted both coordinates exactly before this lane measured them. No other response body moved, and the negative half of that witness (rows/error_alias_ident.lu, seven identifiers spelled `error`) is byte-identical. UNLIKE tl07 AND tl03, replay now SKIPS SIX FILES: the captured editor smokes are still at 30731a6 and were NOT re-captured at this pin, so the library is 77 files and 71 of them were replayed (wolf-lsp#26)"
+    ],
+    "caveat": "THE CAPTURED SMOKE IS STALE. transcripts/nvim/smoke.jsonl was captured at 30731a6 (v0.2.14) and replay skips it at this pin, so the part of this range that a REAL nvim session earns is one version behind the rest. The scripted suite — which covers every rung the smoke covers, through this client's own derived profile — did run at 2e4ca76. wolf-lsp#26."
   },
   "warning_surface": ":checkhealth wolf"
 }

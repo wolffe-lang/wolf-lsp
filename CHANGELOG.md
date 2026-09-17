@@ -1,5 +1,82 @@
 # Changelog
 
+## tl09 — 2026-09-17 — the pin at 0.2.15, and the hole this repo filed coming back green
+
+The pin moves `30731a6` → `2e4ca76` (`v0.2.14` → `v0.2.15`), by
+`vendor/upstream/PIN`'s own rules: the annotated tag peeled
+(`2e4ca769b396219585a07ff18492529c944672d9`), the seven hex digits read off
+the ACQUIRED darwin arm64 archive (release 390641220, sha256 `166004ee…`),
+never off a clone. `lspconf doctor` was READY before the first transcript, on
+the acquired linux x86_64 archive (sha256 `dd28150c…`); both digests matched
+the release API's own. The archive is whole — four assets, the same four-triple
+set since v0.2.3 — and wolf-lang#226's self-publishing race reproduces a
+**sixth** time: three empty drafts behind the tag (390641561, 390641914,
+390644190), all four releases `created_at` 2026-09-17T11:02:05Z.
+
+**The anchors, diffed both ways because a count hides a regeneration.**
+`spec/anchors.json` goes **498 → 524**: 26 added, **0 dropped, 0 retargeted**,
+measured as key sets in both directions and by comparing each surviving key's
+file (wolf-lang#177's lesson). Twelve of the 26 are `type.*`, which grows
+`type-names-check`'s candidate set by exactly four words — `comb`, `generic`,
+`interp`, `method` — and all four answer `E0301` to the type-position probe, so
+none needs a classification row. `TYPE_NAMES` does not move: `prelude.rs` grew
+45 lines and `BUILTIN_TYPES`, `PRELUDE` and `PRELUDE_TYPE_ONLY` are each
+byte-identical, the whole addition being `HOME_MODULES`, which are METHOD
+names. `cargo xtask type-names-check --require-server` at the pin: 18 painted,
+6 unpainted, 18 anchor candidates, all classified.
+
+**The grammar CHANGED, and it cost five letters.** `spec/grammar.ebnf` is +5 −2
+in one hunk: `0e8927e0` (wolf-lang#28) writes `FORMAT_SPEC` out as a real
+production under the new `[type.interp.spec]` anchor, with
+`FMT_TYPE ::= 'b' | 'o' | 'x' | 'X' | 'e' | 'E' | 'f'`, where it had been a
+comment citing a `spec §7.4` that never existed. The word-terminal set goes
+**70 → 75** and the delta is exactly `b`, `o`, `x`, `X`, `f` (`e` and `E` were
+already `CONTEXTUAL`, for `EXPONENT`). The vscode generator refuses an
+unclassified word, so the bump commit alone is RED — `grammar-drift` exits 1
+naming all five, and `the_pinned_grammar_classifies_every_word_terminal` exits
+101 — and the next commit rules them CONTEXTUAL: `FMT_TYPE` is reachable only
+inside a string literal, which every generated artifact paints as a string
+before any word rule is consulted, so painting them would colour the `x` of
+`let x = 1` in order to paint nothing a reader can see. The symbolic terminal
+set does not move at all, `reserved_kw` is byte-identical at fifty, and all
+three `tmLanguage.json` files regenerate byte-identical. All fifteen vendored
+samples are byte-identical across the tags, measured twice and two ways.
+
+**The re-record falsified this lane's own prediction, and the falsification is
+the result.** `crates/wolf_query/` — where the semantic-token walk lives — is
+BYTE-IDENTICAL across `30731a6..2e4ca769`, so `PIN` predicted the EMPTY set.
+Wrong. 71 scripted transcripts re-recorded: 70 header-only, and
+`annotate/semanticTokens-error` gains exactly two tokens, `IoErrors` as `type`
+at 0-based line 13 column 22 and `ConfigErrors` as `type` at line 15 column 27
+(24 → 26 for the document, 2 → 3 for the `/range` request, so it is the walk's
+answer in range mode too). That is **wolf-lang#379's fix** (`b2ad629`, s165) —
+the hole tl07 filed FROM THIS TRANSCRIPT with the sentence "this transcript
+pins the current answer so the fix announces itself as a red here". It did, and
+#379's closing comment named both coordinates before this lane measured them.
+The walk did not change; what the walk SEES did, because s165 makes an error
+row entry naming an alias a reference to the item. A byte-identical query crate
+is not a prediction of a byte-identical answer. `onetruth`: 15 samples × 9
+profiles, 0 divergences, zero unfiled.
+
+**One half is at the pin and the other is not (wolf-lsp#26).** `lspconf
+--require-server replay` prints a SKIP line for the first time since le08:
+**77 transcripts, 71 replayed, SIX SKIPPED, exit 0** — the six captured editor
+smokes are still at `30731a6`. The exit code is 0 because a captured transcript
+at another pin is a designed skip, so read the count, not the colour. They were
+not re-captured because `lspconf capture` proxies the server for a real editor,
+editor and harness therefore share a host, and no host available to this wave
+has all six: kasumi (where wave 45 puts every `cargo` invocation) has no
+`emacs`, `hx` or `fackr`, and nomad-1 has no `code`. Splitting the six across
+two hosts would move `clientInfo`, `workspaceFolders[].name` and the vscode
+method multiset for reasons unrelated to the pin. Each `compat.json` carries the
+caveat; `docs/MATRIX.md` carries the table.
+
+**The declared range moves, it does not widen.** `min` and `max_tested` are both
+`0.2.15` — `earned_versions` derives the earned set from `PIN`, so the statement
+can neither outrun nor lag the pin. `cargo xtask ci` is green on the new pin:
+231 tests, every derived-artifact check, `release-check` at 16 checked / 0
+failed / 7 pending.
+
 ## tl07 — 2026-09-14 — the pin that carries s158, and the gate that reads the compiler
 
 The pin moves `a7f517e` → `30731a6` (`v0.2.12` → `v0.2.14`), by

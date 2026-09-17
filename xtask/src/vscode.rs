@@ -123,14 +123,38 @@ use serde_json::{Value, json};
 /// field-init key and a value, in one file. A `syn keyword` or a `regexp-opt`
 /// would paint every one of them.
 ///
+/// `b`, `o`, `x`, `X` and `f` joined at the 2e4ca76 pin (v0.2.15), and they
+/// are the largest single addition this list has taken. s163 paid #28's spec
+/// debt: `FORMAT_SPEC` had been a one-line PROMISE —
+/// `FORMAT_SPEC ::= ':' /* fill/align/sign/width/precision/type, spec §7.4 */`,
+/// citing a section that never existed — and `0e8927e0` writes the production
+/// out under the new `[type.interp.spec]` anchor, with
+/// `FMT_TYPE ::= 'b' | 'o' | 'x' | 'X' | 'e' | 'E' | 'f'`. Seven letters, of
+/// which `e` and `E` were already here for `EXPONENT`, so the word-terminal
+/// set goes 70 -> 75 and the delta is exactly these five. Nothing else in the
+/// hunk is new to [`inventory`]: `FMT_ALIGN`'s `<`, `^` and `>` and the
+/// spec's `+`, `0` and `.` were every one of them already in the v0.2.14
+/// symbolic set, which does not move at all.
+///
+/// They are contextual by the widest margin of anything in this list, and for
+/// a reason none of the entries above has: **they are not language at the top
+/// level at all.** `FMT_TYPE` is reachable only inside `INTERP`, which is
+/// reachable only inside a string literal, and every generated artifact here
+/// paints a string literal as a string before any word rule is consulted.
+/// A `syn keyword b` or a `regexp-opt` over these would colour the letter `x`
+/// in `let x = 1`, the `f` of a field named `f`, and `o` in `for o in os` — in
+/// every file in the language, to paint nothing a reader can see. `reserved_kw`
+/// is byte-identical across the bump at fifty names, which is the spec
+/// agreeing: these are lexical fragments, like `\x` and `\u{`, not words.
+///
 /// This list is **exhaustive over the pin**, and generation fails when a word
 /// terminal appears in neither it nor `reserved_kw`. That failure is the point:
 /// a contextual keyword added upstream (`sync`, say) forces a human decision
 /// about whether it is contextual or reserved, instead of silently becoming
 /// neither.
 const CONTEXTUAL: &[&str] = &[
-    "E", "_", "c", "cap", "e", "error", "from", "inout", "lateout", "n", "noalias", "out", "pkg",
-    "pool", "r", "rc", "self", "t", "then", "timeout",
+    "E", "X", "_", "b", "c", "cap", "e", "error", "f", "from", "inout", "lateout", "n", "noalias",
+    "o", "out", "pkg", "pool", "r", "rc", "self", "t", "then", "timeout", "x",
 ];
 
 /// Symbolic terminals that are **delimiters or literal-form fragments**, not
@@ -955,6 +979,78 @@ mod tests {
         assert!(
             CONTEXTUAL.contains(&"error"),
             "the classification is the list entry, not this test's opinion"
+        );
+    }
+
+    /// The five FMT_TYPE letters, and the half of the claim a green cannot
+    /// make: the unclassified form of this production REFUSES. Both
+    /// directions are asserted here, because "generation succeeds" is what
+    /// this file would print whether or not the partition could see the
+    /// letters at all.
+    #[test]
+    fn fmt_type_letters_are_contextual_and_the_unclassified_form_reds() {
+        let head = "reserved_kw ::= 'fn' | 'let'\n\
+                    INTERP ::= '{' expr FORMAT_SPEC? '}'\n\
+                    FORMAT_SPEC ::= ':' ((FMT_FILL? FMT_ALIGN)? '+'? '0'? DIGIT* ('.' DIGIT+)? FMT_TYPE?)\n\
+                    FMT_FILL ::= SCALAR\n\
+                    FMT_ALIGN ::= '<' | '^' | '>'\n";
+        let classified = format!("{head}FMT_TYPE ::= 'b' | 'o' | 'x' | 'X' | 'e' | 'E' | 'f'\n");
+
+        for letter in ["b", "o", "x", "X", "e", "E", "f"] {
+            assert!(
+                terminals(&classified).contains(letter),
+                "`{letter}` really is a terminal of the production this test is about"
+            );
+        }
+
+        let inv = inventory(&classified)
+            .expect("all seven letters are classified, so the generator runs");
+        for letter in ["b", "o", "x", "X", "e", "E", "f"] {
+            assert!(
+                !inv.keywords.contains(letter),
+                "`{letter}` is a format-spec fragment, never a keyword"
+            );
+            assert!(
+                !inv.operators.iter().any(|o| o == letter),
+                "`{letter}` is a word, not an operator: {:?}",
+                inv.operators
+            );
+            assert!(
+                CONTEXTUAL.contains(&letter),
+                "the classification is the list entry, not this test's opinion"
+            );
+        }
+
+        // FMT_ALIGN and the width/precision punctuation add nothing: `<`, `^`,
+        // `>` are operators the v0.2.14 inventory already carried, and `+`,
+        // `0` and `.` are already classified. So the five new WORDS are the
+        // whole of this bump's partition work.
+        let align_only = format!("{head}FMT_TYPE ::= 'e'\n");
+        assert!(
+            inventory(&align_only).is_ok(),
+            "nothing in FORMAT_SPEC but FMT_TYPE's letters is a new word"
+        );
+
+        // The red. Strip the five from the partition by hand and the
+        // generator must refuse, naming each one — this is the failure the
+        // 2e4ca76 bump actually met before the list grew.
+        let unclassified: Vec<String> = {
+            let ebnf = &classified;
+            let keywords = crate::reserved_keywords(ebnf);
+            terminals(ebnf)
+                .into_iter()
+                .filter(|term| term.starts_with(|c: char| c.is_alphabetic() || c == '_'))
+                .filter(|term| !keywords.contains(term))
+                .filter(|term| !["e", "E"].contains(&term.as_str()))
+                .collect()
+        };
+        let mut unclassified = unclassified;
+        unclassified.sort();
+        assert_eq!(
+            unclassified,
+            vec!["X", "b", "f", "o", "x"],
+            "exactly five letters needed a ruling at this pin; `e` and `E` were \
+             already here for EXPONENT"
         );
     }
 

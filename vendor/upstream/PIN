@@ -64,15 +64,43 @@ version = "wolf 0.2.15 (wolfgang, pin 2e4ca76)"
 # CHANGELOG section of their own and were backfilled at the cut) — and the
 # surface this repo reads moves in exactly one place.
 #
-# THE SERVER DOES NOT MOVE AT THIS PIN. `crates/wolf_query/src/annotate.rs` —
-# where the semantic-token walk lives, and the file the v0.2.14 bump moved — is
-# BYTE-IDENTICAL across the span. `crates/wolf_lsp/` is again one file
-# different and again that file is a test (`tests/annotate.rs`, +53). So no
-# scripted transcript body is predicted to move and no captured smoke is
-# predicted to move: the prediction at this pin is the EMPTY set, which is a
-# stronger claim than v0.2.14's one-token one and therefore the easier one to
-# falsify. s166's method surface and s165's `par` change what programs MEAN,
-# not what the server says about the documents the transcripts open.
+# THE SERVER'S CODE DOES NOT MOVE AT THIS PIN, AND ITS ANSWER DOES. The whole
+# of `crates/wolf_query/` — where the semantic-token walk lives, in
+# `src/annotate.rs`, the file the v0.2.14 bump moved — is BYTE-IDENTICAL across
+# the span (`git diff 30731a6 2e4ca769 -- crates/wolf_query/` is empty), and
+# `crates/wolf_lsp/` is again one file different and again that file is a test
+# (`tests/annotate.rs`, +53).
+#
+# THIS LANE PREDICTED THE EMPTY SET FROM THAT AND WAS WRONG, which is recorded
+# here rather than quietly corrected. The walk did not change; what the walk
+# SEES did. wolf-lang `b2ad629` (s165, wolf-lang#379) makes an error row entry
+# naming an alias a REFERENCE to the item, so the binding table reaches every
+# use — and the walk, unchanged, now paints two names it used to skip. Measured
+# by re-recording all 71 scripted sessions at this pin: 70 are HEADER-ONLY, and
+# `annotate/semanticTokens-error` gains exactly two tokens —
+#
+#   union L13 C22  `IoErrors`      type   (the row entry)
+#   union L15 C27  `ConfigErrors`  type   (the brace-less `! path` tail)
+#
+# (0-based.) 24 tokens become 26 for the document and the `/range` request over
+# lines 13:0-14:0 goes 2 → 3, so it is the walk's answer in range mode too and
+# not a full-document artifact. wolf-lang#379 is the hole tl07 FILED from this
+# repository at the last bump, with this transcript as the evidence and the
+# sentence "this transcript pins the current answer so the fix announces itself
+# as a red here"; #379's closing comment named both coordinates before this
+# lane measured them, and they match. The lesson is the useful half: a
+# byte-identical query crate is not a prediction of a byte-identical answer,
+# because the walk's INPUT is the whole compiler.
+#
+# s166's method surface and s165's `par` change what programs MEAN, not what
+# the server says about the documents the transcripts open, and no other
+# response body in the library moved.
+#
+# THE SIX CAPTURED EDITOR SMOKES ARE NOT RE-CAPTURED AT THIS PIN. They are
+# still at 30731a6; `lspconf replay` skips them by name and exits 0, so the
+# library is 77 files and 71 of them are replayed here, where at tl07 and tl03
+# it was 77 of 77. wolf-lsp#26 carries the measurement and the reason (no host
+# this wave has all six editors).
 #
 # `crates/wolf_sema/src/prelude.rs` grows by 45 lines and NOT ONE of them is a
 # type name. `BUILTIN_TYPES` (seventeen prims), `PRELUDE` and

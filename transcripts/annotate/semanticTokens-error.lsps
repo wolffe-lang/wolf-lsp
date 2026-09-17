@@ -43,16 +43,32 @@
 #! one bug with two witnesses at this pin: they were at v0.2.12, and one
 #! upstream commit closed both.
 #!
-#! ONE HOLE REMAINS, and it is a different one, filed rather than re-recorded:
-#! the alias NAME is painted `type` where it is DECLARED and painted NOTHING
-#! where it is USED. `IoErrors` inside `{IoErrors, closed}` (L14 C22) and
-#! `ConfigErrors` in `-> int ! ConfigErrors` (L16 C27) are both absent from
-#! the stream, while the `bool` (L16 C12) and `int` (L16 C21) beside them are
-#! `type`. Row TAGS (`none`, `parse`, `closed`, and `return closed`) were never
-#! tokenized at any pin and are not claimed here; the alias name is new at
-#! this pin and is the thing that reads inconsistently. Reported upstream
-#! with this stream; this transcript pins the current answer so the fix
-#! announces itself as a red here.
+#! THE ONE HOLE THAT REMAINED IS CLOSED AT 2e4ca76 (v0.2.15), and this
+#! transcript is how we found out. tl07 measured the alias NAME painted `type`
+#! where DECLARED and painted NOTHING where USED — `IoErrors` inside
+#! `{IoErrors, closed}` and `ConfigErrors` in `-> int ! ConfigErrors` both
+#! absent from the stream while the `bool` and `int` on the same signature
+#! line were `type` — filed it as wolf-lang#379, and wrote here that the
+#! transcript "pins the current answer so the fix announces itself as a red".
+#! It did exactly that: the tl09 pin bump re-recorded 71 scripted sessions and
+#! THIS IS THE ONLY ONE whose body moved. wolf-lang `b2ad629` (s165, #379)
+#! makes an error row entry naming an alias a REFERENCE to the item, so the
+#! binding table reaches every use, and the walk now paints both:
+#!
+#!   union L13 C22  `IoErrors`      type   (the row entry)
+#!   union L15 C27  `ConfigErrors`  type   (the brace-less tail)
+#!
+#! (0-based, as the wire is.) 24 tokens become 26 for the document, and the
+#! `/range` request over lines 13:0-14:0 goes 2 -> 3 — so the new tokens are
+#! the walk's answer in range mode too, not a full-document artifact. Neither
+#! carries `declaration`, which is right: these are uses. #379's closing
+#! comment PREDICTED both coordinates exactly before this lane measured them.
+#!
+#! What still carries no token, unchanged and not a regression: the row TAGS
+#! (`none`, `parse`, `closed`, `return closed`) were never tokenized at any
+#! pin and are not claimed here. And the negative half of this witness did not
+#! move by one byte — `rows/error_alias_ident.lu` answers the same 26 tokens,
+#! and not one of its seven `error` identifiers is `keyword`.
 name      annotate/semanticTokens-error
 profile   minimal
 

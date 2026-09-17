@@ -6,6 +6,140 @@ verified at, the evidence for that tier, and (for T1 and T2) the CI job that
 re-checks the evidence on every push. A row that claims a verification it does
 not have is a bug in this file.
 
+**Last reviewed against wolf pin `2e4ca76`, 2026-09-17** (tl09, the pins at
+0.2.15). That is the wolf-lang release tag `v0.2.15`, one release on from the
+`v0.2.14` this file was last stamped at, so the pinned version string is the
+bare `wolf 0.2.15 (wolfgang, pin 2e4ca76)` and `lspconf doctor` reports READY.
+The binary it reports is the **acquired release artifact** — the
+x86_64-unknown-linux-gnu archive of release 390641220, sha256 `dd28150c…`; the
+`PIN` version string itself was read off the **darwin arm64** archive of the
+same release, sha256 `166004ee…`, both matched against the asset's own digest
+after download — never a local build. `v0.2.15` is an ANNOTATED tag; `PIN`
+records the peeled `v0.2.15^{commit}`, `2e4ca769b396219585a07ff18492529c944672d9`.
+
+**ONE HALF IS AT THIS PIN AND THE OTHER IS NOT, and that is the first thing to
+read here.** `lspconf --require-server replay` prints a SKIP line:
+**77 transcripts, 71 replayed, SIX SKIPPED, exit 0.** The exit code is 0
+because a captured transcript at another pin is a designed skip, not a
+failure — so read the count, not the exit code.
+
+- **The 71 scripted transcripts were re-recorded and replayed green, and the
+  re-record falsified this lane's own prediction.** `71 files changed, 73
+  insertions(+), 73 deletions(-)`: **70 are header-only** (`wolf_pin` and
+  `recorded`, line 1), and the 71st, `annotate/semanticTokens-error`, moves
+  its two response bodies by **exactly two tokens** — 24 tokens become 26 for
+  the document and 2 become 3 for the `/range` request over lines 13:0-14:0.
+  The new tokens are the error-set alias name where it is USED:
+
+  | line (0-based) | col | text | token |
+  |---|---|---|---|
+  | 13 | 22 | `IoErrors` | **`type`** (the row entry) |
+  | 15 | 27 | `ConfigErrors` | **`type`** (the brace-less `! path` tail) |
+
+  That is **wolf-lang#379's fix** (`b2ad629`, s165) — the hole *this repository
+  filed from this transcript at the last bump*, with tl07's sentence "this
+  transcript pins the current answer so the fix announces itself as a red
+  here". It did. #379's closing comment named both coordinates before this
+  lane measured them, and they match. The lesson worth keeping: the whole of
+  `crates/wolf_query/` is **byte-identical** across `30731a6..2e4ca769`, so a
+  byte-identical query crate is not a prediction of a byte-identical answer —
+  the walk's input is the whole compiler, and s165 changed what the binding
+  table reaches. `onetruth` ran **15** samples × 9 profiles with **zero**
+  divergences and zero unfiled.
+- **NONE of the six captured smokes is re-captured at this pin** — they are
+  still at `30731a6`, and `replay` names all six in its SKIP line. This is
+  **wolf-lsp#26**, filed with the measurement. The reason is structural rather
+  than a budget overrun: `lspconf capture` proxies the server for a real
+  editor, so editor and harness share a host, and wave 45 puts every `cargo`
+  invocation on kasumi — where `emacs`, `hx` and `fackr` do not exist, while
+  `code` does not exist on nomad-1. Splitting the six across two hosts would
+  move `clientInfo`, `workspaceFolders[].name` and the vscode method multiset
+  for reasons that have nothing to do with the pin, which is the opposite of
+  what these transcripts are for. **So the part of every T1 row that a REAL
+  editor session earns is one version behind the rest**, and each
+  `compat.json` says so in its own `caveat`.
+- **The declared range MOVED, it did not widen.** `min` and `max_tested` are
+  both `0.2.15` — a pin range, one version wide, as tl02 ruled and as
+  `earned_versions` enforces: the earned set is derived from `PIN`, so the
+  statement cannot lag the pin either.
+
+### The spec diff at this pin, and the five letters it cost
+
+`spec/anchors.json` goes **498 → 524**. Diffed as KEY SETS IN BOTH DIRECTIONS
+and for retargeting, not by comparing counts (wolf-lang#177's lesson, that a
+regeneration can add and drop in the same move): **26 added, 0 dropped, 0
+retargeted**. Twelve of the 26 are `type.*`, which grows
+`type-names-check`'s candidate set by exactly four words — `comb`, `generic`,
+`interp`, `method` — and all four answer `E0301` to the acquired binary's
+type-position probe, so none needs a classification row. `TYPE_NAMES` does not
+move at this pin, and `prelude.rs`'s `BUILTIN_TYPES`, `PRELUDE` and
+`PRELUDE_TYPE_ONLY` are each byte-identical across the span (extracted and
+hashed separately — the file grew by 45 lines, all of them `HOME_MODULES`,
+which are METHOD names). `cargo xtask type-names-check --require-server` at the
+pin: **18 painted, 6 unpainted, 18 anchor candidates, all classified.**
+
+`spec/grammar.ebnf` **CHANGED**, +5 −2 in one hunk, and it is the surface a
+reader would have predicted still. `FORMAT_SPEC` had been a one-line promise
+citing a `spec §7.4` that never existed; `0e8927e0` (#28) writes the production
+out under the new `[type.interp.spec]` anchor, with
+`FMT_TYPE ::= 'b' | 'o' | 'x' | 'X' | 'e' | 'E' | 'f'`. The **word-terminal set
+goes 70 → 75** and the delta is exactly `b`, `o`, `x`, `X`, `f` — `e` and `E`
+were already `CONTEXTUAL` for `EXPONENT`. The vscode generator refuses an
+unclassified word, so the bump commit alone is RED (`grammar-drift` exit 1,
+naming all five; `the_pinned_grammar_classifies_every_word_terminal` exit 101)
+and the next commit classifies them CONTEXTUAL: `FMT_TYPE` is reachable only
+inside a string literal, which every generated artifact paints as a string
+before any word rule is consulted, so painting them would colour the `x` of
+`let x = 1` to paint nothing a reader can see. The **symbolic** terminal set
+does not move at all, `reserved_kw` is byte-identical at fifty names, and all
+three `tmLanguage.json` files regenerate byte-identical.
+
+## tl07's review, at pin `30731a6` (v0.2.14) — kept as the record
+
+**Last reviewed against wolf pin `30731a6`, 2026-09-14** (tl07, wolf-lsp#22
+and #24; both halves — scripted and captured — re-done in the one lane).
+That is the wolf-lang release tag `v0.2.14`, two releases on from the `v0.2.12`
+this file was last stamped at, so the pinned version string is the bare
+`wolf 0.2.14 (wolfgang, pin 30731a6)` and `lspconf doctor` reports READY here.
+The binary it reports is the **acquired release artifact** — the darwin arm64
+archive of release 388081784, sha256 `80407e31…`, matched against the asset's
+own digest after download — not a local build. `v0.2.14` is an ANNOTATED tag;
+`PIN` records the peeled `v0.2.14^{commit}`.
+
+**Both halves are at this pin.** `lspconf --require-server replay` prints no
+SKIP line: **77 transcripts, 77 replayed, zero skipped, exit 0.** Read the two
+claims separately, because they are earned differently:
+
+- **70 scripted transcripts re-recorded and replayed green, and the re-record
+  is the diff the last bump predicted.** `70 files changed, 72 insertions(+),
+  72 deletions(-)`: **69 are header-only** (`wolf_pin` and `recorded`, line 1),
+  and the 70th, `annotate/semanticTokens-then`, moves its two response bodies
+  by **exactly one token** — sixteen tokens become seventeen for the document
+  and five become six for the `/range` request over line 12, the new token
+  being the contextual `then` at column 20 as `keyword`. That is
+  wolf-lang#356's fix (`928f9d9`, s159) arriving as the red-then-re-record
+  tl02 set the transcript up to be, and it is the ONLY server answer that
+  moved between `v0.2.12` and `v0.2.14`. A **71st** transcript was written
+  here, `annotate/semanticTokens-error` (below). `onetruth` ran **15** samples
+  × 9 profiles with **zero divergences**; the 14th and 15th are
+  `rows/error_alias_union.lu` and `rows/error_alias_ident.lu`, vendored at
+  this pin.
+- **All six captured smokes are RE-CAPTURED at `30731a6`**, by each client
+  README's own procedure, against the acquired archive — see
+  [the tl07 table](#the-six-captured-smokes-at-tl07-all-six-driven-again-at-30731a6).
+  **Five of the six are a HEADER-ONLY diff** against tl03's captures (nvim,
+  fackr, helix, emacs, facsimile — every one byte-identical across its
+  consecutive runs); vscode is not byte-reproducible by construction and its
+  METHOD MULTISET differs from tl03's by one background rung, `codeAction`
+  8 → 9, the same rung tl03 saw move 9 → 8. The six took twenty minutes of the
+  half-day the contract allowed.
+- **The declared range MOVED, it did not widen.** `min` and `max_tested` are
+  both `0.2.14` — a pin range, one version wide, as tl02 ruled. The VS Code
+  suite asserts it: the first capture attempt here ran 15/16 because `out/`
+  had been compiled before `compat.ts` moved, and the one failing assertion
+  was the pin comparison. The compat statement is part of the capture's
+  precondition, and the order is bump → regenerate → compile → capture.
+
 **Last reviewed against wolf pin `30731a6`, 2026-09-14** (tl07, wolf-lsp#22
 and #24; both halves — scripted and captured — re-done in the one lane).
 That is the wolf-lang release tag `v0.2.14`, two releases on from the `v0.2.12`

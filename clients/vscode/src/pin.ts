@@ -7,7 +7,7 @@
 // define, and this repo's only honest fact today is one exact pin.
 
 export const PIN = {
-	commit: '30731a6509443ade03724707345da9ceb86a88bf',
-	version: 'wolf 0.2.14 (wolfgang, pin 30731a6)',
+	commit: '2e4ca769b396219585a07ff18492529c944672d9',
+	version: 'wolf 0.2.15 (wolfgang, pin 2e4ca76)',
 	servesLsp: true,
 } as const;

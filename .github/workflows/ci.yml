@@ -464,7 +464,7 @@ jobs:
           # notice: a pinned version no release carries. Nothing else in the
           # repo moves — PIN, the five clients' compat.json and doctor are
           # untouched, so any red this produces is the acquisition's own.
-          version="0.2.99"
+          version="0.2.15+dev.unknown"
           # ===== end tl10 PLANT =====
           asset="wolf-$version-$triple.tar.gz"
           echo "asset=$asset" >> "$GITHUB_OUTPUT"

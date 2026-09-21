@@ -376,8 +376,12 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  # Does a server exist at the pin? Report it, on every platform, and never
-  # fail the build for its absence — but never pass silently either.
+  # Does a server exist at the pin? Report it, on every platform — and FAIL
+  # when the answer is no, because at a released pin "no" means this file asked
+  # the wrong question. The old posture ("never fail the build for its
+  # absence") was written when wolf-lang published nothing at all; it outlived
+  # that, and wolf-lsp#28 is what it cost. The one surviving green-while-dark
+  # path is an unreleased (trunk) pin, and it announces itself.
   server-lane:
     name: server lane (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -447,9 +451,11 @@ jobs:
             *)            triple="" ;;
           esac
           if [ -z "$triple" ]; then
-            echo "SERVER UNAVAILABLE: no target triple mapped for ${RUNNER_OS}-${RUNNER_ARCH}"
+            # A runner this matrix asks for and this case cannot name is a bug
+            # in this file, not an upstream absence. It used to exit 0.
+            echo "::error::no target triple mapped for ${RUNNER_OS}-${RUNNER_ARCH}"
             echo "server=none" >> "$GITHUB_OUTPUT"
-            exit 0
+            exit 1
           fi
           # ===== tl10 PLANT (wolf-lsp#28 (a)) — REVERTED IN THIS SAME PR =====
           # The pin and wolf-lang's latest release agree today (both 0.2.15),
@@ -462,38 +468,68 @@ jobs:
           # ===== end tl10 PLANT =====
           asset="wolf-$version-$triple.tar.gz"
           echo "asset=$asset" >> "$GITHUB_OUTPUT"
-          # Capture, then inspect. Never pipe a program's stdout straight into
-          # `grep -q`: grep exits at the first match and closes the pipe, the
-          # producer's exit-time flush hits EPIPE, and Rust's default
-          # SIGPIPE-ignore turns that into a nondeterministic panic (it showed
-          # up on macOS first, upstream).
-          # Structured query: prose messages contain the repo name, which a
-          # loose grep once matched ("no releases found in .../wolf-lang").
-          n_rel=$(gh release list --repo wolffe-lang/wolf-lang --limit 1 \
-            --json tagName --jq 'length' 2>/dev/null || echo 0)
-          if [ "$n_rel" -gt 0 ]; then
-            # A release exists — try the asset for OUR pinned version. A
-            # release at a different version than this repo's pin carries no
-            # matching asset, and the lane stays dark honestly.
-            if gh release download --repo wolffe-lang/wolf-lang \
-                 --pattern "$asset" -D .wolf-bin 2>/dev/null; then
-              # --strip-components=1: the archive is a directory named for the
-              # version and the triple, and `lsp_harness::locate` looks for
-              # `.wolf-bin/wolf`. Stripping also puts the runtime lib and the
-              # importer worker beside the binary, which it needs to run.
-              tar -xzf ".wolf-bin/$asset" -C .wolf-bin --strip-components=1
-              echo "server=downloaded" >> "$GITHUB_OUTPUT"
-            else
-              echo "SERVER UNAVAILABLE: releases exist but none carries $asset"
-              echo "  (this repo pins wolf $version at $pin; the asset name is"
-              echo "   xtask dist's, wolf-<version>-<triple>.tar.gz)"
+          # BY TAG, NEVER BY LATEST (wolf-lsp#28 (a)). `gh release download`
+          # with no `--tag` resolves wolf-lang's LATEST release and looks for
+          # the pin's asset inside it, so between a wolf-lang release and this
+          # repo's next pin bump the pattern matched nothing, the step said
+          # SERVER UNAVAILABLE, and the whole server lane skipped GREEN on all
+          # three OSes. It ran that way through at least one merge: run
+          # 34682750158 (2026-09-12, pin 0.2.12, latest 0.2.13), where
+          # `v0.2.12`'s own tag carried all four assets the entire time.
+          #
+          # The version out of PIN names a tag. Two shapes, and only two:
+          #   * a bare release version (`0.2.15`)   -> `v0.2.15` MUST resolve,
+          #     and MUST carry this triple's asset. Anything else is red.
+          #   * semver build metadata (`0.2.15+dev.unknown`) -> PIN is at a
+          #     trunk commit rather than a tag, which PIN explicitly allows.
+          #     There is no release to download and no amount of retrying will
+          #     make one, so this is the ONE honest skip — and it is announced
+          #     as a warning annotation, not buried in a log line.
+          tag="v$version"
+          case "$version" in
+            *+*)
+              echo "::warning::server lane dark: PIN is at an UNRELEASED wolf ($version)"
+              {
+                echo "### Server lane: dark at an unreleased pin"
+                echo "\`vendor/upstream/PIN\` names wolf \`$version\` at \`$pin\`, whose"
+                echo "version string carries build metadata — a trunk pin, not a tag, so"
+                echo "wolf-lang publishes no archive to acquire. Re-pin to a released tag"
+                echo "to light this lane. This is the only path on which the server lane"
+                echo "is allowed to be green while dark."
+              } >> "$GITHUB_STEP_SUMMARY"
               echo "server=none" >> "$GITHUB_OUTPUT"
-            fi
-          else
-            echo "SERVER UNAVAILABLE: wolf-lang publishes no artifact for pin $pin"
-            echo '  `wolf lsp` exists at this pin (s52) — what is missing is a DOWNLOAD,'
-            echo '  and this repo never builds the compiler in CI (vendor/README.md).'
+              exit 0
+              ;;
+          esac
+          # Does the PIN'S OWN TAG have a release? `--limit 1 | length` used to
+          # stand here and only ever asked whether wolf-lang had EVER released
+          # anything, which is true forever and guards nothing.
+          if ! gh release view "$tag" --repo wolffe-lang/wolf-lang \
+               --json tagName --jq .tagName > /dev/null 2> "$RUNNER_TEMP/gh-err"; then
+            echo "::error::no wolf-lang release at $tag — this repo pins wolf $version at $pin"
+            sed 's/^/  gh: /' "$RUNNER_TEMP/gh-err"
             echo "server=none" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          # stderr is KEPT. The old step sent gh's diagnosis to /dev/null, so
+          # the log could not tell a wrong release from a missing asset from a
+          # network failure — every one of them printed the same sentence.
+          if gh release download --repo wolffe-lang/wolf-lang --tag "$tag" \
+               --pattern "$asset" -D .wolf-bin 2> "$RUNNER_TEMP/gh-err"; then
+            # --strip-components=1: the archive is a directory named for the
+            # version and the triple, and `lsp_harness::locate` looks for
+            # `.wolf-bin/wolf`. Stripping also puts the runtime lib and the
+            # importer worker beside the binary, which it needs to run.
+            tar -xzf ".wolf-bin/$asset" -C .wolf-bin --strip-components=1
+            echo "acquired $asset from $tag" >> "$GITHUB_STEP_SUMMARY"
+            echo "server=downloaded" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::release $tag carries no $asset — the server lane cannot run"
+            sed 's/^/  gh: /' "$RUNNER_TEMP/gh-err"
+            echo "  (this repo pins wolf $version at $pin; the asset name is"
+            echo "   xtask dist's, wolf-<version>-<triple>.tar.gz)"
+            echo "server=none" >> "$GITHUB_OUTPUT"
+            exit 1
           fi
         env:
           GH_TOKEN: ${{ github.token }}
@@ -511,9 +547,17 @@ jobs:
           rc=$?
           printf '%s\n' "$out"
           printf '%s\n' "$out" >> "$GITHUB_STEP_SUMMARY"
+          # 77 is "no binary". After a SUCCESSFUL download that is not a skip,
+          # it is an extraction or a locate bug — the acquisition said it put a
+          # server on disk and doctor cannot find one. Only the unreleased-pin
+          # path above reaches this branch legitimately.
           case "$rc" in
             0)  echo "server READY at the pin" ;;
-            77) echo "::notice::server lane skipped — no wolf binary at the pin" ;;
+            77) if [ "${{ steps.acquire.outputs.server }}" = "downloaded" ]; then
+                  echo "::error::acquisition reported a download, doctor finds no binary"
+                  exit 1
+                fi
+                echo "::notice::server lane skipped — PIN is at an unreleased wolf" ;;
             *)  echo "::error::doctor failed with $rc"; exit "$rc" ;;
           esac
 

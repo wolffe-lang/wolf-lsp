@@ -33,16 +33,34 @@ jobs:
   # Does a server exist to sweep against? One place answers, and everything
   # below keys off it — so a dark night says so once, loudly, instead of six
   # times quietly.
+  #
+  # IT NEVER ACQUIRED ONE (wolf-lsp#28 (b)). This job installed a toolchain and
+  # ran `doctor` on a runner nobody had put a binary on, so `available` was
+  # `no` on every nightly this repository has ever run, `Sweep`, `Measure` and
+  # `Keep the numbers` were skipped every time, and all five jobs reported
+  # success in forty-odd seconds. A job named "15 min" that finishes in 44
+  # seconds was the only tell, and nothing read it. Run 35587411389
+  # (2026-09-21) is the last night it happened.
   server:
     name: server availability
     runs-on: ubuntu-latest
     outputs:
       available: ${{ steps.doctor.outputs.available }}
       pin: ${{ steps.doctor.outputs.pin }}
+      server: ${{ steps.acquire.outputs.server }}
     steps:
       - uses: actions/checkout@v5
       - name: Install the pinned toolchain
         run: rustup show active-toolchain
+      # ===== tl10 PLANT (wolf-lsp#28 (b)) — RESTORED IN THIS SAME PR =====
+      # The contract's break: "a nightly with the server step forced absent".
+      # The acquisition is commented out, exactly reproducing trunk's nightly,
+      # so the gate below is asked the question it has been answering wrong
+      # since this file was written.
+      # - name: Acquire the wolf binary at the pin
+      #   id: acquire
+      #   uses: ./.github/actions/acquire-wolf
+      # ===== end tl10 PLANT =====
       - name: lspconf doctor
         id: doctor
         shell: bash
@@ -61,6 +79,34 @@ jobs:
             echo "available=no" >> "$GITHUB_OUTPUT"
           fi
 
+      # THE GATE. A nightly that cannot find its subject says so in a colour
+      # somebody reads. The one exception is the one the acquire action itself
+      # allows: an unreleased (trunk) pin, where no archive exists to fetch and
+      # re-pinning is the only remedy — that stays green and announces itself.
+      #
+      # This is deliberately NOT gated on `github.event_name == 'schedule'`. A
+      # gate that only fires on the schedule is a gate nobody can test, and
+      # this repository has already shipped one of those.
+      - name: A nightly with no server is RED
+        if: steps.doctor.outputs.available != 'yes'
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [ "${{ steps.acquire.outputs.server }}" = "unreleased" ]; then
+            echo "::warning::nightly dark: PIN is at an unreleased wolf — nothing to sweep"
+            exit 0
+          fi
+          echo "::error::nightly has no wolf server at pin ${{ steps.doctor.outputs.pin }}"
+          echo "  The sweep and the latency budgets cannot run, so this night measured"
+          echo "  NOTHING. Green here would be a lie about fifteen minutes of fuzzing."
+          {
+            echo "### Nightly: NO SERVER"
+            echo "\`doctor\` says no usable \`wolf\` at pin"
+            echo "\`${{ steps.doctor.outputs.pin }}\`, so \`fuzz-sweep\` and \`latency\` have"
+            echo "nothing to run against. This job is red on purpose (wolf-lsp#28)."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
   # ls01 §7: the 15-minute seeded sweep. Seeds rotate by day so the corpus of
   # explored sessions grows, and each one is printed so a failure is
   # reproducible with a single command on a laptop.
@@ -74,10 +120,17 @@ jobs:
       - name: Install the pinned toolchain
         run: rustup show active-toolchain
 
+      # Its own runner, so its own binary — `needs: server` shares an answer,
+      # not a filesystem. Reached only when the `server` job proved one exists.
+      - name: Acquire the wolf binary at the pin
+        if: needs.server.outputs.available == 'yes'
+        uses: ./.github/actions/acquire-wolf
+
       - name: SKIP — no server at the pin
         if: needs.server.outputs.available != 'yes'
         shell: bash
         run: |
+          echo "::warning::fuzz sweep dark at pin ${{ needs.server.outputs.pin }}"
           {
             echo "### Fuzz sweep: SKIPPED"
             echo "No \`wolf\` binary at pin \`${{ needs.server.outputs.pin }}\`."
@@ -121,10 +174,15 @@ jobs:
       - name: Install the pinned toolchain
         run: rustup show active-toolchain
 
+      - name: Acquire the wolf binary at the pin
+        if: needs.server.outputs.available == 'yes'
+        uses: ./.github/actions/acquire-wolf
+
       - name: SKIP — no server at the pin
         if: needs.server.outputs.available != 'yes'
         shell: bash
         run: |
+          echo "::warning::latency budgets dark at pin ${{ needs.server.outputs.pin }}"
           {
             echo "### Latency budgets: SKIPPED"
             echo "No \`wolf\` binary at pin \`${{ needs.server.outputs.pin }}\`, so there is"

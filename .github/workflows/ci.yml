@@ -457,15 +457,6 @@ jobs:
             echo "server=none" >> "$GITHUB_OUTPUT"
             exit 1
           fi
-          # ===== tl10 PLANT (wolf-lsp#28 (a)) — REVERTED IN THIS SAME PR =====
-          # The pin and wolf-lang's latest release agree today (both 0.2.15),
-          # so the defect's window is shut and the gate cannot be observed.
-          # This line forces the exact condition the gate is supposed to
-          # notice: a pinned version no release carries. Nothing else in the
-          # repo moves — PIN, the five clients' compat.json and doctor are
-          # untouched, so any red this produces is the acquisition's own.
-          version="0.2.15+dev.unknown"
-          # ===== end tl10 PLANT =====
           asset="wolf-$version-$triple.tar.gz"
           echo "asset=$asset" >> "$GITHUB_OUTPUT"
           # BY TAG, NEVER BY LATEST (wolf-lsp#28 (a)). `gh release download`

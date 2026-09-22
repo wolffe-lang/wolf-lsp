@@ -1,5 +1,60 @@
 # Changelog
 
+## tl10 — 2026-09-21 — two green-dark gates, each seen red before it was trusted
+
+**Both claims in wolf-lsp#28 held.** The verbatim lines, the ten run ids and
+the prediction that preceded them are in `docs/GATES.md`; this is the summary.
+
+**`ci.yml` asked the LATEST release for the PIN's asset.** `gh release
+download` with no tag resolves wolf-lang's latest release, and the asset name
+carries the *pinned* version — so from a wolf-lang release until this repo's
+next pin bump, the pattern matched nothing, the step printed `SERVER
+UNAVAILABLE`, and `type-names-check`, conformance replay, D34 one-truth, the
+five suites and the seeded fuzz **all skipped with the job green, on all three
+OSes**. It merged in that state at least once: run `34682750158`
+(2026-09-12, pin 0.2.12 against latest 0.2.13), while `v0.2.12`'s own tag
+carried all four assets the entire time. The acquisition now asks **the pin's
+own tag**, and absence is a **failure**.
+
+**`nightly.yml` never acquired a server at all** — `grep -c 'release
+download' .github/workflows/nightly.yml` was **0**. `available` was therefore
+`no` on every nightly this repository has ever run, so the fifteen-minute fuzz
+sweep and the D5 latency budgets have **never executed**: ten consecutive
+`success` runs of 41 s – 1 m 18 s, the last of them `35587411389`. The nightly
+now acquires, and **reds** when it cannot. Run `35671351880` is the first
+night that ever measured anything: a 15 m 21 s sweep and a published
+`lsp-latency-jsonl` artifact.
+
+**The acquisition moved to `.github/actions/acquire-wolf`**, one copy for both
+workflows, because two copies is exactly how the nightly came to have none.
+
+**Four reds were planted and cited before anything was trusted** — a gate that
+has only ever been green is indistinguishable from one that cannot fail:
+
+- `35669433451` — the dark green **reproduced at this head** with the old
+  workflow, so the 2026-09-12 window is not merely history;
+- `35669729227` — the acquisition **red** on all three OSes at a version no
+  release carries;
+- `35671150476` — the nightly **red**, `fuzz-sweep` and `latency` skipped
+  rather than green, with its acquire step forced absent;
+- `35670143189` — and the fix's own defect: **wolf-lsp#28's suggested fix is
+  wrong.** `gh release download --tag v0.2.15` is `unknown flag: --tag` — the
+  tag is positional. Under the old `2>/dev/null` that misspelling would have
+  printed the same `SERVER UNAVAILABLE` sentence forever while looking like a
+  gate doing its job. The step keeps gh's stderr now, which is what turned a
+  pin cycle into one run.
+
+**The pin did not move.** `git diff origin/trunk -- vendor/upstream/PIN` is
+empty at every commit on this branch; the temporary versions that forced the
+defect's window open lived in the workflow's acquisition step and are gone
+from this branch's head. 0.2.16 is r21's release and ww32/bs51's bump.
+
+**Filed, not fixed:** `nightly.yml`'s `drift` job downloads nothing either. It
+counts releases and prints prose, so "capability drift vs wolf-lang HEAD" has
+never compared anything to wolf-lang HEAD. It is report-only, so it cannot be
+silently green about a test it did not run — but it is dark, and it is named
+in `docs/GATES.md`.
+
 ## tl09 — 2026-09-17 — the pin at 0.2.15, and the hole this repo filed coming back green
 
 The pin moves `30731a6` → `2e4ca76` (`v0.2.14` → `v0.2.15`), by

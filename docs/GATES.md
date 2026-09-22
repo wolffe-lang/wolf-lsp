@@ -204,6 +204,19 @@ steps did not execute; "green" is the run's own conclusion.
 | 9 | `35671150476` | `ae3a412` | **(b) PLANTED RED.** The nightly with its acquire step commented out — "the server step forced absent", exactly trunk's shape — and the new gate: `server availability` **failure**, `##[error]nightly has no wolf server at pin 2e4ca769…`, `fuzz-sweep` and `latency` **skipped**, run conclusion **failure**. Trunk's nightly at the same state is run 2 above, green. |
 | 10 | `35671351880` | `e8afc02` | **(b) green at the fix, and the first night this repository has ever measured anything.** `server availability` acquires and `A nightly with no server is RED` is `skipped`; `latency` runs `Measure` and `Keep the numbers`, publishing artifact `lsp-latency-jsonl` (1,927 bytes) — the D5 JSONL that has been "report-only" since ls01 and has never once been reported. `fuzz-sweep` runs the 15-minute sweep for the first time: 00:18:21 → 00:33:42, **15 m 21 s** against a real server, where trunk's nightly (run 2) skipped it in seconds. The whole nightly goes 44 s → 15 m 57 s. |
 
+**The green at this branch's head: run `35672597839`** (`0694afe`), every job
+`success`, the server lane acquiring `v0.2.15` and running `type-names-check`,
+replay, one-truth, the five suites and the seeded fuzz on ubuntu, macOS and
+windows.
+
+**One red on this branch is NOT mine and is named rather than left hanging:**
+run `35671355946` (`e8afc02`) failed in `emacs mode (windows-latest)`, at the
+step `Emacs version (the floor is 29, for bundled eglot)`, with **exit 127** —
+the emacs binary was not on the runner's PATH. This lane touches no emacs
+file; the same job is `success` at `472130e`, at `aeb39f6` and at the head
+`0694afe`. A runner-image flake, reported here because a reader scrolling the
+branch's runs will see it.
+
 Committed files, for the claims that are not runs:
 
 - `.github/actions/acquire-wolf/action.yml` — the single acquisition.
@@ -222,7 +235,7 @@ Committed files, for the claims that are not runs:
 
 - [x] branch `tl10` on origin
 - [x] PR #29 open, unmerged
-- [ ] CI green at the head sha *(filled in at the end of the lane)*
+- [x] CI green at the head sha — run `35672597839` at `0694afe`, all jobs `success`
 - [x] #28's two claims each verified verbatim, each seen red before it was trusted
 - [x] §2 drift reported (the shared checkout three commits behind; the pin is 0.2.15, not 0.2.14)
 - [x] §3 prediction commit `69275f6` precedes every workflow read

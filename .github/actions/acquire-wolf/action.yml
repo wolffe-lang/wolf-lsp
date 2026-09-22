@@ -1,0 +1,126 @@
+# ONE acquisition, for every job in every workflow that needs a server.
+#
+# It lives here rather than inline because wolf-lsp#28 (b) is precisely what
+# inline costs: `ci.yml` grew an acquisition and `nightly.yml` never did, so
+# the nightly's `fuzz-sweep` and `latency` jobs had no subject to run against
+# and reported success anyway, for every night this repository has existed.
+# A second copy of this shell is a second thing to forget.
+#
+# THE RULE. `vendor/upstream/PIN`'s `version` line names a tag, and the tag is
+# what we download from — never "the latest release". `gh release download`
+# with no tag resolves wolf-lang's latest, which matches the pin's asset name
+# only while the pin happens to equal the latest release; in between, the
+# download silently missed and every server-dependent step skipped green
+# (wolf-lsp#28 (a); run 34682750158, 2026-09-12, pin 0.2.12 against latest
+# 0.2.13, three OSes dark, job green, merged).
+#
+# Absence is FAILURE here, with exactly one exception: a PIN whose version
+# carries semver build metadata (`0.2.15+dev.unknown`) is a trunk pin, which
+# PIN explicitly permits, and no release exists to download. That path exits
+# 0, sets `server=unreleased`, and raises a warning annotation. It is the only
+# way this action lets a caller be green while dark, and the caller is
+# expected to say so out loud.
+name: Acquire the wolf server at the pin
+description: >-
+  Download wolf-lang's release archive for the version in vendor/upstream/PIN,
+  from THAT VERSION'S OWN TAG, into .wolf-bin/. Fails when the pin names a
+  released version the release cannot supply.
+
+outputs:
+  server:
+    description: '`downloaded` or `unreleased` (absence is a failure, not an output)'
+    value: ${{ steps.acquire.outputs.server }}
+  pin:
+    description: The wolf-lang commit from PIN
+    value: ${{ steps.acquire.outputs.pin }}
+  version:
+    description: The wolf version from PIN's `version` line
+    value: ${{ steps.acquire.outputs.version }}
+  asset:
+    description: The archive name this runner asked for
+    value: ${{ steps.acquire.outputs.asset }}
+
+runs:
+  using: composite
+  steps:
+    - id: acquire
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -uo pipefail
+        pin=$(grep '^commit' vendor/upstream/PIN | cut -d= -f2 | tr -d ' "')
+        echo "pin=$pin" >> "$GITHUB_OUTPUT"
+        mkdir -p .wolf-bin
+        # The version out of PIN's `version` line — `wolf 0.2.3 (wolfgang,
+        # pin 3befc3e)` -> `0.2.3`. Same field `xtask compat` reads, so the
+        # asset name and the version doctor enforces cannot drift apart.
+        version=$(grep '^version' vendor/upstream/PIN \
+          | sed -E 's/.*"wolf ([^ ]+).*/\1/')
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+        # The rust target triple for THIS runner. Every release since v0.2.3
+        # publishes one asset for each of the four, so no host in the tier-1
+        # matrix is nameless.
+        case "${RUNNER_OS}-${RUNNER_ARCH}" in
+          Linux-X64)    triple=x86_64-unknown-linux-gnu ;;
+          Linux-ARM64)  triple=aarch64-unknown-linux-gnu ;;
+          macOS-ARM64)  triple=aarch64-apple-darwin ;;
+          macOS-X64)    triple=x86_64-apple-darwin ;;
+          Windows-X64)  triple=x86_64-pc-windows-msvc ;;
+          *)            triple="" ;;
+        esac
+        if [ -z "$triple" ]; then
+          # A runner a matrix asks for and this case cannot name is a bug in
+          # this repository, not an upstream absence. It used to exit 0.
+          echo "::error::no target triple mapped for ${RUNNER_OS}-${RUNNER_ARCH}"
+          exit 1
+        fi
+        asset="wolf-$version-$triple.tar.gz"
+        echo "asset=$asset" >> "$GITHUB_OUTPUT"
+        tag="v$version"
+        case "$version" in
+          *+*)
+            echo "::warning::server lane dark: PIN is at an UNRELEASED wolf ($version)"
+            {
+              echo "### No server to acquire: the pin is unreleased"
+              echo "\`vendor/upstream/PIN\` names wolf \`$version\` at \`$pin\`, whose version"
+              echo "string carries build metadata — a trunk pin, not a tag, so wolf-lang"
+              echo "publishes no archive to acquire. Re-pin to a released tag to light the"
+              echo "server lanes. This is the ONLY path on which a caller of this action is"
+              echo "allowed to be green while dark."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "server=unreleased" >> "$GITHUB_OUTPUT"
+            exit 0
+            ;;
+        esac
+        # Does the PIN'S OWN TAG have a release? A `gh release list --limit 1
+        # | length` used to stand here, and only ever asked whether wolf-lang
+        # had EVER released anything — true forever, so it guarded nothing.
+        if ! gh release view "$tag" --repo wolffe-lang/wolf-lang \
+             --json tagName --jq .tagName > /dev/null 2> "$RUNNER_TEMP/gh-err"; then
+          echo "::error::no wolf-lang release at $tag — this repo pins wolf $version at $pin"
+          sed 's/^/  gh: /' "$RUNNER_TEMP/gh-err"
+          exit 1
+        fi
+        # THE TAG IS POSITIONAL. `gh release download --tag v0.2.15` is
+        # `unknown flag: --tag`, which is what wolf-lsp#28's suggested fix
+        # spells and what run 35670143189 printed here. stderr is KEPT for
+        # that reason: under the old `2>/dev/null` the misspelling would have
+        # been invisible and this step would have reported SERVER UNAVAILABLE
+        # forever while looking like a gate doing its job.
+        if gh release download "$tag" --repo wolffe-lang/wolf-lang \
+             --pattern "$asset" -D .wolf-bin 2> "$RUNNER_TEMP/gh-err"; then
+          # --strip-components=1: the archive is a directory named for the
+          # version and the triple, and `lsp_harness::locate` looks for
+          # `.wolf-bin/wolf`. Stripping also puts the runtime lib and the
+          # importer worker beside the binary, which it needs to run.
+          tar -xzf ".wolf-bin/$asset" -C .wolf-bin --strip-components=1
+          echo "acquired \`$asset\` from \`$tag\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "server=downloaded" >> "$GITHUB_OUTPUT"
+        else
+          echo "::error::release $tag carries no $asset — the server lane cannot run"
+          sed 's/^/  gh: /' "$RUNNER_TEMP/gh-err"
+          echo "  (this repo pins wolf $version at $pin; the asset name is"
+          echo "   xtask dist's, wolf-<version>-<triple>.tar.gz)"
+          exit 1
+        fi

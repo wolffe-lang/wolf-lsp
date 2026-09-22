@@ -52,15 +52,9 @@ jobs:
       - uses: actions/checkout@v5
       - name: Install the pinned toolchain
         run: rustup show active-toolchain
-      # ===== tl10 PLANT (wolf-lsp#28 (b)) — RESTORED IN THIS SAME PR =====
-      # The contract's break: "a nightly with the server step forced absent".
-      # The acquisition is commented out, exactly reproducing trunk's nightly,
-      # so the gate below is asked the question it has been answering wrong
-      # since this file was written.
-      # - name: Acquire the wolf binary at the pin
-      #   id: acquire
-      #   uses: ./.github/actions/acquire-wolf
-      # ===== end tl10 PLANT =====
+      - name: Acquire the wolf binary at the pin
+        id: acquire
+        uses: ./.github/actions/acquire-wolf
       - name: lspconf doctor
         id: doctor
         shell: bash

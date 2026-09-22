@@ -185,3 +185,46 @@ somebody could do with an artifact. It is report-only by design, so it cannot
 be silently green about a test it did not run — but "capability drift vs
 wolf-lang HEAD" has never compared anything to wolf-lang HEAD. Filed here for
 whoever takes it; this lane does not touch it.
+
+## 4. Evidence index
+
+Every run below is `wolffe-lang/wolf-lsp`. "Dark" means the server-dependent
+steps did not execute; "green" is the run's own conclusion.
+
+| # | run | sha | what it proves |
+|---|---|---|---|
+| 1 | `34682750158` | `de053b32` (trunk) | **(a) green that ran nothing.** Push to trunk 2026-09-12, every job `success`, `SERVER UNAVAILABLE: releases exist but none carries wolf-0.2.12-x86_64-unknown-linux-gnu.tar.gz`, server lane dark on all three OSes. |
+| 2 | `35587411389` | trunk | **(b) green that ran nothing.** Scheduled nightly 2026-09-21, 44 s, all five jobs `success`, `Sweep`/`Measure`/`Keep the numbers` all `skipped`. |
+| 3 | `35669433451` | `196b53e` | **(a) reproduced at this head, live.** The plant only — PIN untouched, workflow unchanged — and the run is **green** with the server lane dark on ubuntu, macOS and windows: `SERVER UNAVAILABLE: releases exist but none carries wolf-0.2.99-<triple>.tar.gz`. The 2026-09-12 window is not history; the gate is dark today and was dark all week for want of a mismatch. |
+| 4 | `35669729227` | `39c99a6` | **(a) PLANTED RED.** Same plant, fixed acquisition: `server lane` **failure** on all three OSes — `##[error]no wolf-lang release at v0.2.99 — this repo pins wolf 0.2.99 at 2e4ca769…`, with `gh: release not found` quoted from gh's own stderr. |
+| 5 | `35669926832` | `64102d0` | **The one green-while-dark path, exercised.** Plant changed to `0.2.15+dev.unknown` (an unreleased trunk pin, which `PIN` explicitly permits): green, with `##[warning]server lane dark: PIN is at an UNRELEASED wolf (0.2.15+dev.unknown)` and `##[notice]server lane skipped — PIN is at an unreleased wolf`. The `doctor` guard did not misfire: the log shows it evaluating `[ "none" = "downloaded" ]`. |
+| 6 | `35670143189` | `63acadf` | **The fix's own defect, caught by its own red.** Plant reverted, pin back at 0.2.15 — and the run is **red**: `gh: unknown flag: --tag`. `gh release download` takes the tag **positionally**. wolf-lsp#28's suggested fix (`--tag "v$version"`) does not exist as a flag, and under the old `2>/dev/null` this would have printed the same SERVER UNAVAILABLE sentence forever while looking exactly like a gate doing its job. Keeping stderr is what made it one run instead of one pin cycle. |
+| 7 | `35670361426` | `aeb39f6` | **(a) green at the fix.** `gh release download "$tag" …`: `acquired wolf-0.2.15-x86_64-unknown-linux-gnu.tar.gz from v0.2.15`, `verdict READY — .wolf-bin/wolf serves LSP at pin 2e4ca76`, and `type-names-check`, `Conformance replay`, `One truth`, the five suites and the seeded fuzz all `success` on all three OSes. |
+| 8 | `35670767375` | `472130e` | Same, through the shared `./.github/actions/acquire-wolf`: green, `Report the skip` `skipped`, the five server-dependent steps `success` ×3. |
+| 9 | `35671150476` | `ae3a412` | **(b) PLANTED RED.** The nightly with its acquire step commented out — "the server step forced absent", exactly trunk's shape — and the new gate: `server availability` **failure**, `##[error]nightly has no wolf server at pin 2e4ca769…`, `fuzz-sweep` and `latency` **skipped**, run conclusion **failure**. Trunk's nightly at the same state is run 2 above, green. |
+| 10 | `35671351880` | `e8afc02` | **(b) green at the fix, and the first night this repository has ever measured anything.** `server availability` acquires and `A nightly with no server is RED` is `skipped`; `latency` runs `Measure` and `Keep the numbers`, publishing artifact `lsp-latency-jsonl` (1,927 bytes) — the D5 JSONL that has been "report-only" since ls01 and has never once been reported. `fuzz-sweep` runs the 15-minute sweep for the first time. |
+
+Committed files, for the claims that are not runs:
+
+- `.github/actions/acquire-wolf/action.yml` — the single acquisition.
+- `.github/workflows/ci.yml`, the `server-lane` job — calls it; `if:` on the
+  five server-dependent steps is now `== 'downloaded'`.
+- `.github/workflows/nightly.yml`, the `server`, `fuzz-sweep` and `latency`
+  jobs — the acquisition the file never had, and the red.
+- `vendor/upstream/PIN` — **unchanged by this PR**. `git diff origin/trunk --
+  vendor/upstream/PIN` is empty at every commit on this branch. The pin bump is
+  ww32/bs51's wave and r21's release, and the temporary version overrides that
+  forced the defect's window open were in the workflow's own acquisition step,
+  never in PIN, and are gone from the head of this branch (commits `63acadf`
+  and `e8afc02` remove them).
+
+## 5. Done-when
+
+- [x] branch `tl10` on origin
+- [x] PR #29 open, unmerged
+- [ ] CI green at the head sha *(filled in at the end of the lane)*
+- [x] #28's two claims each verified verbatim, each seen red before it was trusted
+- [x] §2 drift reported (the shared checkout three commits behind; the pin is 0.2.15, not 0.2.14)
+- [x] §3 prediction commit `69275f6` precedes every workflow read
+- [x] five sections present
+- [x] the pin never moved

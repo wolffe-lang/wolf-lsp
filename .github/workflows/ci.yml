@@ -505,7 +505,14 @@ jobs:
           # stderr is KEPT. The old step sent gh's diagnosis to /dev/null, so
           # the log could not tell a wrong release from a missing asset from a
           # network failure — every one of them printed the same sentence.
-          if gh release download --repo wolffe-lang/wolf-lang --tag "$tag" \
+          # The tag is POSITIONAL. `gh release download --tag v0.2.15` is
+          # `unknown flag: --tag` — which is what wolf-lsp#28's suggested fix
+          # spells, and what run 35670143189 printed here. Under the old
+          # `2>/dev/null` that misspelling would have been invisible and this
+          # step would have reported SERVER UNAVAILABLE forever while looking
+          # like a gate doing its job. Keeping stderr is the whole reason it
+          # cost one run instead of one pin cycle.
+          if gh release download "$tag" --repo wolffe-lang/wolf-lang \
                --pattern "$asset" -D .wolf-bin 2> "$RUNNER_TEMP/gh-err"; then
             # --strip-components=1: the archive is a directory named for the
             # version and the triple, and `lsp_harness::locate` looks for

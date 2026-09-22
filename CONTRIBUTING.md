@@ -138,6 +138,16 @@ server-dependent lanes light up as soon as a binary at the pinned version
 resolves. Without one, `lspconf doctor` reports `SERVER UNAVAILABLE`, which is
 a skip and not a failure, and `xtask ci` treats it as one.
 
+**CI is stricter than this, deliberately** (wolf-lsp#28). On a runner the
+server is *acquired*, from the pinned version's own release tag, and absence
+is a **failure** — a skip there would be a green run reporting on suites that
+did not execute, which is what the old workflow did on every merge made
+between a wolf-lang release and this repo's next pin bump. The single
+exception is a PIN at an unreleased (trunk) commit, where there is no archive
+to fetch; that path is green and announces itself with a warning annotation.
+Locally the skip stays a skip, because a contributor without a binary should
+be able to run the server-free half.
+
 ## Where the plan lives
 
 The sprint plan is the `lsp` track (`lsNN`) in the wolf metarepo. Sprint files

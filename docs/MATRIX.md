@@ -6,6 +6,119 @@ verified at, the evidence for that tier, and (for T1 and T2) the CI job that
 re-checks the evidence on every push. A row that claims a verification it does
 not have is a bug in this file.
 
+**Last reviewed against wolf pin `93a5fe5`, 2026-09-24** (tl11, the pins at
+0.2.16). That is the wolf-lang release tag `v0.2.16`, one release on from the
+`v0.2.15` this file was last stamped at, so the pinned version string is the
+bare `wolf 0.2.16 (wolfgang, pin 93a5fe5)` and `lspconf doctor` reports READY.
+The binary it reports is the **acquired release artifact** — the
+x86_64-unknown-linux-gnu archive of release 395302343, sha256 `84e30c05…`; the
+`PIN` version string was read off that **same** archive this time, because the
+lane's build host could run it (`wolf --version` printed it directly), where
+tl09 had to read it off the darwin arm64 archive. The darwin arm64 archive
+(sha256 `b0431056…`) was acquired and hashed member by member all the same, and
+both digests matched the release API's own before anything was unpacked — never
+a local build. `v0.2.16` is an ANNOTATED tag; `PIN` records the peeled
+`v0.2.16^{commit}`, `93a5fe504593ca7642b78ba83b4986e7a03cfe71`.
+
+**ONE HALF IS AT THIS PIN AND THE OTHER IS NOW TWO PINS BEHIND.**
+`lspconf --require-server replay` prints a SKIP line: **77 transcripts, 71
+replayed, SIX SKIPPED, exit 0.** The exit code is 0 because a captured
+transcript at another pin is a designed skip, not a failure — so read the
+count, not the exit code.
+
+- **The 71 scripted transcripts were re-recorded and replayed green, and the
+  server's answer did not move anywhere.** `71 files changed, 72 insertions(+),
+  72 deletions(-)`: **seventy are header-only** (`wolf_pin` and `recorded`,
+  line 1), and the seventy-first, `requests/formatting-byte-stable`, has one
+  further changed line — a **`c2s` `textDocument/didOpen`**, which is the
+  *client's* payload, not the server's answer. The vendored `regions.lu` moved
+  one line of its `//!` header directive between the tags:
+
+      -//! phase: mem
+      +//! phase: run
+
+  (wolf-lang `ac256b20`, s170 — "Pool[T] and handle T lower — three refusals
+  narrowed, three witnesses mem -> run"). The formatting **response** is still
+  the empty edit array. Classifying every changed line by its `dir` field:
+  **not one `s2c` line changed in the whole library.** `onetruth` ran **15**
+  samples × 9 profiles with **zero** divergences and zero unfiled.
+
+  This falsified the lane's own prediction, which was zero movers. The
+  prediction reasoned about every behaviour change in the release against the
+  fifteen sample **documents** and got all of those right; what it never
+  checked was whether the **inputs** had moved — the thing tl09 measured
+  explicitly and this lane assumed. A pin bump has two independent sources of
+  transcript movement, and a prediction about one is not a prediction about the
+  other.
+
+- **NONE of the six captured smokes is re-captured at this pin** — they are
+  still at `30731a6` (v0.2.14), now **two** releases behind, and `replay` names
+  all six in its SKIP line. This is **wolf-lsp#26**, unchanged and not
+  restated as resolved: `lspconf capture` proxies the server for a real editor,
+  so editor and harness share a host, and no host has all six. **So the part of
+  every T1 row that a REAL editor session earns is two versions behind the
+  rest**, and each `compat.json` says so in its own `caveat`.
+- **The declared range MOVED, it did not widen.** `min` and `max_tested` are
+  both `0.2.16` — a pin range, one version wide, as tl02 ruled and as
+  `earned_versions` enforces: the earned set is derived from `PIN`, so the
+  statement cannot lag the pin either.
+
+### The spec diff at this pin, and the gate that could not see the half that mattered
+
+`spec/anchors.json` goes **524 → 539**. Diffed as KEY SETS IN BOTH DIRECTIONS
+and for retargeting, not by comparing counts (wolf-lang#177's lesson):
+**15 added, 0 dropped, 0 retargeted**. A note for whoever re-runs it: the file's
+top level has two keys, `anchors` and `version`, so a naive count of the JSON
+prints **2** — the set to diff is `.anchors`.
+
+**Only ONE of the fifteen is `type.*`** — `type.err.alias.qualified` (s175,
+wolf-lang#434) — and its second segment `err` was already in the candidate set,
+so `type-names-check`'s candidate set is **18 words at both tags, zero added,
+zero dropped**, and the gate asks the 0.2.16 binary exactly the questions it
+asked the 0.2.15 one. It passes: **18 painted, 8 unpainted, 18 anchor
+candidates, all classified.**
+
+**And that green is this pin's finding, because the type list DID move.**
+`crates/wolf_sema/src/prelude.rs` grows 23 lines and two of them are names:
+`PRELUDE` gains **`Scope`** and **`Proc`** (s170, wolf-lang#316, BACKLOG B21) —
+the first prelude type names added since s158's `range`. Measured with the
+gate's own probe against both acquired release binaries, byte-identical source
+each time:
+
+| word | v0.2.15 | v0.2.16 |
+|---|---|---|
+| `Scope` | `error[E0301]: nothing named \`Scope\` is in scope` | resolves in type position |
+| `Proc` | E0301 | resolves |
+| `Proc[int]` | E0301 | resolves |
+
+The gate cannot see either, because their clauses are anchored
+`[conc.proc.handle]` and `[conc.task.scope]` — **`conc.*`, not `type.*`** — and
+its candidate set is the spec's `type.` index. That is verbatim the first
+bullet of `type_names.rs`'s own "What the gate cannot see", a hypothetical
+since wolf-lsp#24 was written and **live for the first time here**. Both words
+are now classified by hand in `TYPE_POSITION_UNPAINTED` (which at least makes
+the gate assert they keep resolving; it had no opinion about either before),
+and the blindness is filed rather than absorbed — `docs/PIN-0216.md` §4.
+`BUILTIN_TYPES` (seventeen prims) and `PRELUDE_TYPE_ONLY` (still just `range`)
+are byte-identical across the span, extracted and hashed separately: a file that
+grew is not the same claim as a list that did not.
+
+`spec/grammar.ebnf` **did not change**, checked two ways — `git diff --quiet`
+exits 0 **and** the blob sha is `4b2ed9939875a8a7d65924449fbd2ba29a3fcd56` on
+both sides, which is the stronger check because a diff can be quieted by a
+filter and a blob sha cannot. The word-terminal set stays at 75, the symbolic
+set does not move, `reserved_kw` is byte-identical at fifty names, and all three
+`tmLanguage.json` files are reported *current* by `grammar-drift` with nothing
+regenerated: a commit of identical bytes would be a claim that something moved.
+tl09's five `FMT_TYPE` contextual rulings were the previous release's.
+
+**One vendored sample moved**, the first since le08 — `regions.lu`, one line,
+in its header directive, as above. Measured two ways: sha256 of the working
+files, and `git rev-parse <tag>:corpus/<path>` on both sides (fifteen blob-sha
+pairs). Fourteen identical, one different, both methods agreeing.
+
+## tl09's review, at pin `2e4ca76` (v0.2.15) — kept as the record
+
 **Last reviewed against wolf pin `2e4ca76`, 2026-09-17** (tl09, the pins at
 0.2.15). That is the wolf-lang release tag `v0.2.15`, one release on from the
 `v0.2.14` this file was last stamped at, so the pinned version string is the

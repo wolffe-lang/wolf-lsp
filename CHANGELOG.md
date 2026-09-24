@@ -1,5 +1,78 @@
 # Changelog
 
+## tl11 — 2026-09-24 — the pin at 0.2.16, and a gate that is green for a case it cannot see
+
+**The pin moves `2e4ca76` → `93a5fe5`** (wolf-lang `v0.2.16`, release
+395302343). Both archives were acquired and matched the release API's own
+digest — `84e30c05…` (linux x86-64) and `b0431056…` (darwin arm64) — and every
+member of both was hashed BY NAME. `_wolf` is `2d1e4801…` in both, the seventh
+reproduction of the trap: it is the zsh completion script, not a binary, and a
+check that hashes "the first executable it finds" reads that same constant at
+every pin on every platform and can therefore never go red.
+
+**THE SERVER'S ANSWER DID NOT MOVE ANYWHERE, and that is a measurement.** All
+71 scripted sessions were re-recorded: `71 files changed, 72 insertions(+), 72
+deletions(-)`. Seventy are header-only. The seventy-first,
+`requests/formatting-byte-stable`, has one further changed line and it is a
+**`c2s` `textDocument/didOpen`** — the *client's* payload — because the
+vendored `regions.lu` moved one line of its `//!` header directive between the
+tags (`phase: mem` → `phase: run`; wolf-lang `ac256b20`, s170's pool lowering).
+The formatting response is still the empty edit array. Classified by `dir`,
+**zero `s2c` lines changed in the whole library**. `replay`: 71 ok, 0
+mismatched, 6 skipped, exit 0. `onetruth`: 15 samples × 9 profiles, 0
+divergences, zero unfiled.
+
+**The lane predicted zero movers and was wrong by one — for a reason worth
+keeping.** The prediction walked every behaviour change in the release against
+the fifteen sample DOCUMENTS (#444's `move`, #312's spawn, #316's handles,
+#400's fn-typed parameter, #391/#392's region charging, `[conf.exit]`,
+`[type.list.lit.elem]`, `[mem.str.ws]`) and got all of them right; it never
+checked whether the vendored INPUTS had moved, which tl09 measured explicitly
+and this lane assumed. **A pin bump has two independent sources of transcript
+movement — what the server answers and what the documents say — and a
+prediction about one is not a prediction about the other.** Both named fallback
+candidates held: `annotate/semanticTokens-error` did not move, so wolf-lang#434
+is a strict extension on the same-module single-segment row entry, and
+`errors.lu`'s `io.Error` still falls through to a tag.
+
+**THE FINDING: `type-names-check` is green and blind at this pin.**
+`crates/wolf_sema/src/prelude.rs` gains **`Scope`** and **`Proc`** (s170,
+wolf-lang#316, B21) — the first prelude TYPE NAMES since s158's `range`.
+Measured with the gate's own probe against both acquired binaries, byte-
+identical source: `Scope`, `Proc` and `Proc[int]` are all `error[E0301]` at
+0.2.15 and all resolve at 0.2.16, against four unmoved controls. The gate
+cannot see them, because its candidate set is the second segment of every
+`type.*` anchor and these two are anchored `[conc.task.scope]` and
+`[conc.proc.handle]` — `conc.*`. That set is 18 words at both tags, zero added,
+zero dropped. This is verbatim the first bullet of `type_names.rs`'s own "What
+the gate cannot see", a hypothetical since wolf-lsp#24 and **live for the first
+time here**. Both names are now classified by hand in
+`TYPE_POSITION_UNPAINTED` (so the gate at least asserts they keep resolving —
+6 unpainted → 8), the gate was **seen red** with a planted `ScopeXYZ` before
+that was trusted, and neither is painted: painting `Scope` is a ruling, and the
+corpus at this pin has zero uses of it in code to test one against.
+
+**`spec/anchors.json` 524 → 539: 15 added, 0 dropped, 0 retargeted**, diffed as
+key sets in both directions. A note for the next reader: the file's top level
+has two keys, `anchors` and `version`, so a naive count of the JSON prints 2.
+
+**`spec/grammar.ebnf` did not change**, checked two ways — `git diff --quiet`
+exit 0 *and* the same blob sha `4b2ed993…` on both sides — so nothing derived
+from it was regenerated. A commit of identical bytes would be a claim that
+something moved.
+
+**The six captured smokes are now TWO pins stale** (still `30731a6`), and
+wolf-lsp#26's caveat stays in every `compat.json` unchanged rather than being
+restated as current.
+
+**A correction to this repository's own prose.** The 0.2.15 `PIN` said the
+lupin pairing sha `41695e7` was unreachable "from any wolf-interp branch" and
+sent a reader to fetch a wolf-interp tag. It is a **wolf-lang** commit,
+preserved as a tag in **wolf-lang**; wolf-interp has no such object, so the
+advice could only produce the error it warned about. At 0.2.16 the pairing pin
+is `2e4ca76` — the v0.2.15 tag itself, an ancestor of trunk — and the hazard is
+gone.
+
 ## tl10 — 2026-09-21 — two green-dark gates, each seen red before it was trusted
 
 **Both claims in wolf-lsp#28 held.** The verbatim lines, the ten run ids and

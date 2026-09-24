@@ -1,31 +1,44 @@
 # The wolf-lang commit this repo is keyed to. A bump is its own commit, with
 # the re-vendored data, and nothing else (vendor/README.md).
 #
-# tl09 pins the RELEASE TAG `v0.2.15`, which is an ANNOTATED tag peeling to the
-# commit below — tl07 pinned v0.2.14, tl02 pinned v0.2.12 and le04..le08 pinned
-# v0.2.1..v0.2.5 the same way; nothing here requires a tag, and the next bump
-# may be a trunk sha again. Note the peel: `git rev-parse v0.2.15` answers the
-# TAG object (`026f48c5`), not the commit — `v0.2.15^{commit}` is what belongs
-# here, and reading the unpeeled form would pin a sha no `wolf --version` will
-# ever print.
-commit = 2e4ca769b396219585a07ff18492529c944672d9
+# tl11 pins the RELEASE TAG `v0.2.16`, which is an ANNOTATED tag peeling to the
+# commit below — tl09 pinned v0.2.15, tl07 pinned v0.2.14, tl02 pinned v0.2.12
+# and le04..le08 pinned v0.2.1..v0.2.5 the same way; nothing here requires a
+# tag, and the next bump may be a trunk sha again. Note the peel:
+# `git rev-parse v0.2.16` answers the TAG object, not the commit —
+# `v0.2.16^{commit}` is what belongs here, and reading the unpeeled form would
+# pin a sha no `wolf --version` will ever print.
+commit = 93a5fe504593ca7642b78ba83b4986e7a03cfe71
 # The exact `wolf --version` string that commit produces (first line; the
-# binary also prints a second line naming its lupin pairing — 0.1.37 at pin
-# `41695e7`, up from 0.1.36 at v0.2.14). `lspconf doctor` fails on a mismatch:
-# a stale local `wolf` producing green transcripts is the failure mode the pin
-# exists to prevent.
+# binary also prints a second line naming its lupin pairing — 0.1.38 at pin
+# `2e4ca76`, up from 0.1.37 at pin `41695e7`). `lspconf doctor` fails on a
+# mismatch: a stale local `wolf` producing green transcripts is the failure
+# mode the pin exists to prevent.
 #
-# A NOTE ON THAT SECOND LINE, which this repo does not read but a human will.
-# The pairing sha `41695e7` is NOT reachable from any wolf-interp branch: r20
-# found it unreachable at the cut and preserved it at
-# `refs/tags/lupin-0.1.37-conformance-pin`. Resolving it needs that tag
-# fetched; the failure mode is a `git cat-file` that says "not a valid object"
-# about a sha the binary prints, which reads as corruption and is not.
+# A NOTE ON THAT SECOND LINE, AND A CORRECTION TO THE ONE THIS FILE CARRIED AT
+# THE LAST PIN. The pairing sha is **a wolf-LANG commit, not a wolf-interp
+# one** — `crates/wolf_driver/PAIRING` calls it "the conformance pin that
+# lupin release itself declares", i.e. the wolf this lupin says it conforms
+# to. The 0.2.15 text here said `41695e7` was "NOT reachable from any
+# wolf-interp branch" and sent a reader to fetch a wolf-interp tag; both
+# halves name the wrong repository. Measured: `41695e78` is a commit in
+# **wolf-lang**, unreachable from wolf-lang trunk, preserved as
+# `refs/tags/lupin-0.1.37-conformance-pin` in **wolf-lang**; wolf-interp has
+# no object by that name at all, so the advice as written could only ever
+# produce the "not a valid object" it was warning about. (wave-46's rule: a
+# sha cited as another repository's pin resolves THERE, and the check names
+# the repository the text names.)
+#
+# AND THE WART IS GONE AT THIS PIN. 0.2.16's pairing pin is `2e4ca76` — the
+# v0.2.15 release tag's own commit, an ancestor of wolf-lang trunk, resolvable
+# in any clone with no extra fetch. wolf-lang `8514c27e` says so in its own
+# subject: "the released tag itself, for the first time". The unreachable-pin
+# hazard this paragraph existed to explain does not apply to 0.2.16.
 #
 # D57 decides the shape. A build is a release build only when the builder
 # stamps BOTH `WOLF_COMMIT=<short sha>` and `WOLF_RELEASE=v{crate version}`,
 # and the second is granted only when that exact tag points at HEAD. This pin
-# is at v0.2.15, so a release build prints the BARE version and the pin clause.
+# is at v0.2.16, so a release build prints the BARE version and the pin clause.
 # An unstamped build still prints `+dev.unknown` — the string any trunk build
 # of the same crate version prints, which is exactly the stale-binary hole —
 # so the pinned string remains a stamped build's, and `cargo xtask dist` in
@@ -34,12 +47,12 @@ commit = 2e4ca769b396219585a07ff18492529c944672d9
 #
 # `xtask compat`'s `version_number` reads the number out of this string; it
 # learned semver build metadata at le03 and takes the bare tag form
-# unchanged — `0.2.15`, no `+` to strip. Asserted in xtask/src/compat.rs.
+# unchanged — `0.2.16`, no `+` to strip. Asserted in xtask/src/compat.rs.
 #
-# SEVEN HEX DIGITS FOR THE SEVENTH PIN RUNNING, and the line below was READ OFF
-# THE ACQUIRED ARTIFACT rather than off any clone on this box — the darwin
-# arm64 archive of release 390641220, sha256
-# 166004ee5314e32d93442bdd2dbb7ef3d2e66b26d9bbe3072f62af145b93fbfd (the
+# SEVEN HEX DIGITS FOR THE EIGHTH PIN RUNNING, and the line below was READ OFF
+# THE ACQUIRED ARTIFACT rather than off any clone on this box — the
+# x86_64-unknown-linux-gnu archive of release 395302343, sha256
+# 84e30c05e56b89fde2fe6e27eec8f7cec0a6aae6e1464a2993fcfc87a7a1829e (the
 # release asset's own digest, matched after download), whose `wolf --version`
 # prints exactly the string below. That matters because wolf-lang#199 is still
 # open: D57's pin clause is clone-dependent, `git rev-parse --short` sizes its
@@ -50,7 +63,7 @@ commit = 2e4ca769b396219585a07ff18492529c944672d9
 # fail `doctor` here, and that refusal is the pin doing its job. The remedy is
 # upstream — `--short=7`, or `core.abbrev`, in whatever computes the stamp.
 # See docs/COMPAT.md.
-version = "wolf 0.2.15 (wolfgang, pin 2e4ca76)"
+version = "wolf 0.2.16 (wolfgang, pin 93a5fe5)"
 # Does `wolf lsp` exist at this commit? YES, and it ANNOTATES, as it has since
 # the v0.2.5 pin. wolf-lang s52 landed the subcommand, s133 added definition,
 # references and rename, and s134 added `signatureHelpProvider`,
@@ -58,151 +71,180 @@ version = "wolf 0.2.15 (wolfgang, pin 2e4ca76)"
 # Those flips are what light every server-dependent lane: record, replay,
 # onetruth, bench, and the encoding, cancellation, navigation and fuzz suites.
 #
-# WHAT v0.2.14..v0.2.15 ADDS THAT THIS REPO CAN SEE — measured, not swept.
-# 162 commits and six merged lanes — s161, s162, s163, s165, s166, s167 (read
-# off the span's own `changelog:` commits, because two of the six shipped no
-# CHANGELOG section of their own and were backfilled at the cut) — and the
-# surface this repo reads moves in exactly one place.
+# THE ARCHIVE PAIR, HASHED BY NAME. Both archives were downloaded and both
+# matched the API's own asset digest byte for byte:
 #
-# THE SERVER'S CODE DOES NOT MOVE AT THIS PIN, AND ITS ANSWER DOES. The whole
-# of `crates/wolf_query/` — where the semantic-token walk lives, in
-# `src/annotate.rs`, the file the v0.2.14 bump moved — is BYTE-IDENTICAL across
-# the span (`git diff 30731a6 2e4ca769 -- crates/wolf_query/` is empty), and
-# `crates/wolf_lsp/` is again one file different and again that file is a test
-# (`tests/annotate.rs`, +53).
+#   wolf-0.2.16-x86_64-unknown-linux-gnu.tar.gz  84e30c05…  70,516,905 bytes
+#   wolf-0.2.16-aarch64-apple-darwin.tar.gz      b0431056…  13,911,651 bytes
 #
-# THIS LANE PREDICTED THE EMPTY SET FROM THAT AND WAS WRONG, which is recorded
-# here rather than quietly corrected. The walk did not change; what the walk
-# SEES did. wolf-lang `b2ad629` (s165, wolf-lang#379) makes an error row entry
-# naming an alias a REFERENCE to the item, so the binding table reaches every
-# use — and the walk, unchanged, now paints two names it used to skip. Measured
-# by re-recording all 71 scripted sessions at this pin: 70 are HEADER-ONLY, and
-# `annotate/semanticTokens-error` gains exactly two tokens —
+# Every member is hashed BY NAME, never "the first executable in the archive",
+# and the reason is worth repeating because this pin reproduces it a SEVENTH
+# time. `_wolf` sorts before `wolf` in ASCII and is NOT a second binary: it is
+# the zsh completion script, 1,913 bytes, `#compdef wolf`, shipped with the
+# executable bit set — and its digest is `2d1e4801…` in BOTH archives here,
+# the same constant sc51 found in all six archives it hashed across 0.2.13,
+# 0.2.14 and 0.2.15 on two platforms. A check that hashes "the first binary it
+# finds" reads that same constant at every pin on every platform: not merely
+# wrong, UNFALSIFIABLE — it cannot go red at any release. The two members that
+# actually move:
 #
-#   union L13 C22  `IoErrors`      type   (the row entry)
-#   union L15 C27  `ConfigErrors`  type   (the brace-less `! path` tail)
+#   wolf                 b53b5328…  271,974,592   linux x86-64
+#   wolf                 88001334…   14,726,120   darwin arm64
+#   libwolf_rt.a         c4c5f670…    38,246,706  linux x86-64
+#   libwolf_rt.a         b804455d…    27,436,696  darwin arm64
+#   wolf-cimport-worker  cf2c47a9…    10,769,504  linux x86-64
+#   wolf-cimport-worker  78812167…       702,216  darwin arm64
 #
-# (0-based.) 24 tokens become 26 for the document and the `/range` request over
-# lines 13:0-14:0 goes 2 → 3, so it is the walk's answer in range mode too and
-# not a full-document artifact. wolf-lang#379 is the hole tl07 FILED from this
-# repository at the last bump, with this transcript as the evidence and the
-# sentence "this transcript pins the current answer so the fix announces itself
-# as a red here"; #379's closing comment named both coordinates before this
-# lane measured them, and they match. The lesson is the useful half: a
-# byte-identical query crate is not a prediction of a byte-identical answer,
-# because the walk's INPUT is the whole compiler.
+# and the six that do not (identical across both platforms): `_wolf`
+# 2d1e4801…, `wolf.1` afcf4f7c…, `wolf.bash` 29eb2d75…, `wolf.fish`
+# 51a1b6a8…, `LICENSE` 3972dc97…, `LICENSE-EXCEPTION` a0eec20d…, `README.md`
+# 8e148142…. Ten members per archive, both archives, nothing unaccounted for.
 #
-# s166's method surface and s165's `par` change what programs MEAN, not what
-# the server says about the documents the transcripts open, and no other
-# response body in the library moved.
+# THE ARCHIVE IS WHOLE AT THIS TAG, AND — FOR THE FIRST TIME SINCE v0.2.3 —
+# THE PAGE IS CLEAN. Release id 395302343 is published (`draft=false`,
+# `published_at` 2026-09-24T03:55:26Z), targets `trunk`, and carries FOUR
+# assets:
+#   wolf-0.2.16-aarch64-apple-darwin.tar.gz       (13,911,651 bytes)
+#   wolf-0.2.16-aarch64-unknown-linux-gnu.tar.gz  (59,369,137 bytes)
+#   wolf-0.2.16-x86_64-pc-windows-msvc.tar.gz     (11,980,810 bytes)
+#   wolf-0.2.16-x86_64-unknown-linux-gnu.tar.gz   (70,516,905 bytes)
+# — the same four-triple set v0.2.3 first carried, so le06's acquire step
+# needs no change and all three tier-1 runners stay covered.
 #
-# THE SIX CAPTURED EDITOR SMOKES ARE NOT RE-CAPTURED AT THIS PIN. They are
-# still at 30731a6; `lspconf replay` skips them by name and exits 0, so the
-# library is 77 files and 71 of them are replayed here, where at tl07 and tl03
-# it was 77 of 77. wolf-lsp#26 carries the measurement and the reason (no host
-# this wave has all six editors).
+# **EXACTLY ONE RELEASE CARRIES THE TAG `v0.2.16`.** The upstream wart this
+# file recorded at six consecutive pins — a tag with the published release
+# plus THREE empty drafts created in the same second, because each archive job
+# created-or-got the release and three lost — does NOT reproduce. wolf-lang#226
+# is fixed at this cut: the draft is created once, in its own job, the archives
+# upload to it by id, and publishing refuses unless exactly one release carries
+# the tag. Queried the whole release list for `tag_name == "v0.2.16"`: one row,
+# `draft=false`, four assets. The paragraph stays here in its corrected form
+# because the six reproductions are the reason the fix is worth recording.
 #
-# `crates/wolf_sema/src/prelude.rs` grows by 45 lines and NOT ONE of them is a
-# type name. `BUILTIN_TYPES` (seventeen prims), `PRELUDE` and
-# `PRELUDE_TYPE_ONLY` (whose entire contents is still `range`) are each
-# byte-identical at the two commits — extracted and hashed separately rather
-# than inferred from the file's diffstat, because a file that grew is not the
-# same claim as a list that did not. The whole addition is `HOME_MODULES`
-# (s166, `[type.method.home]`): the builtin METHOD names on `list`, `map`,
-# `str` and `range`, which the three type-printing surfaces never paint.
-# So `TYPE_NAMES` does not move at this pin, and wolf-lsp#24's gate is what
-# turns that sentence into a row rather than a hope — see below.
+# THE LINUX ARCHIVES HAVE A GLIBC FLOOR NOW, AND IT IS 2.35 (wolf-lang#447).
+# 0.2.15's linux archives were built on Ubuntu 24.04 and imported GLIBC_2.39,
+# so they did not start on 22.04 at all. Measured here on the acquired 0.2.16
+# x86-64 archive: the highest GLIBC symbol version the binary imports is
+# **GLIBC_2.34**, comfortably under the stated 2.35 floor, and it runs on this
+# lane's build host (glibc 2.44). Nothing in this repo pins a runner's libc,
+# but a CI runner older than Ubuntu 22.04 would now be the constraint.
 #
-# THE SPEC DIFF IS NINE FILES, +1002 −44, and TWO of them are vendored here.
+# WHAT v0.2.15..v0.2.16 ADDS THAT THIS REPO CAN SEE — measured, not swept.
+# 148 commits, 125 files, +14,202 −2,028, and eight merged lanes. The surface
+# this repo reads moves in exactly three places, and one of them is a place no
+# gate in this repository can see.
 #
-# `spec/anchors.json`: 498 → 524, TWENTY-SIX ADDED AND NONE DROPPED. Diffed as
+# THE SERVER'S CODE DOES NOT MOVE AT THIS PIN, AND THIS TIME NEITHER CRATE
+# MOVES. The whole of `crates/wolf_query/` — where the semantic-token walk
+# lives, in `src/annotate.rs` — AND the whole of `crates/wolf_lsp/` are
+# BYTE-IDENTICAL across the span; `git diff 2e4ca769 93a5fe50 --` is empty for
+# each. At the last pin `wolf_lsp` was one test file different; here it is
+# nothing at all.
+#
+# BUT A BYTE-IDENTICAL QUERY CRATE IS STILL NOT A PREDICTION OF A
+# BYTE-IDENTICAL ANSWER — tl09 learned that the hard way and this lane did not
+# repeat the mistake, so the transcript claim below is a MEASUREMENT of all 71
+# scripted sessions re-recorded at this pin, not an inference from a diffstat.
+# (See the "THE TRANSCRIPTS" block below, written after the re-record.)
+#
+# `crates/wolf_sema/src/prelude.rs` grows by 23 lines and TWO OF THEM ARE TYPE
+# NAMES — the first prelude NAMES added since s158's `range`, and the first
+# time in this file's history that the answer to "did the type list move?" is
+# yes. `PRELUDE` gains **`Scope`** and **`Proc`** (s170, wolf-lang#316, BACKLOG
+# B21's ruling): `[conc.task.scope]` has said since D16 that "a function that
+# spawns into its caller's scope takes the handle as a parameter", and until
+# this release there was no way to write that parameter — `Scope`/`Proc` were
+# E0301 and `scope`/`proc` were E0206. `fn fan_out(s: Scope)` and
+# `fn watch(p: Proc[int])` are programs now. `BUILTIN_TYPES` (seventeen prims)
+# and `PRELUDE_TYPE_ONLY` (still just `range`) are byte-identical at the two
+# commits — extracted and hashed separately rather than inferred from the
+# file's diffstat, because a file that grew is not the same claim as a list
+# that did not. The other 14 lines are one new `#[test]`.
+#
+# (The contract for this lane said 22 lines and attributed some of them to
+# s173's pool names. Measured: `git diff --numstat` is `23 0`, and NOT ONE
+# pool name is added — `Pool`, `Mutex` and `channel` appear in the diff only
+# as context, present at 2e4ca769 already. s173's pool work is all in `wir`
+# and `wolf_rt`. Drift reported, not absorbed.)
+#
+# THE SPEC DIFF IS SIX FILES, +347 −5, and TWO of them are vendored here.
+#
+# `spec/anchors.json`: 524 → 539, FIFTEEN ADDED AND NONE DROPPED. Diffed as
 # KEY SETS IN BOTH DIRECTIONS (new−old and old−new) and for RETARGETING (a key
 # whose file changed), not by comparing two counts — wolf-lang#177's lesson is
 # that a regeneration can add and drop in the same move and a count hides it.
-# All three answers: 26, 0, 0. The twenty-six:
+# All three answers: 15, 0, 0. NOTE for anyone re-running it: the file's TOP
+# LEVEL has two keys, `anchors` and `version`, so a naive count of the JSON
+# prints **2**; the set to diff is `.anchors`. The fifteen:
 #
-#   [conc.task.par]      .capture .chunk .cost .det .fail .order   29dd09fc #390
-#   [gram.expr.variant]                                            a107fa30 #348
-#   [gram.type.start]                                              c766828c #320
-#   [os.fs.path] [os.fs.remove]                                    5f08cd92 #365
-#   [os.host] [os.host.sigs]                                       871179fa #181
-#   [os.proc.exe] [os.proc.spawn]                                  3fe5c088 #256
-#   [type.comb] .builtin .eager .set                               66281250 #154
-#   [type.method] .home .resolve .root .take                       66281250 #390
-#   [type.generic] [type.generic.bind]                             8abf96fe #319
-#   [type.interp.spec]                                             fe617825  #28
+#   [conc.proc.arg] [conc.proc.handle] [conc.proc.join]   s170  #312/#316/#110
+#   [conf.exit] .class .collide .refused .static .test    s169  exit codes
+#   [mem.region.imm.ret] [mem.region.root]                s168
+#   [proto.cmp.pass] [proto.record.pass] [proto.record.trap]  s169
+#   [type.err.alias.qualified]                            s175  #434
 #
-# (Attributed by the commit that first wrote each key into `anchors.json`,
-# found with `git log -S`, not by reading the release notes — the notes group
-# by lane and three of these clauses are one lane's debt-paying sweep.)
+# Reconciled against the release CHANGELOG clause by clause: every clause the
+# notes name as LANDED appears above, and nothing above is unaccounted for.
+# The clauses the notes discuss that are NOT here — `[type.list.lit.elem]`,
+# `[mem.str.ws]`, `[mem.shared.handle.2]`/`.3` — are RE-WORDINGS of anchors
+# that already existed, which is why fifteen is smaller than a reader of the
+# notes would guess and why the diff had to be over KEYS and not over the file.
 #
-# The type-names gate (wolf-lsp#24) reads the SECOND segment of every `type.*`
-# anchor as its candidate set, so those twelve new `type.*` anchors grow it by
-# exactly four words: `comb`, `generic`, `interp`, `method`. All four answer
-# `error[E0301]: nothing named … is in scope` to the acquired binary's
-# type-position probe, so none of them is a name and none needs a
-# classification row. `range` still answers "a generic application left opaque
-# by the checker", which is the Name verdict tl04's `TYPE_POSITION_UNPAINTED`
-# ruling depends on and the row the gate re-proves at every pin.
+# THE TYPE-NAMES GATE IS GREEN AND IT IS BLIND, AND THAT IS THIS PIN'S FINDING.
+# The gate (wolf-lsp#24, `xtask/src/type_names.rs`) reads the SECOND SEGMENT of
+# every `type.*` anchor as its candidate set. Diffed both ways across the two
+# tags that set is EIGHTEEN WORDS ON EACH SIDE, zero added, zero dropped —
+# `byte char closure comb err float fn generic interp list map method numlit
+# range row str trait unit`. The one new `type.*` anchor is
+# `type.err.alias.qualified` and its second segment `err` was already there.
+# So the gate asks the 0.2.16 binary exactly the questions it asked the 0.2.15
+# one, and passes.
 #
-# `spec/grammar.ebnf` CHANGED, +5 −2 in ONE hunk — and it is the one surface a
-# reader would have predicted still. At v0.2.14 the interpolation format
-# specifier was a PROMISE:
+# Meanwhile `Scope` and `Proc` — two names the compiler resolves in type
+# position at this pin and refused at the last one — are NOT in the candidate
+# set and cannot be, because their clauses are anchored `conc.proc.handle` and
+# `[conc.task.scope]`: **`conc.*`, not `type.*`**. This is verbatim the first
+# bullet of `type_names.rs`'s own "What the gate cannot see" — *a builtin added
+# upstream without a two-segment `type.<name>` anchor of its own spelling* —
+# which has been a hypothetical since wolf-lsp#24 was written and is LIVE for
+# the first time here. The gate stays green while the set it guards is two
+# names short. It is filed rather than absorbed; see docs/PIN-0216.md §4.
 #
-#     FORMAT_SPEC ::= ':' /* fill/align/sign/width/precision/type, spec §7.4 */
+# `spec/grammar.ebnf` DID NOT CHANGE, checked two ways rather than one.
+# `git diff --quiet 2e4ca769 93a5fe50 -- spec/grammar.ebnf` exits **0**, AND
+# the blob sha is `4b2ed9939875a8a7d65924449fbd2ba29a3fcd56` on both sides —
+# the second check is the stronger one, because a diff can be quieted by a
+# filter and a blob sha cannot. So no production moved, the word-terminal set
+# stays at 75 and the symbolic set does not move, `reserved_kw` is
+# byte-identical at fifty names, and NOTHING derived from the EBNF is
+# regenerated at this bump: a commit of identical bytes would be a claim that
+# something moved. tl09's five `FMT_TYPE` contextual rulings were the previous
+# release's and do not recur.
 #
-# `0e8927e0` (#28) writes it out and cites the new `[type.interp.spec]`
-# anchor, replacing a `spec §7.4` reference to a section that never existed:
+# ONE VENDORED SAMPLE DID MOVE, and it is the first time since le08 that any
+# has. Measured TWO WAYS (sha256 of the working files, and `git rev-parse
+# <tag>:corpus/<path>` on both sides — fifteen blob-sha pairs): FOURTEEN
+# identical, ONE different. `regions.lu` changes by exactly one line, and it
+# is in the `//!` HEADER DIRECTIVE, not the program:
 #
-#     FORMAT_SPEC ::= ':' ((FMT_FILL? FMT_ALIGN)? '+'? '0'? DIGIT*
-#                          ('.' DIGIT+)? FMT_TYPE?)
-#     FMT_FILL   ::= SCALAR      /* one byte wide: a multi-byte fill is E0412 */
-#     FMT_ALIGN  ::= '<' | '^' | '>'
-#     FMT_TYPE   ::= 'b' | 'o' | 'x' | 'X' | 'e' | 'E' | 'f'
+#     -//! phase: mem
+#     +//! phase: run
 #
-# THIS BUMP MET FIVE NEW WORD TERMINALS, and they are the first ones since
-# s158's `error`. The word-terminal set goes 70 → 75 and the delta is exactly
-# `'b'`, `'o'`, `'x'`, `'X'`, `'f'` — `FMT_TYPE`'s seven letters less `'e'` and
-# `'E'`, which `EXPONENT ::= ('e' | 'E') ('+' | '-')? DEC_LIT` already put in
-# xtask's `CONTEXTUAL` list at an earlier pin. The vscode generator REFUSES to
-# run on a word terminal that is in neither `reserved_kw` nor `CONTEXTUAL`, so
-# this bump does not build until a human rules on all five; tl09 rules them
-# CONTEXTUAL, for the reason `'e'` and `'E'` already are (xtask/src/vscode.rs).
-# The SYMBOLIC terminal set does not move AT ALL: `'<'`, `'^'`, `'>'`, `'+'`,
-# `'0'` and `'.'` were every one of them already in the v0.2.14 inventory —
-# `'0'` and `'.'` as DELIMITERS, the other four as operators. `reserved_kw` is
-# byte-identical: fifty names, the spec's own checksum.
+# wolf-lang `ac256b20` (s170, "Pool[T] and handle T lower — three refusals
+# narrowed, three witnesses mem -> run"): the pool now lowers, so this witness
+# runs where it used to stop at the mem tier. The program below the header is
+# byte-for-byte what it was. It matters here anyway, because `regions.lu` is
+# the FORMATTING subject — "the largest canonical `wolf fmt` output in the
+# set, so a formatting response is a real byte-for-byte claim" — and a
+# formatting response echoes the document, header comment included. So
+# `requests/formatting-byte-stable` moves at this pin for an INPUT reason and
+# not because the server changed its mind, and the two causes are kept apart
+# in the transcript block below.
 #
-# THE VENDORED SAMPLES DID NOT MOVE. All FIFTEEN paths in `samples.toml` are
-# byte-identical at v0.2.14 and v0.2.15 — measured twice and two ways, by
-# `git rev-parse <tag>:corpus/<path>` on both sides (fifteen blob-sha pairs,
-# fifteen matches) and again by re-copying every one of them out of the
-# submodule at the new pin and watching `git status` stay quiet. This bump's
-# re-vendor changed `spec/grammar.ebnf`, `spec/anchors.json`, this file, and
-# the `upstream` gitlink — nothing else.
-#
-# THE ARCHIVE IS WHOLE AT THIS TAG. Measured 2026-09-17: release id 390641220
-# is published (`draft=false`, `published_at` 2026-09-17T11:09:57Z), is Latest,
-# targets `trunk`, and carries FOUR assets —
-#   wolf-0.2.15-aarch64-apple-darwin.tar.gz       (13,868,188 bytes)
-#   wolf-0.2.15-aarch64-unknown-linux-gnu.tar.gz  (59,245,278 bytes)
-#   wolf-0.2.15-x86_64-pc-windows-msvc.tar.gz     (11,893,559 bytes)
-#   wolf-0.2.15-x86_64-unknown-linux-gnu.tar.gz   (70,324,308 bytes)
-# — the same four-triple set v0.2.3 first carried, so le06's acquire step
-# (`wolf-<version>-<triple>.tar.gz`, derived from the two fields above) needs
-# no change and all three tier-1 runners stay covered. Both archives this lane
-# downloaded matched the API's own asset digest byte for byte.
-#
-# THE UPSTREAM WART REPRODUCES A SIXTH TIME, unchanged and unreaped: the tag
-# `v0.2.15` has FOUR releases behind it — the published one above plus THREE
-# empty drafts (ids 390641561, 390641914, 390644190; `assets=0`,
-# `published=null`), all four `created_at` 2026-09-17T11:02:05Z, the same
-# second. v0.2.3, v0.2.4, v0.2.5, v0.2.12 and v0.2.14 have the identical
-# shape. This is wolf-lang#226's self-publishing release racing: each archive
-# job creates-or-gets the release, three lose, and the losers' empty drafts are
-# never reaped. It does NOT break acquisition — `gh release download v0.2.15`
-# and the API's tag lookup both resolve the published one — but `gh release
-# list` shows three Draft rows above the real one, which is exactly the shape
-# a human checking "did the release land?" misreads. Nothing in this repo
-# compensates for it, by design.
+# THE SIX CAPTURED EDITOR SMOKES ARE STILL NOT RE-CAPTURED, and they are now
+# TWO pins stale — still at `30731a6` (v0.2.14). `lspconf replay` skips them by
+# name and exits 0, so the library is 77 files and 71 of them are replayed
+# here. wolf-lsp#26 carries the measurement and the reason (no host has all
+# six editors); this lane changes nothing about it and leaves the caveat in
+# place rather than quietly re-stating it as current.
 serves_lsp = true

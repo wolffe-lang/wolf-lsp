@@ -274,6 +274,42 @@ pub(crate) const TYPE_POSITION_UNPAINTED: &[(&str, &str)] = &[
          also the constructor's spelling in expression position, so a word list would paint \
          every call.",
     ),
+    // The two rows below were added BY HAND at the v0.2.16 pin (tl11), which
+    // is the point: `type-names-check` did not ask for them and could not.
+    // Its candidate set is the second segment of every `type.*` anchor in the
+    // vendored spec, and these two names are anchored `[conc.proc.handle]` and
+    // `[conc.task.scope]` — `conc.*`. So the gate stayed green across a pin at
+    // which the compiler's prelude gained two type names, which is verbatim the
+    // first bullet of `type_names.rs`'s own "What the gate cannot see". Filed;
+    // see `docs/PIN-0216.md` §4. Measured with the gate's own probe against the
+    // two acquired release binaries, byte-identical source both times:
+    //
+    //   Scope       0.2.15 E0301 (NotAName)  ->  0.2.16 resolves (Name)
+    //   Proc        0.2.15 E0301 (NotAName)  ->  0.2.16 resolves (Name)
+    //   Proc[int]   0.2.15 E0301 (NotAName)  ->  0.2.16 resolves (Name)
+    //
+    // Listing them here is not cosmetic: every row in this table is a name the
+    // gate ASSERTS still resolves at every future pin, so a removal or rename
+    // upstream turns it red. Before these rows the gate had no opinion about
+    // either word at all.
+    (
+        "Scope",
+        "s170 [conc.task.scope] (wolf-lang#316, BACKLOG B21): `scope name { … }`'s handle, so \
+         that a function spawning into its caller's scope can spell its parameter — \
+         `fn fan_out(s: Scope)`. NEW at v0.2.16; E0301 at v0.2.15. Unlike `Pool` and `Mutex` it \
+         takes no argument and would be paintable, but painting it is a RULING and not this \
+         lane's: the wolf-lang corpus at this pin contains zero uses of `Scope` in code (one \
+         comment, `memory/defer_order.lu`), so there is no witness to test a paint against, and \
+         the lowercase `scope` the walk already paints is the keyword beside it.",
+    ),
+    (
+        "Proc",
+        "s170 [conc.proc.handle] (wolf-lang#110/#316, BACKLOG B21): `spawn proc f(…)`'s handle, \
+         carrying the completion type its supervisor collects at `p.join()` — `Proc[int]`, never \
+         a bare `Proc`. NEW at v0.2.16; E0301 at v0.2.15. Unpainted for the SAME reason as \
+         `Pool` and `Mutex`: it takes an argument, and painting the bare word would colour it \
+         wherever the identifier appears.",
+    ),
 ];
 
 /// Which scope each reserved keyword is painted with.

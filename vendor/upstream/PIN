@@ -145,7 +145,7 @@ version = "wolf 0.2.16 (wolfgang, pin 93a5fe5)"
 # BYTE-IDENTICAL ANSWER — tl09 learned that the hard way and this lane did not
 # repeat the mistake, so the transcript claim below is a MEASUREMENT of all 71
 # scripted sessions re-recorded at this pin, not an inference from a diffstat.
-# (See the "THE TRANSCRIPTS" block below, written after the re-record.)
+# (The "THE TRANSCRIPTS" block below is that measurement.)
 #
 # `crates/wolf_sema/src/prelude.rs` grows by 23 lines and TWO OF THEM ARE TYPE
 # NAMES — the first prelude NAMES added since s158's `range`, and the first
@@ -240,6 +240,48 @@ version = "wolf 0.2.16 (wolfgang, pin 93a5fe5)"
 # `requests/formatting-byte-stable` moves at this pin for an INPUT reason and
 # not because the server changed its mind, and the two causes are kept apart
 # in the transcript block below.
+#
+# THE TRANSCRIPTS, MEASURED. All 71 scripted sessions were re-recorded at this
+# pin against the acquired 0.2.16 linux binary. `71 files changed, 72
+# insertions(+), 72 deletions(-)`:
+#
+#   * SEVENTY are HEADER-ONLY — line 1's `wolf_pin` and `recorded`, nothing
+#     else.
+#   * ONE has a second changed line: `requests/formatting-byte-stable`. That
+#     line is a **`c2s` `textDocument/didOpen`** — the CLIENT's own payload,
+#     carrying the re-vendored `regions.lu` with `phase: mem` become
+#     `phase: run`. The formatting RESPONSE did not move: it is still the empty
+#     edit array the transcript exists to pin.
+#
+# So **NOT ONE `s2c` LINE CHANGED IN THE WHOLE LIBRARY**. The server's answer
+# to every request is byte-identical at 0.2.15 and 0.2.16. That was measured by
+# classifying every changed line by its `dir` field, not by eyeballing a diff,
+# because "70 header-only and one body diff" is the same shape whether the
+# server moved or the document did, and the two are not the same claim.
+# `replay` at the new pin: **71 ok, 0 mismatched, 6 skipped, exit 0**.
+# `onetruth`: 15 samples x 9 profiles, 0 known divergences, zero unfiled.
+#
+# THIS LANE PREDICTED ZERO MOVERS AND WAS WRONG BY ONE, and the reason is worth
+# more than the number. The prediction walked every behaviour change in the
+# release against the fifteen vendored sample DOCUMENTS — #444's `move`, #312's
+# spawn, #316's handles, #400's fn-parameter, #391/#392's region charging,
+# s169's exit codes, `[type.list.lit.elem]`, `[mem.str.ws]` — and every one of
+# those calls was right. What it never checked was whether the INPUTS had
+# moved. tl09 measured that explicitly ("fifteen blob-sha pairs, fifteen
+# matches") and this lane assumed it, so the one thing that moved is the one
+# thing that was not looked at. The two named fallback candidates —
+# `annotate/semanticTokens-error` (for s175's rewrite of error-row entry
+# resolution) and `requests/document-symbol` / `hover-nothing-there` (for
+# `errors.lu`'s `io.Error`, the only qualified row entry in the sample set) —
+# BOTH held, which is itself the useful answer: wolf-lang#434 is a strict
+# extension on the same-module single-segment case, and an unresolvable `io.`
+# prefix still falls through to a tag.
+#
+# The lesson, stated so the next bump can use it: **a pin bump has two
+# independent sources of transcript movement — what the server answers, and
+# what the vendored documents say — and a prediction about one is not a
+# prediction about the other.** The 0.2.15 bump moved the first and not the
+# second; this one moved the second and not the first.
 #
 # THE SIX CAPTURED EDITOR SMOKES ARE STILL NOT RE-CAPTURED, and they are now
 # TWO pins stale — still at `30731a6` (v0.2.14). `lspconf replay` skips them by

@@ -69,6 +69,28 @@
 #! pin and are not claimed here. And the negative half of this witness did not
 #! move by one byte — `rows/error_alias_ident.lu` answers the same 26 tokens,
 #! and not one of its seven `error` identifiers is `keyword`.
+#!
+#! AT THE v0.2.16 PIN THIS TRANSCRIPT DID NOT MOVE, and that is a measurement
+#! worth recording rather than a silence. s175 (wolf-lang#434,
+#! `[type.err.alias.qualified]`) rewrote error-row ENTRY RESOLUTION wholesale
+#! at this release — "the row lowering only ever looked up a single-segment
+#! path in the current module; it now resolves an entry the way a type path
+#! resolves" — and put the resolver's REFERENCE TABLE through the new path.
+#! That reference table is precisely the machinery s165 moved at the last
+#! pin, and moving it is precisely what painted `IoErrors` and `ConfigErrors`
+#! where they are USED. tl11 named this transcript as the most likely place
+#! for the rewrite to show, and it shows nothing: the two `union` entries and
+#! the brace-less `! ConfigErrors` tail answer the same 26 tokens, the
+#! `/range` request over lines 13:0-14:0 still answers 3, and
+#! `rows/error_alias_ident.lu`'s seven `error` identifiers keep their
+#! `property`/`function`/`variable` types.
+#!
+#! So #434 is a strict EXTENSION on the same-module single-segment case this
+#! file witnesses: qualified and `use`-bound entries gained a resolution, and
+#! the case that already worked did not change by a byte. That is what this
+#! transcript is for, and it is the second consecutive pin at which it has
+#! answered a question about an upstream change nobody could answer from a
+#! diffstat.
 name      annotate/semanticTokens-error
 profile   minimal
 

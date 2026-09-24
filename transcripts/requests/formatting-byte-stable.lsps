@@ -3,6 +3,31 @@
 #! happens to be a no-op, an empty array. An editor that applies a whole-file
 #! replacement on every save churns the undo stack and defeats every
 #! format-on-save workflow, and the result is `exact` here for that reason.
+#!
+#! THE ONE TRANSCRIPT THAT MOVED AT THE v0.2.16 PIN, AND IT MOVED FOR THE
+#! DOCUMENT, NOT FOR THE SERVER. tl11 re-recorded all 71 scripted sessions at
+#! `93a5fe5`: 71 files changed, 72 insertions, 72 deletions — seventy are
+#! header-only (`wolf_pin`, `recorded`), and this one is the seventy-first,
+#! with exactly TWO changed lines: its header, and line 5. Line 5 is a `c2s`
+#! `textDocument/didOpen`, which is the CLIENT's own payload: the vendored
+#! `regions.lu` changed one line of its `//!` header directive between the
+#! tags —
+#!
+#!     -//! phase: mem
+#!     +//! phase: run
+#!
+#! — wolf-lang `ac256b20` (s170, "Pool[T] and handle T lower — three refusals
+#! narrowed, three witnesses mem -> run"). The program below that header is
+#! byte-for-byte what it was, and the FORMATTING RESPONSE did not move at all:
+#! it is still the empty edit array this transcript exists to pin. Across all
+#! 71 transcripts, **not one `s2c` line changed** — the server's answer to
+#! every request in the library is byte-identical at 0.2.15 and 0.2.16.
+#!
+#! Kept here because the two causes read the same in a diff and are not the
+#! same claim. tl11 predicted zero movers, having reasoned only about what the
+#! COMPILER changed, and never checked whether the vendored INPUTS had moved —
+#! which tl09 measured explicitly and this lane assumed. The prediction was
+#! wrong by one, and this is the one.
 name      requests/formatting-byte-stable
 profile   minimal
 

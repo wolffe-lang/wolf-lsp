@@ -280,7 +280,7 @@ pub(crate) const TYPE_POSITION_UNPAINTED: &[(&str, &str)] = &[
     // vendored spec, and these two names are anchored `[conc.proc.handle]` and
     // `[conc.task.scope]` — `conc.*`. So the gate stayed green across a pin at
     // which the compiler's prelude gained two type names, which is verbatim the
-    // first bullet of `type_names.rs`'s own "What the gate cannot see". Filed;
+    // first bullet of `type_names.rs`'s own "What the gate cannot see". Filed as wolf-lsp#32;
     // see `docs/PIN-0216.md` §4. Measured with the gate's own probe against the
     // two acquired release binaries, byte-identical source both times:
     //

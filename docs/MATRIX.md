@@ -98,7 +98,7 @@ bullet of `type_names.rs`'s own "What the gate cannot see", a hypothetical
 since wolf-lsp#24 was written and **live for the first time here**. Both words
 are now classified by hand in `TYPE_POSITION_UNPAINTED` (which at least makes
 the gate assert they keep resolving; it had no opinion about either before),
-and the blindness is filed rather than absorbed — `docs/PIN-0216.md` §4.
+and the blindness is filed as wolf-lsp#32 — `docs/PIN-0216.md` §4.
 `BUILTIN_TYPES` (seventeen prims) and `PRELUDE_TYPE_ONLY` (still just `range`)
 are byte-identical across the span, extracted and hashed separately: a file that
 grew is not the same claim as a list that did not.

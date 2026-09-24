@@ -208,7 +208,7 @@ version = "wolf 0.2.16 (wolfgang, pin 93a5fe5)"
 # upstream without a two-segment `type.<name>` anchor of its own spelling* —
 # which has been a hypothetical since wolf-lsp#24 was written and is LIVE for
 # the first time here. The gate stays green while the set it guards is two
-# names short. It is filed rather than absorbed; see docs/PIN-0216.md §4.
+# names short. It is filed as wolf-lsp#32 rather than absorbed; see docs/PIN-0216.md §4.
 #
 # `spec/grammar.ebnf` DID NOT CHANGE, checked two ways rather than one.
 # `git diff --quiet 2e4ca769 93a5fe50 -- spec/grammar.ebnf` exits **0**, AND

@@ -35,7 +35,7 @@ candidates held: `annotate/semanticTokens-error` did not move, so wolf-lang#434
 is a strict extension on the same-module single-segment row entry, and
 `errors.lu`'s `io.Error` still falls through to a tag.
 
-**THE FINDING: `type-names-check` is green and blind at this pin.**
+**THE FINDING (wolf-lsp#32): `type-names-check` is green and blind at this pin.**
 `crates/wolf_sema/src/prelude.rs` gains **`Scope`** and **`Proc`** (s170,
 wolf-lang#316, B21) — the first prelude TYPE NAMES since s158's `range`.
 Measured with the gate's own probe against both acquired binaries, byte-

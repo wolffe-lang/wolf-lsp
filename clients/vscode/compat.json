@@ -3,21 +3,21 @@
   "client_version": "0.0.1",
   "artifact": "vsix — clients/vscode/, packaged by @vscode/vsce",
   "wolf": {
-    "min": "0.2.15",
-    "max_tested": "0.2.15",
-    "pin": "2e4ca769b396219585a07ff18492529c944672d9",
-    "pin_version_string": "wolf 0.2.15 (wolfgang, pin 2e4ca76)"
+    "min": "0.2.16",
+    "max_tested": "0.2.16",
+    "pin": "93a5fe504593ca7642b78ba83b4986e7a03cfe71",
+    "pin_version_string": "wolf 0.2.16 (wolfgang, pin 93a5fe5)"
   },
   "verified": {
-    "date": "2026-09-17",
-    "host": "kasumi (linux x86_64), against the ACQUIRED v0.2.15 x86_64-unknown-linux-gnu artifact (sha256 dd28150c…), not a local build — wave 45 puts every cargo invocation there; the PIN `version` string was read off the ACQUIRED darwin arm64 artifact (sha256 166004ee…), both digests matched against the release API's own",
+    "date": "2026-09-24",
+    "host": "kasumi (linux x86_64), against the ACQUIRED v0.2.16 x86_64-unknown-linux-gnu artifact (sha256 84e30c05…), not a local build — wave 46 puts every cargo invocation there. UNLIKE tl09, the PIN `version` string was read off THAT SAME linux artifact rather than the darwin one, because this lane could run it: `wolf --version` printed \"wolf 0.2.16 (wolfgang, pin 93a5fe5)\" directly. The darwin arm64 archive (sha256 b0431056…) was acquired and hashed member-by-member all the same, and both digests matched the release API's own before anything was unpacked",
     "evidence": [
-      "transcripts/vscode/smoke.jsonl was NOT re-captured at this pin and is still at 30731a6 (v0.2.14, tl07's capture). lspconf --require-server replay SKIPS it by name and exits 0; nothing in this row is earned by a vscode session at 2e4ca76. wolf-lsp#26 carries the measurement and why neither host this wave could drive all six editors",
+      "transcripts/vscode/smoke.jsonl was NOT re-captured at this pin and is still at 30731a6 (v0.2.14, tl07's capture) — TWO pins stale now, not one. lspconf --require-server replay SKIPS it by name and exits 0; nothing in this row is earned by a real vscode session at 93a5fe5. wolf-lsp#26 carries the measurement and the reason (no host has all six editors); this lane did not re-capture and does not restate the caveat as resolved",
       "profiles/vscode.json (unchanged; not re-read at this pin — the vscode smoke was not re-driven)",
       "clients/vscode/src/test/suite/extension.test.ts (both halves — the server half has run at every pin since le07 repaired the two defects that had kept it dark; NOT run at this pin)",
-      "lspconf replay + onetruth under this client's derived profile at pin 2e4ca76 (v0.2.15), 2026-09-17 — the 71 scripted transcripts re-recorded and matched (replay: 71 ok, 0 mismatched; onetruth: 15 samples × 9 profiles, 0 known divergences, zero unfiled). The re-record is HEADER-ONLY across 70 of the 71 and a TWO-TOKEN body diff in the 71st: 71 files, 73 insertions, 73 deletions, of which 70 are line 1's wolf_pin and recorded and the other three are annotate/semanticTokens-error's header and its two semanticTokens answers, which gain IoErrors as `type` at 0-based line 13 column 22 and ConfigErrors as `type` at line 15 column 27 — wolf-lang#379's fix (b2ad629, s165), whose closing comment predicted both coordinates exactly before this lane measured them. No other response body moved, and the negative half of that witness (rows/error_alias_ident.lu, seven identifiers spelled `error`) is byte-identical. UNLIKE tl07 AND tl03, replay now SKIPS SIX FILES: the captured editor smokes are still at 30731a6 and were NOT re-captured at this pin, so the library is 77 files and 71 of them were replayed (wolf-lsp#26)"
+      "lspconf replay + onetruth under this client's derived profile at pin 93a5fe5 (v0.2.16), 2026-09-24 — the 71 scripted transcripts re-recorded and matched (replay: 71 ok, 0 mismatched, 6 skipped; onetruth: 15 samples × 9 profiles, 0 known divergences, zero unfiled). THE SERVER'S ANSWER DID NOT MOVE ANYWHERE: 71 files, 72 insertions, 72 deletions, of which 70 are line 1's wolf_pin and recorded alone, and the 71st — requests/formatting-byte-stable — changes its header and ONE further line, a `c2s` textDocument/didOpen. That is the CLIENT's own payload: the vendored regions.lu moved one line of its `//!` header directive between the tags (`phase: mem` -> `phase: run`, wolf-lang ac256b20, s170's pool lowering), and the formatting RESPONSE is still the empty edit array. Not one s2c line changed in the whole library — measured by classifying every changed line by its `dir` field, not by reading the diff. Both crates the answer comes from are byte-identical across 2e4ca769..93a5fe50 (crates/wolf_query/ and crates/wolf_lsp/), but that was NOT the evidence: tl09 predicted an empty diff from exactly that fact and was wrong, so this claim is the re-record. The library is 77 files and 71 of them were replayed (wolf-lsp#26)"
     ],
-    "caveat": "THE CAPTURED SMOKE IS STALE. transcripts/vscode/smoke.jsonl was captured at 30731a6 (v0.2.14) and replay skips it at this pin, so the part of this range that a REAL vscode session earns is one version behind the rest. The scripted suite — which covers every rung the smoke covers, through this client's own derived profile — did run at 2e4ca76. wolf-lsp#26."
+    "caveat": "THE CAPTURED SMOKE IS STALE, AND IT IS NOW TWO PINS STALE. transcripts/vscode/smoke.jsonl was captured at 30731a6 (v0.2.14) and replay skips it at 0.2.16, so the part of this range a REAL vscode session earns is two versions behind the rest. The scripted suite — which covers every rung the smoke covers, through this client's own derived profile — did run at 93a5fe5. wolf-lsp#26."
   },
   "warning_surface": "one notification at activation, plus `Wolf: Show Version`"
 }

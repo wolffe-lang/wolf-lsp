@@ -1,5 +1,32 @@
 # Changelog
 
+## tl14 — 2026-09-28 — the pin at 0.2.18, and nothing but the header moved
+
+**The pin moves `93a5fe5` → `ec56a08`** (wolf-lang `v0.2.18`, release
+397723077), spanning two releases — v0.2.17 was never pinned here. Both
+archives were acquired and matched the release API's digest (da027bf9… linux
+x86-64, b8f36045… darwin arm64), every member hashed by name; `wolf.1` and
+`README.md` are the only shared members that moved.
+
+**71 scripted transcripts re-recorded, 71 header-only** (`71 files changed, 71
+insertions(+), 71 deletions(-)`): classified by `dir`, **0 `s2c` and 0 `c2s`
+lines changed**, as predicted before the bump. The fifteen vendored samples are
+blob-identical across the span, and no sample spells a shape the two releases'
+memory-tier changes reach. `replay` 71 ok / 0 mismatched / 6 skipped;
+`onetruth` 15 × 9, zero unfiled.
+
+**Anchors 539 → 542**, diffed as key sets both ways: 3 added
+(`mem.model.place.rhs`, `os.fs.path.domain`, `mem.model.place.elem`), 0
+dropped, 0 retargeted. **The type-names gate is green and, this time, blind to
+nothing**: the candidate set is 18 at both pins and `prelude.rs` is
+byte-identical across the span, so wolf-lsp#32's hole has nothing to miss.
+**`grammar.ebnf` moved** (s182's moded store, +2 lines) with an identical
+terminal set, so every EBNF-derived artifact stayed current; only `pin.lua`
+and `pin.ts` were regenerated. The compat statement moves to 0.2.18; the six
+captured smokes are three pins stale (#26). Found and filed: the helix/zed
+tree-sitter-wolf pin `bba5274` is 78 commits behind (#33). Contract,
+prediction (five of five) and evidence: `docs/PIN-0218.md`.
+
 ## tl11 — 2026-09-24 — the pin at 0.2.16, and a gate that is green for a case it cannot see
 
 **The pin moves `2e4ca76` → `93a5fe5`** (wolf-lang `v0.2.16`, release

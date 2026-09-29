@@ -6,6 +6,74 @@ verified at, the evidence for that tier, and (for T1 and T2) the CI job that
 re-checks the evidence on every push. A row that claims a verification it does
 not have is a bug in this file.
 
+**Last reviewed against wolf pin `ec56a08`, 2026-09-28** (tl14, the pins at
+0.2.18). That is the wolf-lang release tag `v0.2.18`, **two** releases on from
+the `v0.2.16` this file was last stamped at — v0.2.17 (`02afce84`) was never
+pinned here — so the pinned version string is the bare `wolf 0.2.18 (wolfgang,
+pin ec56a08)` and `lspconf doctor` reports READY. The binary it reports is the
+**acquired release artifact**: the x86_64-unknown-linux-gnu archive of release
+397723077, sha256 da027bf9…, whose `wolf --version` printed the `PIN` string
+directly. The darwin arm64 archive (sha256 b8f36045…) was acquired and hashed
+member by member (ten members each, all by name — `vendor/upstream/PIN`), and
+both digests matched the release API's own before anything was unpacked; never
+a local build. `PIN` records the peeled `v0.2.18^{commit}`,
+`ec56a08f04ff318ea659fd58683f7ae4f22dc7a5`.
+
+**THE SCRIPTED HALF IS AT THIS PIN AND NOTHING BUT THE HEADER MOVED; THE
+CAPTURED HALF IS NOW THREE PINS BEHIND.** `lspconf --require-server replay`:
+**77 transcripts, 71 replayed ok, 0 mismatched, SIX SKIPPED, exit 0** — read the
+count, not the exit code.
+
+- **The 71 scripted transcripts were re-recorded: `71 files changed, 71
+  insertions(+), 71 deletions(-)`, every changed line is line 1** (`wolf_pin`
+  and `recorded`). Classified by the `dir` field rather than by reading the
+  diff: **0 `s2c` lines and 0 `c2s` lines changed** — neither source of
+  movement tl11 separated fired. The inputs could not move (the fifteen vendored
+  samples are blob-identical across `93a5fe50..ec56a08f`), and the server's
+  answers did not, although the compiler under the query crates moved across
+  two releases (s182's moded store, s183's operand order, eg01/eg01b's element
+  places, s184's #464 refusal). `onetruth`: 15 samples × 9 profiles, 0 known
+  divergences, zero unfiled.
+- **None of the six captured smokes is re-captured** — still `30731a6`
+  (v0.2.14), now three pins behind (v0.2.15, v0.2.16, v0.2.18). wolf-lsp#26,
+  unchanged and not restated as resolved; each `compat.json` says so in its own
+  `caveat`.
+- **The declared range MOVED, it did not widen**: `min` and `max_tested` are
+  both `0.2.18` (`earned_versions` derives the earned set from `PIN`;
+  `compat-check` refused the 0.2.16 rows until they moved).
+
+### The spec diff at this pin, and a gate with nothing to miss
+
+`spec/anchors.json` goes **539 → 542** over `.anchors`, diffed as key sets both
+ways and for retargeting: **3 added, 0 dropped, 0 retargeted** —
+`[mem.model.place.rhs]` and `[os.fs.path.domain]` at 0.2.17,
+`[mem.model.place.elem]` at 0.2.18. None is `type.*`, so `type-names-check`'s
+candidate set is **18 words at both pins**, and the gate passes against the
+acquired 0.2.18: **18 painted, 8 unpainted, 18 anchor candidates, all
+classified**. This time the green is not blind to anything: the prelude that
+the gate cannot read directly (wolf-lsp#32) is **byte-identical** across the
+span (`crates/wolf_sema/src/prelude.rs` blob `ae8e0be9…` at v0.2.16, v0.2.17
+and v0.2.18), so no type name arrived without an anchor. tl11's hand rows
+`Scope` and `Proc` still resolve — the gate asserts it.
+
+`spec/grammar.ebnf` **did change** — blob `4b2ed993…` → `3f24d076…` at v0.2.17,
+unchanged at v0.2.18: s182's `[gram.expr.assign]` adds the moded index store
+(`index_place '=' 'take' expr`) and the `index_place` production. The quoted
+terminal set is identical on both sides, so no word or symbolic terminal joins
+the inventory: `grammar-drift` reports all three `tmLanguage.json` files
+*current* (nothing regenerated), `nvim-check` finds all 50 reserved keywords
+and 18 builtin types, `emacs-check` the same 18. Only the two pin constants
+(`pin.lua`, `pin.ts`) were regenerated.
+
+**Not changed here, and found:** `clients/helix/languages.toml` and
+`clients/zed/extension.toml` pin tree-sitter-wolf at `bba5274` (2026-09-01, le04), 78 commits behind its
+trunk and an ancestor of tl13's moded store (`2edeb37`); `config-check` passes
+because it checks the grammar blocks name one rev, not that the rev is current.
+Filed as wolf-lsp#33; the integrator re-pins them to a tree-sitter-wolf merge
+commit.
+
+## tl11's review, at pin `93a5fe5` (v0.2.16) — kept as the record
+
 **Last reviewed against wolf pin `93a5fe5`, 2026-09-24** (tl11, the pins at
 0.2.16). That is the wolf-lang release tag `v0.2.16`, one release on from the
 `v0.2.15` this file was last stamped at, so the pinned version string is the

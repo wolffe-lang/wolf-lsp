@@ -1,5 +1,29 @@
 # Changelog
 
+## tl15 — 2026-09-30 — the pin at 0.2.19, and the editors' grammar moves 82 commits
+
+**The pin moves `ec56a08` → `c2401f0`** (wolf-lang `v0.2.19`, release
+400208356), one release. Both archives were acquired and matched the release
+API's digest (9f3873d8… linux x86-64, 8e9a9653… darwin arm64), every member
+hashed by name; `wolf.1` and `README.md` are again the only shared members that
+moved. **No vendored data file moved**: `anchors.json` (542, key sets equal
+both ways), `grammar.ebnf`, `01-grammar.md` and the fifteen samples are the same
+blobs at both tags, so the bump commit is the gitlink and `PIN` alone.
+
+**71 scripted transcripts re-recorded, 71 header-only**: classified by `dir`,
+0 `s2c` and 0 `c2s` lines, as predicted before the bump. `replay` 71 ok / 0
+mismatched / 6 skipped; `onetruth` 15 × 9, zero unfiled; `type-names-check`
+18 candidates, all classified. The compat statement moves to 0.2.19; the six
+captured smokes are four pins stale (#26).
+
+**helix and zed pin tree-sitter-wolf at `1834e73`** (#33), replacing
+`bba5274` (2026-09-01), 82 commits behind: the moded store, and `take`/`mut`
+reserved outside member position (tree-sitter-wolf#20, PR #23, CI green).
+tree-sitter-wolf's three query files and zed's own `highlights.scm` load
+against that rev on every mode position and all fifteen samples (34 runs;
+a planted bad node name fails). `config-check` green at the one rev. Contract,
+prediction (seven of seven) and evidence: `docs/PIN-0219.md`.
+
 ## tl14 — 2026-09-28 — the pin at 0.2.18, and nothing but the header moved
 
 **The pin moves `93a5fe5` → `ec56a08`** (wolf-lang `v0.2.18`, release

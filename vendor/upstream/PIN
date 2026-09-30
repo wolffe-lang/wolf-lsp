@@ -1,18 +1,19 @@
 # The wolf-lang commit this repo is keyed to. A bump is its own commit, with
 # the re-vendored data, and nothing else (vendor/README.md).
 #
-# tl14 pins the RELEASE TAG `v0.2.18`, an ANNOTATED tag peeling to the commit
-# below — tl11 pinned v0.2.16, tl09 v0.2.15, tl07 v0.2.14, tl02 v0.2.12 and
-# le04..le08 v0.2.1..v0.2.5 the same way. This bump SPANS TWO RELEASES: v0.2.17
-# (`02afce84`, 2026-09-26) was never pinned here. Note the peel: `git rev-parse
-# v0.2.18` answers the TAG object; `v0.2.18^{commit}` is what belongs here.
-commit = ec56a08f04ff318ea659fd58683f7ae4f22dc7a5
+# tl15 pins the RELEASE TAG `v0.2.19`, an ANNOTATED tag (object `ba0b43a7…`)
+# peeling to the commit below — tl14 pinned v0.2.18, tl11 v0.2.16, tl09
+# v0.2.15, tl07 v0.2.14, tl02 v0.2.12 and le04..le08 v0.2.1..v0.2.5 the same
+# way. One release this time: v0.2.18 was this file's previous pin. Note the
+# peel: `git rev-parse v0.2.19` answers the TAG object; `v0.2.19^{commit}` is
+# what belongs here.
+commit = c2401f05f37794a078d2acf62f837dad98e5950d
 # The exact `wolf --version` string that commit produces (first line). The
-# binary's second line names its lupin pairing: `paired with lupin 0.1.41
-# (reference interpreter), pin 93a5fe5` — lupin 0.1.41 declares conformance to
-# wolf-lang `93a5fe5`, which is v0.2.16, this file's PREVIOUS pin: an ancestor
+# binary's second line names its lupin pairing: `paired with lupin 0.1.42
+# (reference interpreter), pin ec56a08` — lupin 0.1.42 declares conformance to
+# wolf-lang `ec56a08`, which is v0.2.18, this file's PREVIOUS pin: an ancestor
 # of wolf-lang trunk, resolvable in any clone (`crates/wolf_driver/PAIRING` at
-# the tag: `lupin-version = 0.1.41`, `lupin-pin = 93a5fe5`). The pairing sha is
+# the tag: `lupin-version = 0.1.42`, `lupin-pin = ec56a08`). The pairing sha is
 # a wolf-LANG commit, never a wolf-interp one (the correction recorded at 0.2.16).
 #
 # D57 decides the shape: a release build stamps `WOLF_COMMIT` and
@@ -24,39 +25,39 @@ commit = ec56a08f04ff318ea659fd58683f7ae4f22dc7a5
 #
 # SEVEN HEX DIGITS, READ OFF THE ACQUIRED ARTIFACT (wolf-lang#199 still open:
 # the clause's abbreviation length depends on the building clone's packed
-# object count). The x86_64-unknown-linux-gnu archive of release 397723077,
-# sha256 da027bf9da4c5a9dfa42c4ac6c7da3072ffce84922916650f024af83701e6bd4
+# object count). The x86_64-unknown-linux-gnu archive of release 400208356,
+# sha256 9f3873d80118681a583a7bc00ead8d00186d447d2584aea75bc65a81f8238c8e
 # (matched against the release asset's own digest after download), prints
 # exactly the string below.
-version = "wolf 0.2.18 (wolfgang, pin ec56a08)"
+version = "wolf 0.2.19 (wolfgang, pin c2401f0)"
 # Does `wolf lsp` exist at this commit? YES, and it annotates, as it has since
 # the v0.2.5 pin (s52 the subcommand; s133 definition/references/rename; s134
 # signatureHelp, semanticTokens, inlayHint).
 #
-# THE RELEASE. Id 397723077, `draft=false`, published 2026-09-27T16:38:47Z,
+# THE RELEASE. Id 400208356, `draft=false`, published 2026-09-30T16:02:58Z,
 # target `trunk`, four assets (the four-triple set since v0.2.3), and EXACTLY
-# ONE release carries the tag (wolf-lang#226's fix holds for a third cut):
-#   wolf-0.2.18-aarch64-apple-darwin.tar.gz       13,949,722  b8f36045…
-#   wolf-0.2.18-aarch64-unknown-linux-gnu.tar.gz  59,543,634  fe6adec8…
-#   wolf-0.2.18-x86_64-pc-windows-msvc.tar.gz     12,019,776  6a133a42…
-#   wolf-0.2.18-x86_64-unknown-linux-gnu.tar.gz   70,662,335  da027bf9…
+# ONE release carries the tag (wolf-lang#226's fix holds for a fourth cut):
+#   wolf-0.2.19-aarch64-apple-darwin.tar.gz       13,949,902  8e9a9653…
+#   wolf-0.2.19-aarch64-unknown-linux-gnu.tar.gz  59,538,517  dcb418a9…
+#   wolf-0.2.19-x86_64-pc-windows-msvc.tar.gz     12,023,773  9b93ce77…
+#   wolf-0.2.19-x86_64-unknown-linux-gnu.tar.gz   70,697,806  9f3873d8…
 #
 # THE ARCHIVE PAIR, EVERY MEMBER HASHED BY NAME (ten per archive; `_wolf` is
 # the zsh completion script with the executable bit set, the same 2d1e4801…
 # constant at every pin on every platform — a check that hashes "the first
 # binary it finds" can never go red). Full sha256, linux-x64 / darwin-arm64:
 #
-#   wolf                a9556245da435991d6603f0000412d8b7d4c87f75af3c665329ca6e2da18b424  272,628,488
-#                       1b90e0ddbc0a14cf07fc62ffacfabd903ab2254e1d7db97fbd72422ce23d4e23   14,771,000
-#   libwolf_rt.a        5360ecd64d5e375652ca47c653ddee167c3185615db1353864d50da5bfaf7ed5   38,295,622
-#                       8b8c95a81421412c8c2a90de35985e11c4644919a801b5811abb681af98ef66c   27,493,296
-#   wolf-cimport-worker b2525d003a16b04309dc3206a15cf0043050c1721cf6960d6df4b70b259d0e58   10,769,672
-#                       b79781bc90a5220a14d88c0a9929e5bdd2231dd2625b75e32d156ba22858d892      702,216
+#   wolf                3821bfaa3a4e3fd4b7970a88482d9fc37bfc09738cd70dc56d60f2484ae313f9  272,726,368
+#                       c8bc428b2e7179fad0a2acbda83657842fc180046e137376bf306a52238eb13c   14,768,424
+#   libwolf_rt.a        f7e7236dd61144830d9a3c4de9dcd617993226790cb8310bea7db3e4c735dda9   38,295,732
+#                       a72a0ec920ac3897063e1b6cd276e6c03b351a75626e8b4e2bb13ca02afafe4a   27,493,304
+#   wolf-cimport-worker 65498b6ae4510e837b1089a7d403ec98a8d9b5f5b97c8f10d94b94825ab26e99   10,769,672
+#                       5ae6c076129ce04c80baff510209a7227a1ea9b1c3a0ba12f74b2d9dde26151d      702,216
 #
 # identical on both platforms:
 #
-#   wolf.1              988cb2a20a07d5e03519e93da4452abfce824b799a6d41e21a7a9ad45d5070a4   10,920  (moved; afcf4f7c… at 0.2.16)
-#   README.md           0c31613efe657ad95b029821a9a85bb9833f69951b739d7143c8143b9a3e758b    5,327  (moved; 8e148142… at 0.2.16)
+#   wolf.1              cd04e9d8c7fc9f833fded8c3525eaedc9a0b746c0d35e4e95cbe4861569b61bf   10,920  (moved; 988cb2a2… at 0.2.18)
+#   README.md           d0ff56987aadef79536bde1ea38f56676850554b49c81429c8c95554f8da5be9    5,327  (moved; 0c31613e… at 0.2.18)
 #   _wolf               2d1e48018333e3dd70473b34dfc78723f91f71d44a3d95287b68ce85fbbc2221    1,913
 #   wolf.bash           29eb2d752591ab80fe54aed9e368f51aa9bfd557e48dd7ff2cc95e47fad27d97      515
 #   wolf.fish           51a1b6a8e12d6e3def4621af12cefee13ec6181ed1687ec9eba7f43f17550c2f    2,861
@@ -64,66 +65,35 @@ version = "wolf 0.2.18 (wolfgang, pin ec56a08)"
 #   LICENSE-EXCEPTION   a0eec20d7b98b1cd0e5b4d23c3965667c97b68fb365ec95a9516b0c3cbc4fec4    1,273
 #
 # GLIBC FLOOR: the highest GLIBC symbol the linux `wolf` imports is
-# GLIBC_2.34, as at 0.2.16.
+# GLIBC_2.34, as at 0.2.16 and 0.2.18.
 #
-# WHAT v0.2.16..v0.2.18 ADDS THAT THIS REPO CAN SEE — measured, not swept.
-# 152 commits, 263 files, +18,946 −599, two releases (0.2.17: s182's moded
-# index store, s183's ruled operand order; 0.2.18: eg01/eg01b's element places,
-# s184's #464 refusal of a `mut` parameter left moved-out, #460).
+# WHAT v0.2.18..v0.2.19 ADDS THAT THIS REPO CAN SEE — measured, not swept.
+# 105 commits, 164 files, +8,589 −381, one release (eg02's element-granular
+# `mut` claims, EG2; eg02b's #472 ruling A and the #471 gate fix; s185's
+# header reads beside a moved element and #469; #470, a release-tier ICE in
+# 0.2.18; the pairing to lupin 0.1.42).
 #
 # THE SERVER'S CODE DOES NOT MOVE: `crates/wolf_query/` (tree a9d98535…) and
-# `crates/wolf_lsp/` (tree 9c59202a…) are the same trees at v0.2.16, v0.2.17
-# and v0.2.18. The compiler under them does move (`wolf_parse`, `wolf_lex`,
-# `wolf_mem`), so the transcript claim is a measurement (below), not an
-# inference from these two trees.
+# `crates/wolf_lsp/` (tree 9c59202a…) are the same trees at v0.2.16, v0.2.17,
+# v0.2.18 and v0.2.19. Nor, this time, does the front end: `crates/wolf_lex/src`
+# (9166b9fd…) and `crates/wolf_parse/src` (0bbed454…) are the same trees at
+# v0.2.18 and v0.2.19 — the span moved only their snapshot tests. What moved
+# is `wolf_mem`, so the transcript claim is still a measurement (below), not
+# an inference.
 #
 # THE PRELUDE DOES NOT MOVE: `crates/wolf_sema/src/prelude.rs` is blob
-# ae8e0be9a94a1e78ec91a2a9f4f9f6bd7a245b6d at all three commits. No type name
-# is added or dropped, so wolf-lsp#32's blindness (a prelude name with no
-# `type.*` anchor — `Scope`/`Proc` at 0.2.16) has nothing to miss at this bump.
-# The type-names candidate set (second segment of every `type.*` anchor) is 18
-# words at both pins, zero added, zero dropped.
+# ae8e0be9a94a1e78ec91a2a9f4f9f6bd7a245b6d at both commits; the type-names
+# candidate set is the same 18 words.
 #
-# `spec/anchors.json`: 539 → 542 over `.anchors` (the file's top level has two
-# keys, `anchors` and `version`; a naive count prints 2). Diffed as KEY SETS
-# BOTH WAYS and for retargeting: 3 added, 0 dropped, 0 retargeted (539 common
-# keys joined, none with a changed file).
+# NO VENDORED DATA FILE MOVES. `spec/anchors.json` is the same blob
+# (9be2d074…) at both tags: 542 keys over `.anchors`, diffed as KEY SETS BOTH
+# WAYS — 0 added, 0 dropped, 0 retargeted. `spec/grammar.ebnf` is the same
+# blob (3f24d076…), and so is `spec/01-grammar.md`; the span's one spec edit
+# is `02-memory-model.md`. The fifteen samples are blob-identical per
+# `samples.toml` path. After the re-vendor, all seventeen data files here are
+# blob-identical to the tag's, and this commit's diff under `vendor/` is this
+# file alone.
 #
-#   [mem.model.place.rhs]   02-memory-model.md   0.2.17  s182/s183 (#438, #452)
-#   [os.fs.path.domain]     11-os.md             0.2.17
-#   [mem.model.place.elem]  02-memory-model.md   0.2.18  eg01/eg01b
-#
-# Reconciled against the CHANGELOG's `## 0.2.18` and `## 0.2.17`: of the eleven
-# bracketed clauses the notes name, these three are new and the other eight
-# exist at both pins (edits to anchored clauses).
-#
-# `spec/grammar.ebnf` MOVED, for the first time since tl09's FORMAT_SPEC: blob
-# 4b2ed9939875a8a7d65924449fbd2ba29a3fcd56 (v0.2.16) →
-# 3f24d076fde0079aa3b6260b8cbadc97a35a9eff (v0.2.17, unchanged at v0.2.18).
-# +2 lines, s182's `[gram.expr.assign]`: `assign_stmt` gains
-# `| index_place '=' 'take' expr TERM`, and `index_place ::= expr '[' expr ']'`
-# is new. The quoted-terminal set is IDENTICAL (136 distinct quoted tokens on
-# both sides): `take`, `=`, `[` and `]` were terminals already, so no word or
-# symbolic terminal joins the inventory the grammar-drift gates read.
-#
-# THE FIFTEEN VENDORED SAMPLES DID NOT MOVE: blob sha per `samples.toml` path at
-# v0.2.16 vs v0.2.18, fifteen identical, zero different (tl11's lesson — the
-# input side of a transcript is measured, not assumed). After the re-vendor, all
-# seventeen data files here are blob-identical to the tag's.
-#
-# THE SIX CAPTURED EDITOR SMOKES remain at `30731a6` (v0.2.14), now three pins
-# stale (wolf-lsp#26, no host has all six editors). `lspconf replay` skips them
-# by name. Nothing about that changes here.
-#
-# THE TRANSCRIPTS, MEASURED. All 71 scripted sessions were re-recorded at this
-# pin against the acquired 0.2.18 linux binary: `71 files changed, 71
-# insertions(+), 71 deletions(-)`, and every changed line is line 1 (`wolf_pin`,
-# `recorded`). Classified by the `dir` field: 0 `s2c` lines, 0 `c2s` lines. The
-# prediction (docs/PIN-0218.md §3, committed before the bump) said exactly this;
-# it reasoned about both sources of movement tl11 separated — the inputs (the
-# fifteen samples, blob-identical) and the server's answers (no sample spells a
-# shape the two releases' memory-tier changes reach). `replay`: 71 ok, 0
-# mismatched, 6 skipped, exit 0. `onetruth`: 15 samples x 9 profiles, 0 known
-# divergences, zero unfiled. `type-names-check --require-server`: 18 painted,
-# 8 unpainted, 18 anchor candidates, all classified.
+# THE SIX CAPTURED EDITOR SMOKES remain at `30731a6` (v0.2.14), now four pins
+# stale (wolf-lsp#26). `lspconf replay` skips them by name.
 serves_lsp = true

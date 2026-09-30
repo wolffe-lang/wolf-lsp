@@ -42,12 +42,15 @@ languages = ["Wolf"]
 # and `languages/wolf/highlights.scm` carries the queries this extension
 # ships.
 #
-# The commit is the le04 branch head (the `\u{…}` escape bounded at one
-# to six hex digits, per v0.2.1's UNI_ESC), pinned at wiring time;
-# the integrator re-pins it to the merge commit (or a tag) when
-# tree-sitter-wolf's trunk takes the branch — pins move only with a human
-# hand, like every pin here.
+# The commit is tree-sitter-wolf's tl15 head (wolf-lsp#33), the same rev
+# helix names: the grammar that knows s182's moded store and reserves
+# `take` and `mut` outside member position (tree-sitter-wolf#20). It
+# replaced `bba5274` (2026-09-01, le04), 82 commits behind. The
+# `highlights.scm` this extension ships was loaded against it with no
+# edit (docs/PIN-0219.md). Pins move only with a human hand, like every
+# pin here; if tree-sitter-wolf's trunk takes the branch by anything but
+# a fast-forward, the integrator re-pins to the merge commit.
 
 [grammars.wolf]
 repository = "https://github.com/wolffe-lang/tree-sitter-wolf"
-commit = "bba527442ee8c4837756f42b415bde3f63bc4a3b"
+commit = "1834e73050e91164602e0f100cba8b138ced71dd"

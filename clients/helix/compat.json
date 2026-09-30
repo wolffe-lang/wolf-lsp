@@ -3,21 +3,21 @@
   "client_version": "0.0.1",
   "artifact": "TOML fragment — clients/helix/languages.toml, copied into the user's config",
   "wolf": {
-    "min": "0.2.18",
-    "max_tested": "0.2.18",
-    "pin": "ec56a08f04ff318ea659fd58683f7ae4f22dc7a5",
-    "pin_version_string": "wolf 0.2.18 (wolfgang, pin ec56a08)"
+    "min": "0.2.19",
+    "max_tested": "0.2.19",
+    "pin": "c2401f05f37794a078d2acf62f837dad98e5950d",
+    "pin_version_string": "wolf 0.2.19 (wolfgang, pin c2401f0)"
   },
   "verified": {
-    "date": "2026-09-28",
-    "host": "kasumi (linux x86_64), against the ACQUIRED v0.2.18 x86_64-unknown-linux-gnu artifact (sha256 da027bf9…), not a local build — every cargo invocation runs there (wave 45). The PIN `version` string was read off that same linux artifact: `wolf --version` printed \"wolf 0.2.18 (wolfgang, pin ec56a08)\". The darwin arm64 archive (sha256 b8f36045…) was acquired and hashed member by member all the same, and both digests matched the release API's own before anything was unpacked",
+    "date": "2026-09-30",
+    "host": "kasumi (linux x86_64), against the ACQUIRED v0.2.19 x86_64-unknown-linux-gnu artifact (sha256 9f3873d8…), not a local build — every cargo invocation runs there (wave 45). The PIN `version` string was read off that same linux artifact: `wolf --version` printed \"wolf 0.2.19 (wolfgang, pin c2401f0)\". The darwin arm64 archive (sha256 8e9a9653…) was acquired and hashed member by member all the same, and both digests matched the release API's own before anything was unpacked",
     "evidence": [
-      "transcripts/helix/smoke.jsonl was NOT re-captured at this pin and is still at 30731a6 (v0.2.14, tl07's capture) — THREE pins stale now (the v0.2.15, v0.2.16 and v0.2.18 pins; v0.2.17 was never pinned). lspconf --require-server replay SKIPS it by name and exits 0; nothing in this row is earned by a real helix session at ec56a08. wolf-lsp#26 carries the measurement and the reason (no host has all six editors); this lane did not re-capture and does not restate the caveat as resolved",
+      "transcripts/helix/smoke.jsonl was NOT re-captured at this pin and is still at 30731a6 (v0.2.14, tl07's capture) — FOUR pins stale now (the v0.2.15, v0.2.16, v0.2.18 and v0.2.19 pins; v0.2.17 was never pinned). lspconf --require-server replay SKIPS it by name and exits 0; nothing in this row is earned by a real helix session at c2401f0. wolf-lsp#26 carries the measurement and the reason (no host has all six editors); this lane did not re-capture and does not restate the caveat as resolved",
       "profiles/helix.json (unchanged; not re-read at this pin — the helix smoke was not re-driven)",
       "cargo xtask helix-health",
-      "lspconf replay + onetruth under this client's derived profile at pin ec56a08 (v0.2.18), 2026-09-28 — the 71 scripted transcripts re-recorded and matched (replay: 71 ok, 0 mismatched, 6 skipped; onetruth: 15 samples × 9 profiles, 0 known divergences, zero unfiled). NOTHING BUT THE HEADER MOVED: 71 files, 71 insertions, 71 deletions, every one of them line 1's wolf_pin and recorded; classified by the `dir` field, 0 s2c and 0 c2s lines changed. The span is two releases (v0.2.17 was never pinned here); crates/wolf_query/ and crates/wolf_lsp/ are byte-identical across it and the fifteen vendored samples are blob-identical, but the evidence is the re-record, not those facts (tl09's lesson). The library is 77 files and 71 of them were replayed (wolf-lsp#26)"
+      "lspconf replay + onetruth under this client's derived profile at pin c2401f0 (v0.2.19), 2026-09-30 — the 71 scripted transcripts re-recorded and matched (replay: 71 ok, 0 mismatched, 6 skipped; onetruth: 15 samples × 9 profiles, 0 known divergences, zero unfiled). NOTHING BUT THE HEADER MOVED: 71 files, 71 insertions, 71 deletions, every one of them line 1's wolf_pin and recorded; classified by the `dir` field, 0 s2c and 0 c2s lines changed. The span is one release; crates/wolf_query/, crates/wolf_lsp/ and the front end (crates/wolf_lex/src, crates/wolf_parse/src) are byte-identical across it and the fifteen vendored samples are blob-identical, but the evidence is the re-record, not those facts (tl09's lesson). The library is 77 files and 71 of them were replayed (wolf-lsp#26)"
     ],
-    "caveat": "THE CAPTURED SMOKE IS STALE, AND IT IS NOW THREE PINS STALE. transcripts/helix/smoke.jsonl was captured at 30731a6 (v0.2.14) and replay skips it at 0.2.18, so the part of this range a REAL helix session earns is three pins behind the rest. The scripted suite — which covers every rung the smoke covers, through this client's own derived profile — did run at ec56a08. wolf-lsp#26."
+    "caveat": "THE CAPTURED SMOKE IS STALE, AND IT IS NOW FOUR PINS STALE. transcripts/helix/smoke.jsonl was captured at 30731a6 (v0.2.14) and replay skips it at 0.2.19, so the part of this range a REAL helix session earns is four pins behind the rest. The scripted suite — which covers every rung the smoke covers, through this client's own derived profile — did run at c2401f0. wolf-lsp#26."
   },
   "warning_surface": "none — a TOML fragment cannot run code; docs/COMPAT.md is the whole statement"
 }

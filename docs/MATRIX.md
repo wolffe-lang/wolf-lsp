@@ -6,6 +6,60 @@ verified at, the evidence for that tier, and (for T1 and T2) the CI job that
 re-checks the evidence on every push. A row that claims a verification it does
 not have is a bug in this file.
 
+**Last reviewed against wolf pin `c2401f0`, 2026-09-30** (tl15, the pin at
+0.2.19). That is the wolf-lang release tag `v0.2.19`, **one** release on from
+the `v0.2.18` this file was last stamped at, so the pinned version string is the
+bare `wolf 0.2.19 (wolfgang, pin c2401f0)` and `lspconf doctor` reports READY.
+The binary it reports is the **acquired release artifact**: the
+x86_64-unknown-linux-gnu archive of release 400208356, sha256 9f3873d8…, whose
+`wolf --version` printed the `PIN` string directly. The darwin arm64 archive
+(sha256 8e9a9653…) was acquired and hashed member by member (ten members each,
+by name — `vendor/upstream/PIN`), and both digests matched the release API's
+own before anything was unpacked; never a local build. `PIN` records the peeled
+`v0.2.19^{commit}`, `c2401f05f37794a078d2acf62f837dad98e5950d`.
+
+**THE SCRIPTED HALF IS AT THIS PIN AND NOTHING BUT THE HEADER MOVED; THE
+CAPTURED HALF IS NOW FOUR PINS BEHIND.** `lspconf --require-server replay`:
+**77 transcripts, 71 replayed ok, 0 mismatched, SIX SKIPPED, exit 0**.
+
+- **The 71 scripted transcripts were re-recorded: `71 files changed, 71
+  insertions(+), 71 deletions(-)`, every hunk `@@ -1 +1 @@`.** Classified by
+  the `dir` field: 142 changed lines, all headers, **0 `s2c`, 0 `c2s`**. The
+  inputs could not move (the fifteen samples are blob-identical across
+  `ec56a08f..c2401f05`), and neither the query crates nor the front end
+  (`wolf_lex`, `wolf_parse` sources) moved; the release's movement is
+  `wolf_mem`'s (EG2's element-granular claims, header reads, #470, #469), on
+  shapes no sample spells. `onetruth`: 15 samples × 9 profiles, 0 known
+  divergences, zero unfiled.
+- **None of the six captured smokes is re-captured** — still `30731a6`
+  (v0.2.14), now four pins behind (v0.2.15, v0.2.16, v0.2.18, v0.2.19).
+  wolf-lsp#26, unchanged.
+- **The declared range MOVED, it did not widen**: `min` and `max_tested` are
+  both `0.2.19`.
+
+**No vendored data file moved.** `spec/anchors.json`, `spec/grammar.ebnf` and
+`spec/01-grammar.md` are the same blobs at both tags (542 anchors, key sets
+equal both ways; the type-names gate: 18 painted, 8 unpainted, 18 candidates,
+all classified against 0.2.19), and so are the fifteen samples. The bump
+commit touched the `upstream` gitlink and `PIN` alone; `grammar-drift`,
+`nvim-check` and `emacs-check` found every EBNF-derived artifact current, and
+only the two pin constants and the compat rows were regenerated.
+
+**The editors' grammar pin moved (wolf-lsp#33).** `clients/helix/languages.toml`
+and `clients/zed/extension.toml` pinned tree-sitter-wolf at `bba5274`
+(2026-09-01, le04), 82 commits behind its trunk and older than the moded store.
+Both now name `1834e73`, tree-sitter-wolf's tl15 head: the moded store, and
+`take`/`mut` reserved outside member position (tree-sitter-wolf#20), CI green
+there (runs 36750218089, 36750216216). Against a private build of that rev,
+tree-sitter-wolf's three `queries/*.scm` (helix's runtime copy) and zed's own
+`languages/wolf/highlights.scm` load on a sample spelling every mode position
+and on all fifteen vendored samples (34 query runs, rc 0; a planted bad node
+name in a copy of zed's file fails, rc 1). zed's copy needed no edit to load;
+it still lags tree-sitter-wolf's own highlights (no `invalid_escape`,
+`error_item` or nullary-variant rules), which loading cannot see.
+
+## tl14's review, at pin `ec56a08` (v0.2.18) — kept as the record
+
 **Last reviewed against wolf pin `ec56a08`, 2026-09-28** (tl14, the pins at
 0.2.18). That is the wolf-lang release tag `v0.2.18`, **two** releases on from
 the `v0.2.16` this file was last stamped at — v0.2.17 (`02afce84`) was never

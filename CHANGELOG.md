@@ -1,5 +1,50 @@
 # Changelog
 
+## tl16 — 2026-10-02 — the pin at 0.2.20, zed's queries become the grammar's, the docs stop calling it a seed
+
+**The pin moves `c2401f0` → `cdde128`** (wolf-lang `v0.2.20`, release
+401498582), one release. Both archives were acquired and matched the release
+API's digest (24855d5e… linux x86-64, c8a3f1a3… darwin arm64), every member
+hashed by name; `wolf.1` and `README.md` are again the only shared members that
+moved. **One vendored data file moved**: `anchors.json` gained
+`mem.tier0.excl.4` (ruling #17) and `type.row.else` (ruling #18) — 544 keys,
+key sets diffed both ways, 0 dropped, 0 retargeted, and the type-names
+candidate set is the same 18 words. `grammar.ebnf` and the fifteen samples are
+the same blobs at both tags, so the bump commit is the gitlink, `PIN` and
+`anchors.json`.
+
+**71 scripted transcripts re-recorded, 71 header-only**: classified by `dir`,
+0 `s2c` and 0 `c2s` lines, as predicted before the bump — this time with the
+front end moved (`wolf_parse`'s field shorthand, s190) on a shape no sample
+spells. `replay` 71 ok / 0 mismatched / 6 skipped; `onetruth` 15 × 9, zero
+unfiled; `type-names-check` 18 candidates, all classified; `doctor` READY at
+`cdde128`. The compat statement moves to 0.2.20; the six captured smokes are
+five pins stale (#26).
+
+**zed's `languages/wolf/highlights.scm` is tree-sitter-wolf's own
+`queries/highlights.scm` at the pinned rev `1834e73`, byte for byte.** tl15
+found the copy lagging (no `invalid_escape`, `error_item`, nullary-variant,
+`range` or `aliased_error_type` rules; no `then`/`error`/`cap` keywords) and
+noted that loading cannot see a missing rule. Capture counts can: against a
+private build of `1834e73` the new file matches the grammar's own counts on
+the mode sample, a probe and all fifteen vendored samples, and beats the old
+copy where the old copy was blind (probe 117 → 126, `if_then_ident` 51 → 52,
+`error_alias_union` 102 → 107); a planted bad node name fails. The helix/zed
+pin stays `1834e73` (tree-sitter-wolf's trunk; tl16's grammar lane changes no
+grammar file).
+
+**The client docs stop calling the grammar a seed or a scaffold.** helix
+(README, CHANGELOG), zed (README, CHANGELOG, `config.toml`), emacs (README) and
+the nvim plugin (README, `queries/README.md`, four query headers,
+`treesitter.lua`, `health.lua`, `doc/wolf.txt`) all described
+`tree-sitter-wolf` as a seed commit with no `grammar.js` — true at `b1b2c17`,
+false since le02 and the live helix/zed pins of le04. Each now names the
+pinned grammar. The nvim query files are **still empty** and say why: nobody
+has written them against the grammar's node names; that lane is owed and
+named in `clients/nvim/queries/README.md`. Contract, prediction (eight of
+eight) and evidence: `docs/PIN-0220.md`; the grammar half is tree-sitter-wolf
+`docs/spec-findings-tl16.md`.
+
 ## tl15 — 2026-09-30 — the pin at 0.2.19, and the editors' grammar moves 82 commits
 
 **The pin moves `ec56a08` → `c2401f0`** (wolf-lang `v0.2.19`, release

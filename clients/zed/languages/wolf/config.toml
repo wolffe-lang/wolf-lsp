@@ -46,8 +46,8 @@ brackets = [
 tab_size = 4
 hard_tabs = false
 
-# With no grammar there is no `indents.scm`, so these regexes are the whole
-# auto-indent story. They are deliberately **lookahead-free** — Zed compiles
+# No `indents.scm` ships here (tree-sitter-wolf carries none), so these
+# regexes are the whole auto-indent story. They are deliberately **lookahead-free** — Zed compiles
 # them with the Rust `regex` crate, which has no `(?!…)`, so the
 # `^((?!//).)*…` form used in `clients/vscode/language-configuration.json`
 # (JavaScript regex, lookahead supported) cannot be transliterated here. The

@@ -16,11 +16,15 @@ not registered in Zed's extension registry and installing it means
 - `languages/wolf/config.toml` and `languages/wolfi/config.toml`: comment form,
   brackets, indent.
 - The server is attached to `Wolf` only, never to `Wolfi` (D32).
-- `[grammars.wolf]` ships **commented out**, and this matters more in Zed than
-  anywhere else: Zed builds every grammar named in the manifest *at install
-  time*, so a block pointing at the empty `tree-sitter-wolf` repository would
-  fail the install and take the language server down with it. The consequence is
-  that a `.lu` buffer in Zed has **no syntax highlighting**.
+- `[grammars.wolf]` is **live**, pinning `wolffe-lang/tree-sitter-wolf` by
+  commit (`1834e73` at tl16, the same rev helix names), and
+  `languages/wolf/highlights.scm` ships beside it — since tl16 byte-identical
+  to tree-sitter-wolf's own `queries/highlights.scm` at that rev. It shipped
+  commented out at first, and that mattered more in Zed than anywhere else:
+  Zed builds every grammar named in the manifest *at install time*, so a block
+  pointing at the then-empty `tree-sitter-wolf` repository would have failed
+  the install and taken the language server down with it. Live since le02,
+  when the grammar landed.
 - No runtime version check. The extension's only entry point is
   `language_server_command`, which Zed calls before there is anywhere to raise a
   notification; [`docs/COMPAT.md`](../../docs/COMPAT.md) carries the statement.

@@ -16,27 +16,35 @@ extension whose only job is to find `wolf` on `PATH`".
 ## What is in here
 
 ```
-extension.toml                    manifest: one language server, no grammars
+extension.toml                    manifest: one language server, one grammar
 Cargo.toml                        cdylib, zed_extension_api 0.7.0
 src/lib.rs                        ~40 lines of glue and ~40 of reasons
-languages/wolf/config.toml        .lu — comments, brackets, indent
-languages/wolfi/config.toml       .wolfi — the same, with no server attached
+languages/wolf/config.toml        .lu — grammar = "wolf", comments, brackets, indent
+languages/wolf/highlights.scm     tree-sitter-wolf's own, byte for byte, at the pinned rev
+languages/wolfi/config.toml       .wolfi — the same, with no grammar and no server
 ```
 
-There is no `highlights.scm` and no `[grammars.wolf]` table. Both wait on
-`tree-sitter-wolf`, which is a seed commit with no `grammar.js`
-(`b1b2c17`). For Zed this is not merely cosmetic: **Zed builds every grammar
-named in `extension.toml` when the extension is installed**, so a block pointing
-at an empty repository fails the install outright and takes the language server
-down with it.
+`[grammars.wolf]` and `languages/wolf/highlights.scm` are both live.
+`extension.toml` pins `wolffe-lang/tree-sitter-wolf` by commit (`1834e73` at
+tl16, the same rev helix names) and `languages/wolf/config.toml` names
+`grammar = "wolf"`; `cargo xtask config-check` holds the two spellings of the
+pin together and asserts the query file carries captures and the builtin type
+list. The highlight file is byte-identical to tree-sitter-wolf's
+`queries/highlights.scm` at the pinned rev (tl16; before that it was a copy
+that had lagged le06, s151, s157 and s158), so the next pin bump's check is one
+`diff`. While the grammar did not exist this mattered more in Zed than
+anywhere else: **Zed builds every grammar named in `extension.toml` when the
+extension is installed**, so a block pointing at an empty repository fails the
+install outright and takes the language server down with it — which is why the
+table shipped commented out until le02, when the grammar landed. This README
+went on saying so until tl16.
 
-**Zed's `grammar` key is optional, and that is what makes this work.**
-`LanguageConfig::grammar` is `Option<Arc<str>>` and defaults to `None`; Zed's
-own built-in "Plain Text" language ships with no grammar at all. The registry
-branches on it and attaches no queries when it is absent — no error, no warning.
-So `languages/wolf/config.toml` deliberately has no `grammar` key, and comments,
-brackets, autoclose and indent all still work. What is absent is syntax
-highlighting, and only that.
+**Zed's `grammar` key is optional**, and `languages/wolfi/config.toml` leans
+on that: `LanguageConfig::grammar` is `Option<Arc<str>>` and defaults to
+`None`; Zed's own built-in "Plain Text" language ships with no grammar at all,
+and the registry attaches no queries when it is absent — no error, no warning.
+So the `.wolfi` language has comments, brackets, autoclose and indent and no
+highlighting, by design: it is a binary format with nothing to highlight.
 
 ## Setup
 

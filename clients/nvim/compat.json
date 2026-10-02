@@ -3,21 +3,21 @@
   "client_version": "0.0.1",
   "artifact": "plugin tree — clients/nvim/, published as the generated wolf.nvim mirror",
   "wolf": {
-    "min": "0.2.19",
-    "max_tested": "0.2.19",
-    "pin": "c2401f05f37794a078d2acf62f837dad98e5950d",
-    "pin_version_string": "wolf 0.2.19 (wolfgang, pin c2401f0)"
+    "min": "0.2.20",
+    "max_tested": "0.2.20",
+    "pin": "cdde128a30999652c9d70189664226b766a206f0",
+    "pin_version_string": "wolf 0.2.20 (wolfgang, pin cdde128)"
   },
   "verified": {
-    "date": "2026-09-30",
-    "host": "kasumi (linux x86_64), against the ACQUIRED v0.2.19 x86_64-unknown-linux-gnu artifact (sha256 9f3873d8…), not a local build — every cargo invocation runs there (wave 45). The PIN `version` string was read off that same linux artifact: `wolf --version` printed \"wolf 0.2.19 (wolfgang, pin c2401f0)\". The darwin arm64 archive (sha256 8e9a9653…) was acquired and hashed member by member all the same, and both digests matched the release API's own before anything was unpacked",
+    "date": "2026-10-02",
+    "host": "kasumi (linux x86_64), against the ACQUIRED v0.2.20 x86_64-unknown-linux-gnu artifact (sha256 24855d5e…), not a local build — every cargo invocation runs there (wave 45). The PIN `version` string was read off that same linux artifact: `wolf --version` printed \"wolf 0.2.20 (wolfgang, pin cdde128)\". The darwin arm64 archive (sha256 c8a3f1a3…) was acquired and hashed member by member all the same, and both digests matched the release API's own before anything was unpacked",
     "evidence": [
-      "transcripts/nvim/smoke.jsonl was NOT re-captured at this pin and is still at 30731a6 (v0.2.14, tl07's capture) — FOUR pins stale now (the v0.2.15, v0.2.16, v0.2.18 and v0.2.19 pins; v0.2.17 was never pinned). lspconf --require-server replay SKIPS it by name and exits 0; nothing in this row is earned by a real nvim session at c2401f0. wolf-lsp#26 carries the measurement and the reason (no host has all six editors); this lane did not re-capture and does not restate the caveat as resolved",
+      "transcripts/nvim/smoke.jsonl was NOT re-captured at this pin and is still at 30731a6 (v0.2.14, tl07's capture) — FIVE pins stale now (the v0.2.15, v0.2.16, v0.2.18, v0.2.19 and v0.2.20 pins; v0.2.17 was never pinned). lspconf --require-server replay SKIPS it by name and exits 0; nothing in this row is earned by a real nvim session at cdde128. wolf-lsp#26 carries the measurement and the reason (no host has all six editors); this lane did not re-capture and does not restate the caveat as resolved",
       "profiles/nvim.json (unchanged; not re-read at this pin — the nvim smoke was not re-driven)",
       "clients/nvim/tests/plugin_spec.lua",
-      "lspconf replay + onetruth under this client's derived profile at pin c2401f0 (v0.2.19), 2026-09-30 — the 71 scripted transcripts re-recorded and matched (replay: 71 ok, 0 mismatched, 6 skipped; onetruth: 15 samples × 9 profiles, 0 known divergences, zero unfiled). NOTHING BUT THE HEADER MOVED: 71 files, 71 insertions, 71 deletions, every one of them line 1's wolf_pin and recorded; classified by the `dir` field, 0 s2c and 0 c2s lines changed. The span is one release; crates/wolf_query/, crates/wolf_lsp/ and the front end (crates/wolf_lex/src, crates/wolf_parse/src) are byte-identical across it and the fifteen vendored samples are blob-identical, but the evidence is the re-record, not those facts (tl09's lesson). The library is 77 files and 71 of them were replayed (wolf-lsp#26)"
+      "lspconf replay + onetruth under this client's derived profile at pin cdde128 (v0.2.20), 2026-10-02 — the 71 scripted transcripts re-recorded and matched (replay: 71 ok, 0 mismatched, 6 skipped; onetruth: 15 samples × 9 profiles, 0 known divergences, zero unfiled). NOTHING BUT THE HEADER MOVED: 71 files, 71 insertions, 71 deletions, every one of them line 1's wolf_pin and recorded; classified by the `dir` field, 0 s2c and 0 c2s lines changed. The span is one release; crates/wolf_query/, crates/wolf_lsp/ and crates/wolf_lex/src are byte-identical across it and the fifteen vendored samples are blob-identical, while crates/wolf_parse/src moved (the field shorthand, s190) on a shape no sample spells — the evidence is the re-record, not those facts (tl09's lesson). The library is 77 files and 71 of them were replayed (wolf-lsp#26)"
     ],
-    "caveat": "THE CAPTURED SMOKE IS STALE, AND IT IS NOW FOUR PINS STALE. transcripts/nvim/smoke.jsonl was captured at 30731a6 (v0.2.14) and replay skips it at 0.2.19, so the part of this range a REAL nvim session earns is four pins behind the rest. The scripted suite — which covers every rung the smoke covers, through this client's own derived profile — did run at c2401f0. wolf-lsp#26."
+    "caveat": "THE CAPTURED SMOKE IS STALE, AND IT IS NOW FIVE PINS STALE. transcripts/nvim/smoke.jsonl was captured at 30731a6 (v0.2.14) and replay skips it at 0.2.20, so the part of this range a REAL nvim session earns is five pins behind the rest. The scripted suite — which covers every rung the smoke covers, through this client's own derived profile — did run at cdde128. wolf-lsp#26."
   },
   "warning_surface": ":checkhealth wolf"
 }

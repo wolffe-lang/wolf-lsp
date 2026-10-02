@@ -16,10 +16,12 @@ against on which date.
   v0 is a binary format and `wolf lsp` discovers modules by `.lu` alone (D32).
   Attaching the server there would produce a buffer that looks supported and is
   not.
-- `[[grammar]]` ships **commented out**. `wolffe-lang/tree-sitter-wolf` is a
-  seed commit with no `grammar.js`, so a `.lu` buffer in Helix has **no syntax
-  highlighting**. Uncommenting it only makes Helix noisy at startup; it does not
-  produce highlighting.
+- `[[grammar]]` is **live**, pinning `wolffe-lang/tree-sitter-wolf` by `rev`
+  (`1834e73` at tl16; the comment above the block says why that rev). It
+  shipped commented out at first — tree-sitter-wolf was a seed commit with no
+  `grammar.js` — and went live at le02, when the grammar landed. `hx -g fetch
+  && hx -g build` compiles the pinned parser; highlighting also needs
+  tree-sitter-wolf's `queries/*.scm` copied into `runtime/queries/wolf/`.
 - No runtime version check, and there cannot be one: a TOML fragment cannot run
   code. [`docs/COMPAT.md`](../../docs/COMPAT.md) is the whole compatibility
   statement for this client.

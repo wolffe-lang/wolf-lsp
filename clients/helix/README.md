@@ -66,20 +66,22 @@ a real 17-record session driven through a pty:
 None of these is worked around here (D22: the editor layer must not launder what
 the compiler said).
 
-**A `.lu` buffer in helix has no syntax highlighting at all, and there is
-nothing to ship in its place.** helix highlights exclusively through
-tree-sitter — there is no regex fallback of the kind `clients/nvim/syntax/`
-and `clients/vscode/syntaxes/` provide — and
-`wolffe-lang/tree-sitter-wolf` is a seed commit containing three files, none of
-them `grammar.js` (`b1b2c17`, "scaffold; grammar port to follow
-opportunistically"). So the `[[grammar]]` block ships **commented out**, with
-that reason on the line above it. A config that references a missing grammar
-makes `hx -g fetch` fail and `hx` noisy at startup, and noisy startup is how
-users delete config.
+**Syntax highlighting needs two things the fragment alone cannot give you.**
+helix highlights exclusively through tree-sitter — there is no regex fallback
+of the kind `clients/nvim/syntax/` and `clients/vscode/syntaxes/` provide. The
+`[[grammar]]` block is live and pins `wolffe-lang/tree-sitter-wolf` by `rev`
+(`1834e73` at tl16). It shipped commented out while that repository was a seed
+commit with no `grammar.js` (`b1b2c17`) and went live at le02, when the
+grammar landed; this paragraph went on describing the seed until tl16.
+`hx -g fetch && hx -g build` compiles the pinned parser, and the queries still
+have to be copied by hand — tree-sitter-wolf's `queries/*.scm` into helix's
+`runtime/queries/wolf/` — because helix loads queries from its runtime
+directory, not from the grammar checkout. Without that copy `hx --health wolf`
+shows the parser ✓ and the highlight queries ✘, and a `.lu` buffer is
+unhighlighted.
 
 Everything a *server* provides — diagnostics, hover, symbols, formatting, code
-actions — works today and is what the transcript shows. What is missing is
-strictly the local tokenizer.
+actions — works with no grammar at all and is what the transcript shows.
 
 **`hx --health` reports a tree-sitter parser that does not exist.** Pointing the
 fragment at `grammar = "definitely-not-a-real-grammar"` still prints

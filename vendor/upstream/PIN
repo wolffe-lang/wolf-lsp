@@ -1,19 +1,21 @@
 # The wolf-lang commit this repo is keyed to. A bump is its own commit, with
 # the re-vendored data, and nothing else (vendor/README.md).
 #
-# tl15 pins the RELEASE TAG `v0.2.19`, an ANNOTATED tag (object `ba0b43a7…`)
-# peeling to the commit below — tl14 pinned v0.2.18, tl11 v0.2.16, tl09
-# v0.2.15, tl07 v0.2.14, tl02 v0.2.12 and le04..le08 v0.2.1..v0.2.5 the same
-# way. One release this time: v0.2.18 was this file's previous pin. Note the
-# peel: `git rev-parse v0.2.19` answers the TAG object; `v0.2.19^{commit}` is
-# what belongs here.
-commit = c2401f05f37794a078d2acf62f837dad98e5950d
+# tl16 pins the RELEASE TAG `v0.2.20`, an ANNOTATED tag (object `db412213…`)
+# peeling to the commit below — tl15 pinned v0.2.19, tl14 v0.2.18, tl11
+# v0.2.16, tl09 v0.2.15, tl07 v0.2.14, tl02 v0.2.12 and le04..le08
+# v0.2.1..v0.2.5 the same way. One release this time: v0.2.19 was this file's
+# previous pin. Note the peel: `git rev-parse v0.2.20` answers the TAG object;
+# `v0.2.20^{commit}` is what belongs here. wolf-lang's default branch had
+# already moved past the tag (s195, `6a57f943`) when this was written; the
+# tag, not trunk, is the pin.
+commit = cdde128a30999652c9d70189664226b766a206f0
 # The exact `wolf --version` string that commit produces (first line). The
-# binary's second line names its lupin pairing: `paired with lupin 0.1.42
-# (reference interpreter), pin ec56a08` — lupin 0.1.42 declares conformance to
-# wolf-lang `ec56a08`, which is v0.2.18, this file's PREVIOUS pin: an ancestor
+# binary's second line names its lupin pairing: `paired with lupin 0.1.43
+# (reference interpreter), pin c2401f0` — lupin 0.1.43 declares conformance to
+# wolf-lang `c2401f0`, which is v0.2.19, this file's PREVIOUS pin: an ancestor
 # of wolf-lang trunk, resolvable in any clone (`crates/wolf_driver/PAIRING` at
-# the tag: `lupin-version = 0.1.42`, `lupin-pin = ec56a08`). The pairing sha is
+# the tag: `lupin-version = 0.1.43`, `lupin-pin = c2401f0`). The pairing sha is
 # a wolf-LANG commit, never a wolf-interp one (the correction recorded at 0.2.16).
 #
 # D57 decides the shape: a release build stamps `WOLF_COMMIT` and
@@ -25,39 +27,39 @@ commit = c2401f05f37794a078d2acf62f837dad98e5950d
 #
 # SEVEN HEX DIGITS, READ OFF THE ACQUIRED ARTIFACT (wolf-lang#199 still open:
 # the clause's abbreviation length depends on the building clone's packed
-# object count). The x86_64-unknown-linux-gnu archive of release 400208356,
-# sha256 9f3873d80118681a583a7bc00ead8d00186d447d2584aea75bc65a81f8238c8e
+# object count). The x86_64-unknown-linux-gnu archive of release 401498582,
+# sha256 24855d5efae9515ac092f1db11613187838f018f017dc20416f70905fb816ce9
 # (matched against the release asset's own digest after download), prints
 # exactly the string below.
-version = "wolf 0.2.19 (wolfgang, pin c2401f0)"
+version = "wolf 0.2.20 (wolfgang, pin cdde128)"
 # Does `wolf lsp` exist at this commit? YES, and it annotates, as it has since
 # the v0.2.5 pin (s52 the subcommand; s133 definition/references/rename; s134
 # signatureHelp, semanticTokens, inlayHint).
 #
-# THE RELEASE. Id 400208356, `draft=false`, published 2026-09-30T16:02:58Z,
+# THE RELEASE. Id 401498582, `draft=false`, published 2026-10-02T03:16:00Z,
 # target `trunk`, four assets (the four-triple set since v0.2.3), and EXACTLY
-# ONE release carries the tag (wolf-lang#226's fix holds for a fourth cut):
-#   wolf-0.2.19-aarch64-apple-darwin.tar.gz       13,949,902  8e9a9653…
-#   wolf-0.2.19-aarch64-unknown-linux-gnu.tar.gz  59,538,517  dcb418a9…
-#   wolf-0.2.19-x86_64-pc-windows-msvc.tar.gz     12,023,773  9b93ce77…
-#   wolf-0.2.19-x86_64-unknown-linux-gnu.tar.gz   70,697,806  9f3873d8…
+# ONE release carries the tag (wolf-lang#226's fix holds for a fifth cut):
+#   wolf-0.2.20-aarch64-apple-darwin.tar.gz       13,989,265  c8a3f1a3…
+#   wolf-0.2.20-aarch64-unknown-linux-gnu.tar.gz  59,770,714  30f9fad9…
+#   wolf-0.2.20-x86_64-pc-windows-msvc.tar.gz     12,039,945  9e23020c…
+#   wolf-0.2.20-x86_64-unknown-linux-gnu.tar.gz   70,919,813  24855d5e…
 #
 # THE ARCHIVE PAIR, EVERY MEMBER HASHED BY NAME (ten per archive; `_wolf` is
 # the zsh completion script with the executable bit set, the same 2d1e4801…
 # constant at every pin on every platform — a check that hashes "the first
 # binary it finds" can never go red). Full sha256, linux-x64 / darwin-arm64:
 #
-#   wolf                3821bfaa3a4e3fd4b7970a88482d9fc37bfc09738cd70dc56d60f2484ae313f9  272,726,368
-#                       c8bc428b2e7179fad0a2acbda83657842fc180046e137376bf306a52238eb13c   14,768,424
-#   libwolf_rt.a        f7e7236dd61144830d9a3c4de9dcd617993226790cb8310bea7db3e4c735dda9   38,295,732
-#                       a72a0ec920ac3897063e1b6cd276e6c03b351a75626e8b4e2bb13ca02afafe4a   27,493,304
-#   wolf-cimport-worker 65498b6ae4510e837b1089a7d403ec98a8d9b5f5b97c8f10d94b94825ab26e99   10,769,672
-#                       5ae6c076129ce04c80baff510209a7227a1ea9b1c3a0ba12f74b2d9dde26151d      702,216
+#   wolf                3fb48c1d2177703aa7e51b998461419bc3e24b0228d4b450ada956a5f45a8932  273,748,152
+#                       00b5459cc099cb24928b75e02d412a63de0ffdfe47796e1c1e54b962b1fe10e5   14,834,280
+#   libwolf_rt.a        c011f2ae88b2d7e1868861769bb3b0d529262a9ba073b9d6edf3da92f9fc55b0   38,339,746
+#                       d87f121af05028f0a29e0c69e8c4b4b78530ece82ee057c4374a870b9e6faf4b   27,524,056
+#   wolf-cimport-worker 13a61554c30382bc8e82d623ed16e9d9a9bf91e24e6a55963acbba4552771ba2   10,769,536
+#                       fe5825c3e095299732744af5e26404a0519b1e5955d6566de6d2044a8a63dab9      702,216
 #
 # identical on both platforms:
 #
-#   wolf.1              cd04e9d8c7fc9f833fded8c3525eaedc9a0b746c0d35e4e95cbe4861569b61bf   10,920  (moved; 988cb2a2… at 0.2.18)
-#   README.md           d0ff56987aadef79536bde1ea38f56676850554b49c81429c8c95554f8da5be9    5,327  (moved; 0c31613e… at 0.2.18)
+#   wolf.1              48f9eb32a9f0968e5444e82dc4a03316091210300e2bebd7b952ed64aeaa425a   10,920  (moved; cd04e9d8… at 0.2.19)
+#   README.md           1c597c5ef2fb628a33d3d508852956b0738e58060a81f9352728db4ef9322e52    5,327  (moved; d0ff5698… at 0.2.19)
 #   _wolf               2d1e48018333e3dd70473b34dfc78723f91f71d44a3d95287b68ce85fbbc2221    1,913
 #   wolf.bash           29eb2d752591ab80fe54aed9e368f51aa9bfd557e48dd7ff2cc95e47fad27d97      515
 #   wolf.fish           51a1b6a8e12d6e3def4621af12cefee13ec6181ed1687ec9eba7f43f17550c2f    2,861
@@ -65,45 +67,41 @@ version = "wolf 0.2.19 (wolfgang, pin c2401f0)"
 #   LICENSE-EXCEPTION   a0eec20d7b98b1cd0e5b4d23c3965667c97b68fb365ec95a9516b0c3cbc4fec4    1,273
 #
 # GLIBC FLOOR: the highest GLIBC symbol the linux `wolf` imports is
-# GLIBC_2.34, as at 0.2.16 and 0.2.18.
+# GLIBC_2.34, as at 0.2.16, 0.2.18 and 0.2.19.
 #
-# WHAT v0.2.18..v0.2.19 ADDS THAT THIS REPO CAN SEE — measured, not swept.
-# 105 commits, 164 files, +8,589 −381, one release (eg02's element-granular
-# `mut` claims, EG2; eg02b's #472 ruling A and the #471 gate fix; s185's
-# header reads beside a moved element and #469; #470, a release-tier ICE in
-# 0.2.18; the pairing to lupin 0.1.42).
+# WHAT v0.2.19..v0.2.20 ADDS THAT THIS REPO CAN SEE — measured, not swept.
+# 155 commits, 318 files, +30,565 −692, one release (ruling #17, two-phase
+# arguments, `[mem.tier0.excl.4]`; ruling #18, `[type.row.else]`; EG3 for one
+# call's claims; the field shorthand parsed as the longhand, #486; seven
+# silent wrong answers of 0.2.19 fixed; the pairing to lupin 0.1.43).
 #
 # THE SERVER'S CODE DOES NOT MOVE: `crates/wolf_query/` (tree a9d98535…) and
-# `crates/wolf_lsp/` (tree 9c59202a…) are the same trees at v0.2.16, v0.2.17,
-# v0.2.18 and v0.2.19. Nor, this time, does the front end: `crates/wolf_lex/src`
-# (9166b9fd…) and `crates/wolf_parse/src` (0bbed454…) are the same trees at
-# v0.2.18 and v0.2.19 — the span moved only their snapshot tests. What moved
-# is `wolf_mem`, so the transcript claim is still a measurement (below), not
-# an inference.
+# `crates/wolf_lsp/` (tree 9c59202a…) are the same trees at v0.2.16 through
+# v0.2.20. `crates/wolf_lex/src` (9166b9fd…) is the same tree too. THE FRONT
+# END MOVES THIS TIME: `crates/wolf_parse/src` 0bbed454… → b20dd47c…, one
+# file, `exprs.rs` +15 −3 — a struct-literal field shorthand `W { x }` now
+# wraps its IDENT in a `PathExpr` (s190). No vendored sample spells a field
+# shorthand (every `{x}` in the set is an f-string interpolation). `wolf_sema`
+# (`check.rs`, two-phase arguments) and `wolf_mem` (EG3) moved as well, on
+# shapes no sample spells. The transcript claim is therefore still a
+# measurement (below), not an inference.
 #
 # THE PRELUDE DOES NOT MOVE: `crates/wolf_sema/src/prelude.rs` is blob
-# ae8e0be9a94a1e78ec91a2a9f4f9f6bd7a245b6d at both commits; the type-names
-# candidate set is the same 18 words.
+# ae8e0be9a94a1e78ec91a2a9f4f9f6bd7a245b6d at both commits.
 #
-# NO VENDORED DATA FILE MOVES. `spec/anchors.json` is the same blob
-# (9be2d074…) at both tags: 542 keys over `.anchors`, diffed as KEY SETS BOTH
-# WAYS — 0 added, 0 dropped, 0 retargeted. `spec/grammar.ebnf` is the same
-# blob (3f24d076…), and so is `spec/01-grammar.md`; the span's one spec edit
-# is `02-memory-model.md`. The fifteen samples are blob-identical per
-# `samples.toml` path. After the re-vendor, all seventeen data files here are
-# blob-identical to the tag's, and this commit's diff under `vendor/` is this
-# file alone.
+# ONE VENDORED DATA FILE MOVES. `spec/anchors.json` is blob 9be2d074… at
+# v0.2.19 and 6be24a9e… at v0.2.20: 542 → 544 keys over `.anchors`, diffed as
+# KEY SETS BOTH WAYS — 2 added (`mem.tier0.excl.4`, `type.row.else`), 0
+# dropped, 0 retargeted. The type-names candidate set (the second segment of
+# every `type.<x>…` anchor) is the same 18 words at both tags: `type.row.else`
+# folds into `row`, already present from `type.row`. `spec/grammar.ebnf` is the
+# same blob (3f24d076…) at v0.2.18, v0.2.19 and v0.2.20; `spec/01-grammar.md`
+# moved by three prose lines under the struct-literal production (the
+# shorthand is the longhand) and no production. The fifteen samples are
+# blob-identical per `samples.toml` path. After the re-vendor, all seventeen
+# data files here are blob-identical to the tag's, and this commit's diff
+# under `vendor/` is this file and `spec/anchors.json` (+2 lines).
 #
-# THE SIX CAPTURED EDITOR SMOKES remain at `30731a6` (v0.2.14), now four pins
+# THE SIX CAPTURED EDITOR SMOKES remain at `30731a6` (v0.2.14), now five pins
 # stale (wolf-lsp#26). `lspconf replay` skips them by name.
-#
-# THE TRANSCRIPTS, MEASURED. All 71 scripted sessions were re-recorded at this
-# pin against the acquired 0.2.19 linux binary: `71 files changed, 71
-# insertions(+), 71 deletions(-)`, every hunk `@@ -1 +1 @@` — line 1 alone
-# (`wolf_pin`, `recorded`). Classified by the `dir` field: 142 changed lines,
-# all headers, 0 `s2c`, 0 `c2s`. The prediction (docs/PIN-0219.md §3,
-# committed before the bump) said exactly this. `replay`: 71 ok, 0 mismatched,
-# 6 skipped, exit 0. `onetruth`: 15 samples x 9 profiles, 0 known divergences,
-# zero unfiled. `type-names-check --require-server`: 18 painted, 8 unpainted,
-# 18 anchor candidates, all classified.
 serves_lsp = true

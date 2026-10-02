@@ -6,7 +6,7 @@
 -- WITHOUT calling it unsupported: a supported version RANGE is ls07's to
 -- define, and this repo's only honest fact today is one exact pin.
 return {
-  commit = "c2401f05f37794a078d2acf62f837dad98e5950d",
-  version = "wolf 0.2.19 (wolfgang, pin c2401f0)",
+  commit = "cdde128a30999652c9d70189664226b766a206f0",
+  version = "wolf 0.2.20 (wolfgang, pin cdde128)",
   serves_lsp = true,
 }

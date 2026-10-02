@@ -265,10 +265,11 @@ local function check_treesitter()
   local ts = require('wolf.treesitter')
   if not ts.available(true) then
     health.info('no `wolf` parser installed — expected today; the regex fallback is in use', {
-      '`wolffe-lang/tree-sitter-wolf` is scaffold-only (licenses and a README);',
-      'the grammar is filled opportunistically between compiler sprints.',
-      'syntax/wolf.vim is the real highlighting story until it exists, and it is',
-      'derived from the same pinned grammar the parser will be.',
+      '`wolffe-lang/tree-sitter-wolf` is a real grammar (helix and zed pin it at',
+      '1834e73), but this plugin installs no parser and its queries/wolf/*.scm',
+      'are still empty — queries/README.md names the owed filling lane.',
+      'syntax/wolf.vim is the real highlighting story until then, and it is',
+      'derived from the same pinned EBNF.',
       'Nothing is broken and nothing needs installing.',
     })
     return
@@ -283,7 +284,7 @@ local function check_treesitter()
       })
     elseif (q.patterns or 0) == 0 then
       health.warn(('queries/wolf/%s.scm has no patterns'):format(q.name), {
-        'Placeholder. Filled when tree-sitter-wolf has node names to reference.',
+        'Not yet written against the grammar — queries/README.md names the owed lane.',
       })
     else
       health.ok(('queries/wolf/%s.scm — %d pattern(s)'):format(q.name, q.patterns))

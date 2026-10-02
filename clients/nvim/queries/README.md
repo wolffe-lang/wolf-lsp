@@ -4,25 +4,28 @@ These four files exist, are on the runtimepath, are loaded by Neovim the moment
 a `wolf` parser appears, and contain **no patterns**. That is not an oversight
 and it is not a placeholder anyone forgot to fill.
 
-## The blocker
+## The blocker, then and now
 
-`wolffe-lang/tree-sitter-wolf` is scaffold-only. At the pin this plugin was
-written against the repository contains `LICENSE` and
-`README.md` — no `grammar.js`, no `src/`, no parser. Its stated scope is that
-the grammar gets "filled opportunistically between compiler sprints", and ls04
-is explicit that nothing in this sprint blocks on it.
+When this plugin was written (ls04), `wolffe-lang/tree-sitter-wolf` was
+scaffold-only: `LICENSE` and `README.md`, no `grammar.js`, no `src/`, no
+parser. A tree-sitter query is written against **node names**, and node names
+come from the grammar, so every pattern written then would have been a guess
+dressed as a derivation — the exact failure `inventory.md` exists to prevent
+for the regex highlighter, transplanted into a file format that fails louder.
+`vim.treesitter.query.get` raises on a query naming a node the grammar does not
+have, so a speculative `highlights.scm` would not have degraded gracefully the
+day the grammar landed: it would have broken every `.lu` buffer for everyone
+who installed the parser, and the breakage would have looked like a grammar
+bug. Writing zero patterns was the only option correct in both worlds.
 
-A tree-sitter query is written against **node names**, and node names come from
-the grammar. With no grammar there are no node names, so every pattern anyone
-wrote here today would be a guess dressed as a derivation — the exact failure
-`inventory.md` exists to prevent for the regex highlighter, transplanted into a
-file format that fails louder. `vim.treesitter.query.get` raises on a query
-naming a node the grammar does not have, so a speculative `highlights.scm`
-would not degrade gracefully the day the grammar lands: it would break every
-`.lu` buffer for everyone who installed the parser, and the breakage would look
-like a grammar bug.
-
-Writing zero patterns is the only option that is correct in both worlds.
+The grammar landed at le02 and has a corpus gate of its own; helix and zed pin
+it at `1834e73` (tl16), and tree-sitter-wolf ships
+`queries/{highlights,locals,injections}.scm` of its own. **These four files
+are still empty because nobody has written them**, not because there is
+nothing to write them against — this README said "scaffold-only" until tl16.
+Filling them is a lane of its own (below); until it runs, `:checkhealth wolf`
+reports `0 pattern(s)` for each, which is the visible state this layout was
+designed to show.
 
 ## Why the files exist at all, then
 
@@ -45,7 +48,9 @@ rather than a warning.
 
 ## Filling them
 
-When `tree-sitter-wolf` has a grammar:
+The owed lane, against the pinned grammar (tree-sitter-wolf's own
+`queries/highlights.scm` is the starting point; Neovim's capture names differ
+from helix's and zed's, so it is a port, not a copy):
 
 1. `highlights.scm` — map node names onto the capture set `syntax/wolf.vim`
    already establishes (`@keyword`, `@type`, `@string`, `@comment.documentation`

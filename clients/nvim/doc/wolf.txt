@@ -264,18 +264,19 @@ three are arguments for semantic tokens whenever the compiler ships them.
 ==============================================================================
 10. TREE-SITTER                                              *wolf-treesitter*
 
-There is no tree-sitter grammar for wolf yet. `wolffe-lang/tree-sitter-wolf`
-is scaffold-only — two licenses and a README — and the grammar is filled
-opportunistically between compiler sprints.
+`wolffe-lang/tree-sitter-wolf` is a real grammar (since le02; helix and zed
+pin it at 1834e73 as of tl16), but this plugin installs no parser and its
+query files are still empty: nobody has written them against the grammar's
+node names yet, and that is a lane of its own.
 
 What this plugin ships is the WIRING, which is real and inert:
 
 - the `wolf` language is registered for the `wolf` filetype, so an installed
   parser is used with no further configuration and no plugin update;
 - `queries/wolf/{highlights,injections,folds,indents}.scm` are on the
-  runtimepath and are deliberately EMPTY. A tree-sitter query is written
-  against node names, node names come from a grammar, and a guessed pattern
-  would raise "invalid node type" for every user the day a real grammar lands.
+  runtimepath and are EMPTY. They were written when there was no grammar (a
+  guessed pattern would have raised "invalid node type" for every user the
+  day a real grammar landed) and have not been filled since.
   `queries/README.md` records the filling order;
 - absence is detected and is not an error. `:checkhealth wolf` reports it as
   information, because nothing is broken and nothing needs installing.

@@ -175,11 +175,12 @@ states, and re-derive it *differently* from how the LSP path derives it — the
 exact divergence `lspconf onetruth` exists to catch. `lua/wolf/quickfix.lua` is
 the single renderer instead, and the sharing is structural.
 
-**The tree-sitter queries are empty files.** `tree-sitter-wolf` is
-scaffold-only, so there are no node names to write patterns against.
-`queries/README.md` explains why a guessed `highlights.scm` would be worse than
-none. The wiring is real and inert; the regex fallback is the highlighting
-story today.
+**The tree-sitter queries are empty files.** `tree-sitter-wolf` has been a
+real grammar since le02 (helix and zed pin it at `1834e73`, tl16), so the node
+names exist now; nobody has written the four query files against them yet, and
+this plugin installs no parser. `queries/README.md` has the filling order and
+the reason a guessed pattern was never shipped. The wiring is real and inert;
+the regex fallback is the highlighting story today.
 
 **The syntax file cannot express three real parts of wolf lexical structure**:
 expressions inside `{}` interpolations, the identifier/string fusion in

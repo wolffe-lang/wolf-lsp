@@ -1,9 +1,12 @@
---- Tree-sitter wiring — inert today, correct the day the grammar exists.
+--- Tree-sitter wiring — inert until a parser is installed and the queries
+--- are written.
 ---
---- `wolffe-lang/tree-sitter-wolf` is **scaffold-only**: at the time this was
---- written the repository contains two licenses and a README and no grammar,
---- and its stated scope is "filled opportunistically between compiler
---- sprints". So this module ships the wiring and none of the pretending:
+--- `wolffe-lang/tree-sitter-wolf` was **scaffold-only** when this was written
+--- (two licenses and a README, no grammar). It has been a real grammar since
+--- le02 — helix and zed pin it at 1834e73 (tl16) — but this plugin still
+--- installs no parser and its `queries/wolf/*.scm` are still empty (a lane
+--- of its own; see queries/README.md). So this module ships the wiring and
+--- none of the pretending:
 ---
 ---  * the `wolf` language is registered for the `wolf` filetype, so the moment
 ---    a `wolf` parser appears on the runtimepath — installed by hand, by

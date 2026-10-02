@@ -6,6 +6,74 @@ verified at, the evidence for that tier, and (for T1 and T2) the CI job that
 re-checks the evidence on every push. A row that claims a verification it does
 not have is a bug in this file.
 
+**Last reviewed against wolf pin `cdde128`, 2026-10-02** (tl16, the pin at
+0.2.20). That is the wolf-lang release tag `v0.2.20`, **one** release on from
+the `v0.2.19` this file was last stamped at, so the pinned version string is the
+bare `wolf 0.2.20 (wolfgang, pin cdde128)` and `lspconf doctor` reports READY.
+The binary it reports is the **acquired release artifact**: the
+x86_64-unknown-linux-gnu archive of release 401498582, sha256 24855d5e…, whose
+`wolf --version` printed the `PIN` string directly. The darwin arm64 archive
+(sha256 c8a3f1a3…) was acquired and hashed member by member (ten members each,
+by name — `vendor/upstream/PIN`), and both digests matched the release API's
+own before anything was unpacked; never a local build. `PIN` records the peeled
+`v0.2.20^{commit}`, `cdde128a30999652c9d70189664226b766a206f0`. wolf-lang's
+default branch had already moved past the tag (s195) when the pin was taken;
+the tag, not trunk, is what this file pins.
+
+**THE SCRIPTED HALF IS AT THIS PIN AND NOTHING BUT THE HEADER MOVED; THE
+CAPTURED HALF IS NOW FIVE PINS BEHIND.** `lspconf --require-server replay`:
+**77 transcripts, 71 replayed ok, 0 mismatched, SIX SKIPPED, exit 0**.
+
+- **The 71 scripted transcripts were re-recorded: `71 files changed, 71
+  insertions(+), 71 deletions(-)`, every hunk `@@ -1 +1 @@`.** Classified by
+  the `dir` field: 142 changed lines, all headers, **0 `s2c`, 0 `c2s`**. The
+  inputs could not move (the fifteen samples are blob-identical across
+  `c2401f05..cdde128a`) and the query crates did not; the front end **did**
+  this time — `wolf_parse`'s field-init shorthand (s190, wolf-lang#486) — on
+  a shape no sample spells, and `wolf_sema`'s two-phase arguments (ruling #17)
+  on shapes no sample spells either. `onetruth`: 15 samples × 9 profiles, 0
+  known divergences, zero unfiled.
+- **None of the six captured smokes is re-captured** — still `30731a6`
+  (v0.2.14), now five pins behind (v0.2.15, v0.2.16, v0.2.18, v0.2.19,
+  v0.2.20). wolf-lsp#26, unchanged.
+- **The declared range MOVED, it did not widen**: `min` and `max_tested` are
+  both `0.2.20`.
+
+**One vendored data file moved.** `spec/anchors.json` gained two keys
+(`mem.tier0.excl.4`, `type.row.else`; 544 anchors, key sets diffed both ways,
+0 dropped, 0 retargeted) and the type-names candidate set is the same 18
+words (`type.row.else` folds into `row`; the gate: 18 painted, 8 unpainted,
+18 candidates, all classified against 0.2.20). `spec/grammar.ebnf` is the
+same blob, and so are the fifteen samples. The bump commit touched the
+`upstream` gitlink, `PIN` and `anchors.json`; `grammar-drift`, `nvim-check`
+and `emacs-check` found every EBNF-derived artifact current, and only the two
+pin constants and the compat rows were regenerated.
+
+**The editors' grammar pin stays at `1834e73`** — tree-sitter-wolf's trunk,
+which tl16's grammar branch leaves untouched (the corpus floor there moves
+746 → 829; no `grammar.js`, `src/` or `queries/` file changes). **zed's
+`languages/wolf/highlights.scm` is now tree-sitter-wolf's own
+`queries/highlights.scm` at that rev, byte for byte** (tl15 found it lagging:
+no `invalid_escape`, `error_item`, nullary-variant, `range` or
+`aliased_error_type` rules, no `then`/`error`/`cap` keywords). Against a
+private build of `1834e73` the new file loads on the mode sample, a probe
+spelling the missing rules, and all fifteen vendored samples with exactly the
+grammar's own capture counts (it is the same bytes), and strictly more than
+the old copy where the old copy was blind (probe 117 → 126, `if_then_ident`
+51 → 52, `error_alias_union` 102 → 107); a planted bad node name fails. The
+next pin bump's check on that file is one `diff`.
+
+**The client docs stop calling the grammar a seed.** helix's README and
+CHANGELOG, zed's README and CHANGELOG, emacs's README and the nvim plugin's
+README, `queries/README.md`, four query headers, `treesitter.lua`,
+`health.lua` and `doc/wolf.txt` all described `tree-sitter-wolf` as a seed
+commit or scaffold-only — true at `b1b2c17`, false since le02. Each now names
+the pinned grammar. The nvim queries themselves are **still empty**: filling
+them against the grammar's node names is a lane of its own, named in
+`clients/nvim/queries/README.md`.
+
+<details><summary>The previous stamp (tl15, c2401f0)</summary>
+
 **Last reviewed against wolf pin `c2401f0`, 2026-09-30** (tl15, the pin at
 0.2.19). That is the wolf-lang release tag `v0.2.19`, **one** release on from
 the `v0.2.18` this file was last stamped at, so the pinned version string is the
@@ -57,6 +125,8 @@ and on all fifteen vendored samples (34 query runs, rc 0; a planted bad node
 name in a copy of zed's file fails, rc 1). zed's copy needed no edit to load;
 it still lags tree-sitter-wolf's own highlights (no `invalid_escape`,
 `error_item` or nullary-variant rules), which loading cannot see.
+
+</details>
 
 ## tl14's review, at pin `ec56a08` (v0.2.18) — kept as the record
 

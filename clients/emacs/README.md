@@ -222,11 +222,14 @@ and the compiler is the authority. The keyword list is the closed set of 50
 `cargo xtask emacs-check` on every CI run — so an invented keyword fails the
 build rather than teaching a language that does not exist.
 
-**`treesit` is wired to nothing, deliberately.** Emacs 30 has
-`treesit-language-source-alist` and would happily build a `wolf` grammar —
-except that `wolffe-lang/tree-sitter-wolf` is a seed commit with no
-`grammar.js` in it (`b1b2c17`). A `wolf-ts-mode` today would be a mode with no
-parser, which is worse than no mode.
+**`treesit` is wired to nothing, still.** Emacs 30 has
+`treesit-language-source-alist` and would build `wolffe-lang/tree-sitter-wolf`
+— a real grammar since le02, pinned by helix and zed at `1834e73` (tl16) — but
+no `wolf-ts-mode` has been written; the mode here is the regex one, its
+keyword list re-derived from the vendored EBNF as above. (This paragraph said
+the grammar was a seed commit with no `grammar.js` until tl16: true at
+`b1b2c17`, false from le02 on.) A `wolf-ts-mode` is a lane of its own, and it
+would pin the grammar the way helix and zed do.
 
 **`.wolfi` is not in `auto-mode-alist`, and a test enforces it.** `wolfi` v0 is
 a *binary* format — magic bytes `WOLFI`,

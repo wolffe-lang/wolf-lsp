@@ -8,6 +8,7 @@ lane for each stops being separable.
 - [`nvim/`](nvim/README.md), [`vscode/`](vscode/README.md) — tier 1, the plugin tier (ls04–ls05)
 - [`helix/`](helix/README.md), [`zed/`](zed/README.md), [`emacs/`](emacs/README.md) — tier 2, the config tier (ls06)
 - [`jetbrains/`](jetbrains/README.md) — tier 3, documented only (ls06)
+- [`yew/`](yew/README.md) — tier 3, one `init.fl` row; yew's compiled-in server table has no wolf row (ye01)
 
 Every one of them configures a client to launch `wolf lsp`. None of them
 implements a server capability, works around a missing one, or post-processes a

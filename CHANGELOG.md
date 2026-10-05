@@ -1,5 +1,22 @@
 # Changelog
 
+## ye01 — 2026-10-05 — why yew shows no LSP for wolf files
+
+**Cause, measured:** yew's compiled-in LSP server table (`default_cfgs`,
+`src/mod/lsp/client.c`, sagitta `d52f24d5`) has no `wolf` row. A `.lu` buffer
+(language `wolf`, from yew's own `runtime/syntax/wolf.fl`) therefore finds no
+config, and yew spawns nothing and logs nothing. `:ed.lsp.info` prints `no LSP
+server configured for wolf`. Neither `wolf lsp` nor this repo is at fault.
+With a row added, wolf 0.2.23 negotiates utf-8 and publishes diagnostics that
+yew lists.
+
+**`clients/yew/`** (T3): an `init.fl` row and a README covering the cause, the
+recipe, the replace-not-merge caveat for `lsp.servers`, and the session.
+`config-check` now reads it (`wolf lsp` only, `wolf.pkg` before `.git`, no
+`wolfi` row, README quoting it verbatim), with five tests that plant breaks. The
+real fix is one row in yew's table. It is a proposed patch kept in ye01's
+report and is not submitted, because yew belongs to another org.
+
 ## tl16 — 2026-10-02 — the pin at 0.2.20, zed's queries become the grammar's, the docs stop calling it a seed
 
 **The pin moves `c2401f0` → `cdde128`** (wolf-lang `v0.2.20`, release

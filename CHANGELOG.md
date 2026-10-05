@@ -1,5 +1,29 @@
 # Changelog
 
+## tl17 — 2026-10-05 — rulings #38 and #39: helix's trailing shutdown, and the prelude list
+
+**`type-names-check` reads wolf's published prelude list (ruling #39 = B,
+#32).** The candidate set is the `builtin_type` and `type` entries of
+`wolf-prelude/0`. It is read from `vendor/upstream/spec/prelude.json`, or
+else from the pinned compiler's `wolf prelude --json`. If both are present
+they must be the same bytes. With the list, the gate proves that the hand
+lists equal the published set (`Self` excepted) and that every published
+type resolves. Planting a list without `Scope` makes it red. At wolf-lang
+`6b5db762` the list has 25 type names, against the 18 anchor words it
+replaces, and the two share 4. **The pin (`cdde128`, 0.2.20) has no list**,
+because no release through 0.2.23 carries one. The gate therefore says so
+and uses the anchor index until the first pin bump past `6b5db762`.
+`vendor-check` compares the file both ways once either side has it.
+
+**`lspconf replay` names a captured transcript's teardown (ruling #38 = C,
+#17).** The shapes are: shutdown answered, no shutdown, and a trailing
+unanswered shutdown. The third is accepted for helix only
+(`profiles::TEARDOWN_RACES`); replay sends it live and requires `"result":
+null`. The same ending from any other client is refused by `verify` and
+`replay`. At trunk, both helix shapes printed the same line, and an nvim
+capture cut short replayed green. `tests/teardown.rs` replays both helix
+shapes in the server lane. Measurements: `docs/RULINGS-38-39.md`.
+
 ## ye01 — 2026-10-05 — why yew shows no LSP for wolf files
 
 **Cause, measured:** yew's compiled-in LSP server table (`default_cfgs`,

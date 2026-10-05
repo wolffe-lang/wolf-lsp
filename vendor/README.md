@@ -3,7 +3,7 @@
 A tracked **data** snapshot of wolf-lang at the commit recorded in
 `upstream/PIN` — byte-identical to the `upstream/` submodule at that pin.
 
-It holds exactly four things:
+It holds exactly four things, and a fifth is due (`spec/prelude.json`, below):
 
 - `PIN` — the sha, the `wolf --version` string that sha produces, and whether
   `wolf lsp` exists at it.
@@ -14,6 +14,14 @@ It holds exactly four things:
   has introduced, and asks the ACQUIRED binary which of them resolve. Vendored
   at tl07 because the builtin type set is not derivable from the EBNF and
   `prelude.rs` is compiler source, which this directory never carries.
+- `spec/prelude.json` — **not here yet.** wolf's published prelude list
+  (`wolf prelude --json`, schema `wolf-prelude/0`, wolf-lang s212 at
+  `6b5db762`; ruling #39 = B). The type-names gate's candidate set is its
+  `builtin_type` and `type` entries. No release through 0.2.23 carries it, so
+  the first pin bump past `6b5db762` vendors it beside `anchors.json`
+  (`vendor-check` compares it with the submodule both ways once either side
+  has it); until then the gate reads the pinned compiler's command, or says
+  on its summary line that the pin has no list.
 - `samples/` + `samples.toml` — the only `.lu` files any test in this repo may
   touch, and the editor reason each was picked.
 

@@ -385,6 +385,18 @@ fn submodule_errors(root: &Path, submodule: &Path) -> Vec<String> {
             vendor.join("spec").join("anchors.json"),
         ),
     ];
+    // wolf's published prelude list (ruling #39 = B, s212): vendored once the
+    // pin carries it, and drift either way — a submodule that has it and a
+    // snapshot that does not is a re-vendor that forgot it, and the reverse
+    // is a file from a newer wolf-lang than the pin. No pin through 0.2.23
+    // has it, so both absent is the in-sync state today.
+    let prelude = (
+        submodule.join("spec").join("prelude.json"),
+        vendor.join("spec").join("prelude.json"),
+    );
+    if prelude.0.is_file() || prelude.1.is_file() {
+        pairs.push(prelude);
+    }
     let listed = std::fs::read_to_string(vendor.join("samples.toml"))
         .map(|t| sample_paths(&t))
         .unwrap_or_default();

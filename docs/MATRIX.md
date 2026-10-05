@@ -1082,6 +1082,7 @@ commit's run.
 | [Emacs (eglot)](../clients/emacs/README.md) | **T2** | `emacs-mode` (3 OS, 9 cases) + `emacs-check` | `clients/emacs/wolf-mode.el` loaded by `emacs --batch`; `transcripts/emacs/smoke` · `profiles/emacs.json` (`emacs@31.1`, eglot 1.24.31) | **2026-09-12, pin `a7f517e`, GNU Emacs 31.1** — RE-CAPTURED at tl03; header-only. `replay` no longer skips it. |
 | [Zed](../clients/zed/README.md) | **T2** | `zed-extension` (wasm build) + `config-check` | wasm component builds; config statically checked | **wasm build: 2026-08-10.** **Manual run: NEVER — see below.** Config re-checked at pin `a7f517e` (tl02). |
 | [JetBrains (LSP4IJ)](../clients/jetbrains/README.md) | **T3** | *(none, by design)* | a written recipe | **NEVER — see below** |
+| [yew](../clients/yew/README.md) | **T3** | `config-check` (static: the row, no `wolfi`, README verbatim) | `clients/yew/init.fl`; a hand-driven pty session (ye01) | **2026-10-05, wolf 0.2.23 (`8edac3e`, darwin arm64 archive `92c918f2…`), yew `1.0.0-dev` at sagitta `d52f24d5`.** Walked by hand on nomad-1 by ye01. Without the row, yew starts no server (`no LSP server configured for wolf`). With it: `initialize` → utf-8 → `didOpen` (`languageId: wolf`) → one E0401 published and listed → `shutdown`/`exit`. No transcript or profile is committed. |
 | Emacs (lsp-mode) | **T3** | *(none)* | a three-line `lsp-register-client` snippet in `clients/emacs/README.md` | **NEVER — no `lsp-mode` on any machine this repo runs on** |
 
 ### The two rows with no stamp, spelled out

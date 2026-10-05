@@ -396,17 +396,20 @@ fn replay_cmd(root: &Path, bin: &Path, pin: &str, rest: &[&str]) -> ExitCode {
         match replay::replay(root, bin, file, pin) {
             Ok(report) if report.ok() => {
                 println!(
-                    "ok  {} — {} record(s) matched",
-                    report.name, report.compared
+                    "ok  {} — {} record(s) matched{}",
+                    report.name,
+                    report.compared,
+                    teardown_note(file, &report)
                 );
             }
             Ok(report) => {
                 println!(
-                    "FAIL {} ({}) — {} of {} record(s) did not match",
+                    "FAIL {} ({}) — {} of {} record(s) did not match{}",
                     report.name,
                     report.file,
                     report.mismatches.len(),
-                    report.compared
+                    report.compared,
+                    teardown_note(file, &report)
                 );
                 for f in &report.mismatches {
                     print!("{f}");
@@ -472,6 +475,29 @@ fn replay_cmd(root: &Path, bin: &Path, pin: &str, rest: &[&str]) -> ExitCode {
         ExitCode::from(EXIT_MISMATCH as u8)
     } else {
         ExitCode::from(EXIT_OK as u8)
+    }
+}
+
+/// The teardown shape, for a CLIENT-RECORDED transcript (ruling #38 = C,
+/// wolf-lsp#17). A scripted transcript's ending is its script's, so naming it
+/// on 71 lines would say nothing; a captured one's ending is the client's, and
+/// helix has two.
+fn teardown_note(file: &Path, report: &replay::Report) -> String {
+    match report.teardown {
+        Some(shape @ replay::Teardown::TrailingShutdown)
+            if !file.with_extension("lsps").is_file() =>
+        {
+            format!(
+                "; teardown: {shape} (a racing client, wolf-lsp#17; sent live, answered {})",
+                if report.ok() {
+                    "null"
+                } else {
+                    "otherwise — see the finding"
+                }
+            )
+        }
+        Some(shape) if !file.with_extension("lsps").is_file() => format!("; teardown: {shape}"),
+        _ => String::new(),
     }
 }
 
@@ -777,6 +803,15 @@ fn verify(root: &Path, paths: &[&str]) -> ExitCode {
             failures += 1;
             continue;
         }
+        // Ruling #38 = C: an unanswered trailing `shutdown` is a shape only a
+        // racing client produces (wolf-lsp#17). Checked here too, so the
+        // server-free job refuses a cut-short capture without a binary.
+        let client = transcript.header.name.split('/').next().unwrap_or_default();
+        if let Some(why) = replay::teardown_refusal(client, replay::teardown(&transcript)) {
+            eprintln!("{display}: {why}");
+            failures += 1;
+            continue;
+        }
         if jsonl::to_string(&transcript) != text {
             eprintln!(
                 "{display}: not in canonical form (sorted keys, LF, trailing newline) \
@@ -814,8 +849,9 @@ fn verify(root: &Path, paths: &[&str]) -> ExitCode {
                 continue;
             }
             println!(
-                "ok  {display} ({} records, client-recorded — no script by design)",
-                transcript.records.len()
+                "ok  {display} ({} records, client-recorded — no script by design; teardown: {})",
+                transcript.records.len(),
+                replay::teardown(&transcript)
             );
             continue;
         }

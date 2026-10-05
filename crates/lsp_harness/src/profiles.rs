@@ -90,6 +90,29 @@ pub const REAL_CLIENTS: &[(&str, &str)] = &[
     ("emacs", "ls06"),
 ];
 
+/// The tracked clients whose teardown RACES the capture, with the evidence:
+/// the client sends `shutdown` and drops the server fast enough that the
+/// request is usually never read, so one capture ends on an ordinary record
+/// and the next, from the same quit path, ends on an unanswered `shutdown`.
+///
+/// Ruling #38 = C (wolf-lsp#17): `lspconf replay` accepts that trailing
+/// request for a client named here, and only here, and reports which shape it
+/// saw. A client absent from this list whose capture ends on an unanswered
+/// `shutdown` is a capture cut short, and replay and verify refuse it.
+/// `docs/MATRIX.md` states the same row in prose; this table is what the code
+/// reads.
+pub const TEARDOWN_RACES: &[(&str, &str)] = &[(
+    "helix",
+    "tl03, helix 25.07.1, three captures quitting with `:q!`: 19, 20 and 19 records; run B \
+     alone read the `shutdown` request (seq 20) before helix dropped the server (wolf-lsp#17)",
+)];
+
+/// Whether `client`'s teardown races the capture ([`TEARDOWN_RACES`]).
+#[must_use]
+pub fn teardown_races(client: &str) -> bool {
+    TEARDOWN_RACES.iter().any(|(c, _)| *c == client)
+}
+
 /// A profile that did not load or did not hold up.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Error {
@@ -401,5 +424,27 @@ mod tests {
             synthetic("fackr", None, Encoding::Utf16),
         );
         assert!(missing_derived(&loaded).contains(&("fackr", "ls02")));
+    }
+
+    /// A race row is a claim about a client this repo tracks, with the
+    /// measurement that showed it; a row for an untracked client, or one with
+    /// no evidence, would widen replay's tolerance on nobody's say-so.
+    #[test]
+    fn every_racing_client_is_tracked_and_carries_its_evidence() {
+        assert!(!TEARDOWN_RACES.is_empty());
+        for (client, why) in TEARDOWN_RACES {
+            assert!(
+                REAL_CLIENTS.iter().any(|(c, _)| c == client),
+                "`{client}` races but is not a tracked client"
+            );
+            assert!(!why.trim().is_empty(), "`{client}` has no evidence");
+        }
+        assert!(teardown_races("helix"));
+        for (client, _) in REAL_CLIENTS.iter().filter(|(c, _)| *c != "helix") {
+            assert!(
+                !teardown_races(client),
+                "`{client}` was never measured racing"
+            );
+        }
     }
 }

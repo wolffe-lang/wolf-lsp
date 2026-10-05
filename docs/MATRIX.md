@@ -72,6 +72,36 @@ the pinned grammar. The nvim queries themselves are **still empty**: filling
 them against the grammar's node names is a lane of its own, named in
 `clients/nvim/queries/README.md`.
 
+### Rulings #38 and #39 (tl17, 2026-10-05, still at `cdde128`)
+
+What two gates now prove. The measurements are in
+[`RULINGS-38-39.md`](RULINGS-38-39.md).
+
+- **`type-names-check` reads wolf's published prelude list (#39 = B,
+  wolf-lsp#32).** Its candidate set is the list's `builtin_type` and `type`
+  entries (schema `wolf-prelude/0`), taken from `vendor/upstream/spec/prelude.json`
+  or, failing that, the pinned compiler's `wolf prelude --json`. With the list
+  in force, the gate proves the hand lists **equal** the published set
+  (`Self` excepted), and that every published type name resolves. That is the
+  check that would have gone red on `Scope` and `Proc` at 0.2.16. At
+  `6b5db762` the list has 25 type names, where the spec's `type.*` index
+  gives 18 words. The two share 4. The 25 are `TYPE_NAMES` (less `Self`)
+  plus the 8 unpainted rows, exactly. **At this pin the list does not
+  exist.** 0.2.20 has no `prelude` command, and no release through 0.2.23
+  carries the file. The gate says `NO PRELUDE LIST AT THIS PIN` and falls
+  back to the anchor index, which is still blind to an unanchored prelude type.
+  The list takes effect at the first pin past wolf-lang `6b5db762`, and
+  `vendor-check` then requires the file to be vendored.
+- **`lspconf replay` names a captured transcript's teardown (#38 = C,
+  wolf-lsp#17).** Helix has two shapes from one quit path. In one the session
+  ends on an ordinary record (the committed capture, 19 records). In the
+  other it ends on an unanswered `shutdown` (tl03's run B, 20 records).
+  Replay accepts the second only for a client in `profiles::TEARDOWN_RACES`,
+  which lists helix alone. It sends that `shutdown` live, requires
+  `"result": null`, and prints the shape. The same ending from any other
+  client is refused by `verify` and `replay`. `tests/teardown.rs` replays
+  both helix shapes in the server lane.
+
 <details><summary>The previous stamp (tl15, c2401f0)</summary>
 
 **Last reviewed against wolf pin `c2401f0`, 2026-09-30** (tl15, the pin at
@@ -1078,7 +1108,7 @@ commit's run.
 | [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | **2026-09-12, pin `a7f517e`, fac v0.35.0** — RE-CAPTURED at tl03, rung for rung with le08's; header-only, three runs byte-identical. `replay` no longer skips it. |
 | [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.5`) | **2026-09-12, pin `a7f517e`, NVIM v0.12.5** — RE-CAPTURED at tl03; 7/7. Header-only **plus `clientInfo.version`**, which is the client's build stamp and not a server change (see above). `replay` no longer skips it. |
 | [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 16 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | **2026-09-12, pin `a7f517e`, VS Code 1.120.0** — RE-CAPTURED at tl03; 16/16. Not byte-reproducible by construction, so the claim is the method multiset: every test-driven rung identical, one background `codeAction` rung fewer (see above). `replay` no longer skips it. |
-| [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | **2026-09-12, pin `a7f517e`, helix 25.07.1** — RE-CAPTURED at tl03; header-only, two runs byte-identical. `replay` no longer skips it. One row-adjacent correction: this client DOES sometimes send `shutdown` (wolf-lsp#17). |
+| [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | **2026-09-12, pin `a7f517e`, helix 25.07.1** — RE-CAPTURED at tl03; header-only, two runs byte-identical. `replay` no longer skips it. One row-adjacent correction: this client DOES sometimes send `shutdown` (wolf-lsp#17); since tl17 `replay` accepts that trailing `shutdown` for helix alone and names the shape (ruling #38). |
 | [Emacs (eglot)](../clients/emacs/README.md) | **T2** | `emacs-mode` (3 OS, 9 cases) + `emacs-check` | `clients/emacs/wolf-mode.el` loaded by `emacs --batch`; `transcripts/emacs/smoke` · `profiles/emacs.json` (`emacs@31.1`, eglot 1.24.31) | **2026-09-12, pin `a7f517e`, GNU Emacs 31.1** — RE-CAPTURED at tl03; header-only. `replay` no longer skips it. |
 | [Zed](../clients/zed/README.md) | **T2** | `zed-extension` (wasm build) + `config-check` | wasm component builds; config statically checked | **wasm build: 2026-08-10.** **Manual run: NEVER — see below.** Config re-checked at pin `a7f517e` (tl02). |
 | [JetBrains (LSP4IJ)](../clients/jetbrains/README.md) | **T3** | *(none, by design)* | a written recipe | **NEVER — see below** |

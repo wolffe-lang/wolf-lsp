@@ -301,7 +301,9 @@ It remains a different shape from facsimile's (which SIGTERMs then SIGKILLs)
 and fackr's (which sends both and then kills). *Holds today; asserted by
 `tests/semantics.rs::a_client_that_vanishes_leaves_no_orphan`, and confirmed by
 `transcripts/helix/smoke.jsonl` ending on the `formatting` response with no
-orphaned process left behind. The racing `shutdown` is wolf-lsp#17.*
+orphaned process left behind. The racing `shutdown` is wolf-lsp#17; since
+tl17 (ruling #38 = C), `lspconf replay` accepts a helix capture that ends on
+it, sends it live, and requires the server's `"result": null`.*
 
 **Answer `utf-8` when the client offers all three with utf-8 first.** Helix
 declares `general.positionEncodings: ["utf-8", "utf-32", "utf-16"]`. Note the

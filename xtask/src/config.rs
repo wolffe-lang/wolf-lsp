@@ -551,6 +551,54 @@ pub fn emacs(root: &Path) -> Vec<String> {
     errors
 }
 
+// -------------------------------------------------------------------- yew --
+
+/// The `wolf` row `clients/yew/init.fl` must carry, as yew's Fletch spells it.
+/// yew keys `lsp.servers` by its language name (`wolf`, from its own
+/// `runtime/syntax/wolf.fl`), and an absent key means no server at all (ye01).
+const YEW_ROW: &str =
+    r#"wolf: {id: "wolf", cmd: "wolf", args: ["lsp"], roots: ["wolf.pkg", ".git"]},"#;
+
+/// The yew recipe's invariants, on the two texts rather than the files, so
+/// the planted-break tests below need no fixture directory.
+fn yew_errors(init_rel: &str, init: &str, readme_rel: &str, readme: &str) -> Vec<String> {
+    let mut errors = Vec::new();
+    let live = live_lines(init, '#');
+    if !live.contains(&YEW_ROW) {
+        errors.push(format!(
+            "{init_rel}: expected the live row `{YEW_ROW}` — yew must spawn exactly `wolf lsp`, \
+             keyed by its language name `wolf`, with `wolf.pkg` ahead of `.git`"
+        ));
+    }
+    if live.iter().any(|l| l.starts_with("wolfi")) {
+        errors.push(format!(
+            "{init_rel}: a `wolfi` server row — `.wolfi` is attached to no language server \
+             anywhere (ls04, ls05, ls06)"
+        ));
+    }
+    // The block a reader pastes and the file this check reads are one artifact.
+    match init.find("let lsp") {
+        Some(at) if readme.contains(init[at..].trim_end()) => {}
+        Some(_) => errors.push(format!(
+            "{readme_rel} does not quote {init_rel}'s `let lsp` block verbatim — the snippet a \
+             reader pastes and the file this check reads have drifted"
+        )),
+        None => errors.push(format!("{init_rel}: no `let lsp` binding")),
+    }
+    errors
+}
+
+fn yew(root: &Path, errors: &mut Vec<String>) {
+    let init_rel = "clients/yew/init.fl";
+    let readme_rel = "clients/yew/README.md";
+    if let (Some(init), Some(readme)) = (
+        read(root, init_rel, errors),
+        read(root, readme_rel, errors),
+    ) {
+        errors.extend(yew_errors(init_rel, &init, readme_rel, &readme));
+    }
+}
+
 // ------------------------------------------------------------ the numbers --
 
 /// `INDENT` and `WIDTH` agree across every client that states them.
@@ -798,13 +846,62 @@ pub fn check(root: &Path) -> Vec<String> {
         ));
     }
     numbers(root, &mut errors);
+    yew(root, &mut errors);
     if errors.is_empty() {
         eprintln!(
-            "config-check: helix, zed and emacs all spawn `wolf lsp`; `.wolfi` is attached \
+            "config-check: helix, zed, emacs and yew all spawn `wolf lsp`; `.wolfi` is attached \
              to no server; the grammar blocks are live at one pinned rev ({}); INDENT/WIDTH \
              agree across 4 clients",
             helix_rev.as_deref().unwrap_or("<unpinned>"),
         );
     }
     errors
+}
+
+#[cfg(test)]
+mod tests {
+    use super::yew_errors;
+
+    const INIT: &str = include_str!("../../clients/yew/init.fl");
+    const README: &str = include_str!("../../clients/yew/README.md");
+
+    fn run(init: &str, readme: &str) -> Vec<String> {
+        yew_errors("init.fl", init, "README.md", readme)
+    }
+
+    #[test]
+    fn the_shipped_yew_recipe_is_clean() {
+        assert_eq!(run(INIT, README), Vec::<String>::new());
+    }
+
+    #[test]
+    fn a_yew_row_that_spawns_anything_but_wolf_lsp_is_red() {
+        let bad = INIT.replace(r#"args: ["lsp"]"#, r#"args: ["lsp", "--stdio"]"#);
+        let errors = run(&bad, &bad);
+        assert_eq!(errors.len(), 1, "{errors:?}");
+        assert!(errors[0].contains("expected the live row"), "{errors:?}");
+    }
+
+    #[test]
+    fn a_commented_out_yew_row_is_red() {
+        let bad = INIT.replace("    wolf: {", "    # wolf: {");
+        assert!(run(&bad, &bad).iter().any(|e| e.contains("expected the live row")));
+    }
+
+    #[test]
+    fn a_wolfi_row_is_red() {
+        let bad = INIT.replace(
+            "}}\n",
+            "    wolfi: {id: \"wolf\", cmd: \"wolf\", args: [\"lsp\"]},\n}}\n",
+        );
+        assert!(run(&bad, &bad).iter().any(|e| e.contains("`wolfi` server row")));
+    }
+
+    #[test]
+    fn a_readme_that_drifted_from_init_fl_is_red() {
+        let drifted = README.replace(r#"roots: ["wolf.pkg", ".git"]"#, r#"roots: [".git"]"#);
+        let errors = run(INIT, &drifted);
+        assert_eq!(errors.len(), 1, "{errors:?}");
+        assert!(errors[0].contains("verbatim"), "{errors:?}");
+    }
 }

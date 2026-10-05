@@ -129,7 +129,12 @@ enough that the frame is usually never read. So a capture that ends without
 regression — but a client that "never sends `shutdown`" is not a constraint
 this server can rely on. Filed as **wolf-lsp#17**;
 [`docs/SERVER-CONSTRAINTS.md`](../../docs/SERVER-CONSTRAINTS.md) carries the
-server-side half.
+server-side half. **Ruling #38 = C (tl17):** a re-capture may produce either
+shape. `lspconf replay` and `verify` accept the trailing `shutdown` for helix,
+and only for helix (`profiles::TEARDOWN_RACES`). Each prints which shape it
+saw, and replay sends that `shutdown` live and requires `"result": null`. A
+re-capture that ends on a `shutdown` therefore stays green and says that it
+does.
 
 **Only linux was exercised locally.** `cargo xtask helix-health` self-checks
 that helix actually loaded the fragment from `$XDG_CONFIG_HOME` and **skips

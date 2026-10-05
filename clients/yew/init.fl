@@ -1,0 +1,17 @@
+# yew: run `wolf lsp` for wolf buffers. Append to $XDG_CONFIG_HOME/yew/init.fl.
+#
+# yew's compiled-in server table has no wolf row, so without this a `.lu`
+# buffer gets no server and `:ed.lsp.info` says "no LSP server configured for
+# wolf". The key is yew's language name for `.lu` ("wolf", from
+# runtime/syntax/wolf.fl), not the extension.
+#
+# CAUTION: an `lsp.servers` table REPLACES yew's built-in defaults; it does not
+# merge with them. Pasting this alone turns off clangd, rust-analyzer and the
+# rest. Add their rows beside this one if you use them.
+#
+# `wolf.pkg` (the package manifest) comes before `.git`, so a package root wins
+# over the repository root. `.wolfi` has no row: it is a binary interface file
+# and the server never reports on it.
+let lsp = {servers: {
+    wolf: {id: "wolf", cmd: "wolf", args: ["lsp"], roots: ["wolf.pkg", ".git"]},
+}}

@@ -479,7 +479,8 @@ jobs:
         shell: bash
         run: |
           cargo test --test negotiation --test encoding --test semantics \
-                     --test fuzz_oracles --test stability --test one_truth
+                     --test fuzz_oracles --test stability --test one_truth \
+                     --test teardown
 
       # 60 s of seeded fuzzing on a PR; the 15-minute sweep is nightly (s01/s02
       # posture). The seed is explicit and constant so a failure here is

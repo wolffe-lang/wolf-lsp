@@ -591,10 +591,9 @@ fn yew_errors(init_rel: &str, init: &str, readme_rel: &str, readme: &str) -> Vec
 fn yew(root: &Path, errors: &mut Vec<String>) {
     let init_rel = "clients/yew/init.fl";
     let readme_rel = "clients/yew/README.md";
-    if let (Some(init), Some(readme)) = (
-        read(root, init_rel, errors),
-        read(root, readme_rel, errors),
-    ) {
+    if let (Some(init), Some(readme)) =
+        (read(root, init_rel, errors), read(root, readme_rel, errors))
+    {
         errors.extend(yew_errors(init_rel, &init, readme_rel, &readme));
     }
 }
@@ -885,7 +884,11 @@ mod tests {
     #[test]
     fn a_commented_out_yew_row_is_red() {
         let bad = INIT.replace("    wolf: {", "    # wolf: {");
-        assert!(run(&bad, &bad).iter().any(|e| e.contains("expected the live row")));
+        assert!(
+            run(&bad, &bad)
+                .iter()
+                .any(|e| e.contains("expected the live row"))
+        );
     }
 
     #[test]
@@ -894,7 +897,11 @@ mod tests {
             "}}\n",
             "    wolfi: {id: \"wolf\", cmd: \"wolf\", args: [\"lsp\"]},\n}}\n",
         );
-        assert!(run(&bad, &bad).iter().any(|e| e.contains("`wolfi` server row")));
+        assert!(
+            run(&bad, &bad)
+                .iter()
+                .any(|e| e.contains("`wolfi` server row"))
+        );
     }
 
     #[test]

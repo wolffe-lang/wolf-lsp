@@ -266,7 +266,7 @@ local function check_treesitter()
   if not ts.available(true) then
     health.info('no `wolf` parser installed — expected today; the regex fallback is in use', {
       '`wolffe-lang/tree-sitter-wolf` is a real grammar (helix and zed pin it at',
-      '1834e73), but this plugin installs no parser and its queries/wolf/*.scm',
+      '66a677f), but this plugin installs no parser and its queries/wolf/*.scm',
       'are still empty — queries/README.md names the owed filling lane.',
       'syntax/wolf.vim is the real highlighting story until then, and it is',
       'derived from the same pinned EBNF.',

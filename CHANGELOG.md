@@ -1,5 +1,24 @@
 # Changelog
 
+## tl18 — 2026-10-07 — the pin at 0.2.25, the prelude list vendored, and the editors' grammar at `extern "c" let`
+
+**Pinned to wolf 0.2.25** (`6710f9e`, release 406122367), five releases on
+from 0.2.20; both archives of the pair acquired by digest and hashed member by
+member (eleven members now: `libwolf_rt_none.a` is new, and the `_wolf`
+completion is no longer the constant it was through 0.2.20). Three vendored
+spec files moved: `anchors.json` (+51 keys, 0 dropped, 0 retargeted),
+`grammar.ebnf` (`extern_let_item`) and, new, **`prelude.json`** — so
+`type-names-check` reads wolf's published prelude list at the pin for the
+first time (ruling #39's editor half): 25 candidates, 18 painted, 8
+unpainted, all classified, and the acquired compiler's `wolf prelude --json`
+is the same bytes. The 71 scripted transcripts re-recorded **header-only** (0
+`s2c`, 0 `c2s`); replay 71/0/6 skipped; onetruth zero unfiled. **helix and
+zed pin tree-sitter-wolf `66a677f`** (its tl18 head), which parses `extern
+"c" let` and gates the 0.2.25 corpus at 969; zed's `highlights.scm` is
+unchanged and still the grammar's byte for byte. The compat range moves to
+0.2.25; the six captured smokes are six pins stale (#26). Record, prediction
+(seven of seven before CI) and evidence: `docs/PIN-0225.md`.
+
 ## tl17 — 2026-10-05 — rulings #38 and #39: helix's trailing shutdown, and the prelude list
 
 **`type-names-check` reads wolf's published prelude list (ruling #39 = B,

@@ -106,4 +106,17 @@ version = "wolf 0.2.25 (wolfgang, pin 6710f9e)"
 #
 # THE SIX CAPTURED EDITOR SMOKES remain at `30731a6` (v0.2.14), now six pins
 # stale (wolf-lsp#26). `lspconf replay` skips them by name.
+#
+# THE TRANSCRIPTS, MEASURED. All 71 scripted sessions were re-recorded at this
+# pin against the acquired 0.2.25 linux binary: `71 files changed, 71
+# insertions(+), 71 deletions(-)`, every hunk `@@ -1 +1 @@` — line 1 alone
+# (`wolf_pin`, `recorded`). Classified by the `dir` field: 142 changed lines,
+# all headers, 0 `s2c`, 0 `c2s`. The prediction (docs/PIN-0225.md §3,
+# committed before the bump) said exactly this: five releases of parser,
+# prelude, diagnostic-text and formatter movement on shapes no sample spells.
+# `replay`: 71 ok, 0 mismatched, 6 skipped, exit 0. `onetruth`: 15 samples x
+# 9 profiles, 0 known divergences, zero unfiled. `type-names-check
+# --require-server`: candidates from vendor/upstream/spec/prelude.json, 18
+# painted, 8 unpainted, 25 prelude-list candidates, all classified.
+# `doctor`: READY, serves LSP at pin 6710f9e.
 serves_lsp = true

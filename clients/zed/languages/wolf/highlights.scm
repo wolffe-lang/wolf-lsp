@@ -127,6 +127,18 @@
 ((type_path (path . (identifier) @type.builtin .))
   (#eq? @type.builtin "range"))
 
+;; `never` (s213, wolf-lang#572, ruling #50 = A; `[type.fn.never]`) — the
+;; bottom type, written as a fn's return type (`fn die(msg: str) -> never`,
+;; `extern "c" fn abort() -> never`). wolfc puts it in `BUILTIN_TYPES` (the
+;; prelude list publishes it as a `builtin_type` since v0.2.26) and ALSO in
+;; `BUILTIN_TYPE_ONLY`, a list of one: a name with no expression form, so
+;; W0304 exempts a binding named `never`. And programs bind one — wolf-std's
+;; tests do four times (`let never = fs.fstat(mut forged)?`) — so it is
+;; `range`'s case exactly and gets `range`'s pattern, not a place in the
+;; closed any-position list above, which would paint those bindings.
+((type_path (path . (identifier) @type.builtin .))
+  (#eq? @type.builtin "never"))
+
 (type_path (path (identifier) @type))
 ;; `T ! IoErrors` (s158) â the tail names a declared error SET, so the
 ;; path is a type reference in type position, not one of the tags a

@@ -42,17 +42,19 @@ languages = ["Wolf"]
 # and `languages/wolf/highlights.scm` carries the queries this extension
 # ships.
 #
-# The commit is tree-sitter-wolf's tl18 head (PR tree-sitter-wolf#26), the
-# same rev helix names: the grammar that parses `extern "c" let` (wolf-lang
-# kw09, v0.2.23), gates the 0.2.25 corpus, knows s182's moded store and
-# reserves `take` and `mut` outside member position (tree-sitter-wolf#20).
-# It replaced `1834e73` (tl15), which had no extern-let rule; that one
-# replaced `bba5274` (le04). The `highlights.scm` this extension ships is
-# tree-sitter-wolf's own, unchanged at this rev, and was loaded against it
-# with no edit (docs/PIN-0225.md). Pins move only with a human hand, like every
-# pin here; if tree-sitter-wolf's trunk takes the branch by anything but
-# a fast-forward, the integrator re-pins to the merge commit.
+# The commit is tree-sitter-wolf's tl19 head (PR tree-sitter-wolf#28), the
+# same rev helix names: the grammar that gates the 0.2.26 corpus (1019
+# files) and paints `never` as a builtin type in type position only. It
+# parses everything tl18's `66a677f` did (`extern "c" let`, s182's moded
+# store, `take`/`mut` reserved outside member position, tree-sitter-wolf#20)
+# and the 0.2.26 spellings with no rule change. `66a677f` replaced
+# `1834e73` (tl15), which replaced `bba5274` (le04). The `highlights.scm`
+# this extension ships is tree-sitter-wolf's own at this rev, byte for byte
+# (its one change since `66a677f` is the `never` pattern), and was loaded
+# against it (docs/PIN-0226.md). Pins move only with a human hand, like
+# every pin here; if tree-sitter-wolf's trunk takes the branch by anything
+# but a fast-forward, the integrator re-pins to the merge commit.
 
 [grammars.wolf]
 repository = "https://github.com/wolffe-lang/tree-sitter-wolf"
-commit = "66a677f0dfcbc676966ebd30ae91179a09370288"
+commit = "e7388233aaba4165b9c9f9d0165b9566d1eba1dc"

@@ -92,17 +92,18 @@ text-width = 100
 # wolf-lang's full corpus at zero ERROR nodes. `hx -g fetch && hx -g build`
 # compiles the committed `src/parser.c` from the pinned rev.
 #
-# The rev is tree-sitter-wolf's tl18 head (PR tree-sitter-wolf#26): the
-# grammar that parses `extern "c" let NAME: T` (wolf-lang kw09, v0.2.23)
-# with its corpus gate at wolf 0.2.25 (969 files), on top of everything
-# tl15's `1834e73` knew — s182's moded store (`xs[i] = take v`, tl13) and
-# `take`/`mut` reserved outside member position (tree-sitter-wolf#20).
-# `1834e73` replaced `bba5274` (le04); this rev replaced `1834e73`, which
-# had no rule for the extern let. tl18's queries were loaded against this
-# rev (docs/PIN-0225.md). Pins move only with a human
-# hand, like every pin here; if tree-sitter-wolf's trunk takes the branch
-# by anything but a fast-forward, the integrator re-pins to the merge
-# commit.
+# The rev is tree-sitter-wolf's tl19 head (PR tree-sitter-wolf#28): the
+# grammar whose corpus gate reads wolf 0.2.26 at 1019 files and whose
+# highlights paint `never` (the bottom type, `-> never`) as a builtin type
+# in type position only, as they paint `range`. It parses everything tl18's
+# `66a677f` did — `extern "c" let` (kw09), s182's moded store, `take`/`mut`
+# reserved outside member position — and the 0.2.26 spellings `-> never`,
+# `!` on an integer and `copy region { … }` with no rule change, now pinned
+# by corpus cases. `66a677f` replaced `1834e73`, which replaced `bba5274`
+# (le04). tl19's queries were loaded against this rev (docs/PIN-0226.md).
+# Pins move only with a human hand, like every pin here; if
+# tree-sitter-wolf's trunk takes the branch by anything but a fast-forward,
+# the integrator re-pins to the merge commit.
 #
 # Highlighting also needs the query files on the runtime path: copy
 # `queries/*.scm` from tree-sitter-wolf into `runtime/queries/wolf/`
@@ -111,4 +112,4 @@ text-width = 100
 
 [[grammar]]
 name = "wolf"
-source = { git = "https://github.com/wolffe-lang/tree-sitter-wolf", rev = "66a677f0dfcbc676966ebd30ae91179a09370288" }
+source = { git = "https://github.com/wolffe-lang/tree-sitter-wolf", rev = "e7388233aaba4165b9c9f9d0165b9566d1eba1dc" }

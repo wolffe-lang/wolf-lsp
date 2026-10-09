@@ -674,6 +674,22 @@ mod tests {
             .collect()
     }
 
+    /// Type names wolf published AFTER `6b5db762`'s list, each classified in
+    /// the hand lists at the pin that first carried it: `never` at v0.2.26
+    /// (tl19). The fixture is s212's first list and stays byte for byte, so a
+    /// claim about it is made against the hand lists as they would have stood
+    /// then — the real lists minus these rows. The real lists against the
+    /// list at the PIN are `the_vendored_list_at_the_pin_is_exactly_ours`.
+    const PUBLISHED_AFTER_6B5DB762: &[&str] = &["never"];
+
+    fn unpainted_at_6b5db762() -> Vec<(&'static str, &'static str)> {
+        TYPE_POSITION_UNPAINTED
+            .iter()
+            .copied()
+            .filter(|(n, _)| !PUBLISHED_AFTER_6B5DB762.contains(n))
+            .collect()
+    }
+
     #[test]
     fn the_first_published_list_has_twenty_five_type_names_and_they_are_ours() {
         let names = prelude_type_names(PRELUDE_6B5DB762).unwrap();
@@ -690,11 +706,12 @@ mod tests {
             names.intersection(&old).cloned().collect::<BTreeSet<_>>(),
             set(&["byte", "char", "range", "str"])
         );
-        // With the list, the real hand lists are exactly the published set.
+        // With the list, the hand lists as they stood at that list are
+        // exactly the published set.
         let names_vec = every_hand_listed_name();
         let errors = classify(
             TYPE_NAMES,
-            TYPE_POSITION_UNPAINTED,
+            &unpainted_at_6b5db762(),
             &BTreeSet::new(),
             &Candidates::Published {
                 names,
@@ -715,7 +732,7 @@ mod tests {
         let names_vec = every_hand_listed_name();
         let errors = classify(
             TYPE_NAMES,
-            TYPE_POSITION_UNPAINTED,
+            &unpainted_at_6b5db762(),
             &BTreeSet::new(),
             &Candidates::Published {
                 names,
@@ -725,6 +742,32 @@ mod tests {
         );
         assert_eq!(errors.len(), 1, "{errors:?}");
         assert!(errors[0].contains("`Scope`") && errors[0].contains("does not name it"));
+    }
+
+    /// The vendored list at the pin, against the REAL hand lists: set
+    /// equality, every name classified, no hand-listed name unpublished. At
+    /// v0.2.26 that is 26 type names, `never` the one new since the fixture.
+    /// A pin bump that adds a type turns this red until the name is
+    /// classified — the same red `type-names-check` gives, without a binary.
+    #[test]
+    fn the_vendored_list_at_the_pin_is_exactly_ours() {
+        let vendored = include_str!("../../vendor/upstream/spec/prelude.json");
+        let names = prelude_type_names(vendored).unwrap();
+        let first = prelude_type_names(PRELUDE_6B5DB762).unwrap();
+        let after: BTreeSet<String> = names.difference(&first).cloned().collect();
+        assert_eq!(after, set(PUBLISHED_AFTER_6B5DB762), "{names:?}");
+        let names_vec = every_hand_listed_name();
+        let errors = classify(
+            TYPE_NAMES,
+            TYPE_POSITION_UNPAINTED,
+            &BTreeSet::new(),
+            &Candidates::Published {
+                names,
+                from: "vendor/upstream/spec/prelude.json".to_string(),
+            },
+            &mut fake(&names_vec, &[]),
+        );
+        assert!(errors.is_empty(), "{errors:?}");
     }
 
     /// wolf-lsp#32 itself: a prelude type with no `type.*` anchor. The anchor

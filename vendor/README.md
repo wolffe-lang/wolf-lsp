@@ -18,7 +18,7 @@ It holds exactly five things:
   --json`, schema `wolf-prelude/0`, wolf-lang s212 at `6b5db762`; ruling
   #39 = B), vendored since tl18's pin at v0.2.25 (first released at v0.2.24).
   The type-names gate's candidate set is its `builtin_type` and `type`
-  entries (25 at v0.2.25), and the gate also requires the pinned compiler's
+  entries (25 at v0.2.25; 26 at v0.2.26, `never` the one new), and the gate also requires the pinned compiler's
   `wolf prelude --json` to be the same bytes; `vendor-check` compares the
   file with the submodule both ways.
 - `samples/` + `samples.toml` — the only `.lu` files any test in this repo may

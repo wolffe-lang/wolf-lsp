@@ -6,60 +6,58 @@ verified at, the evidence for that tier, and (for T1 and T2) the CI job that
 re-checks the evidence on every push. A row that claims a verification it does
 not have is a bug in this file.
 
-**Last reviewed against wolf pin `6710f9e`, 2026-10-07** (tl18, the pin at
-0.2.25). That is the wolf-lang release tag `v0.2.25`, **five** releases on from
-the `v0.2.20` this file was last stamped at (v0.2.21–v0.2.24 were never
-pinned here), so the pinned version string is the bare `wolf 0.2.25
-(wolfgang, pin 6710f9e)` and `lspconf doctor` reports READY. The binary it
-reports is the **acquired release artifact**: the x86_64-unknown-linux-gnu
-archive of release 406122367, sha256 9d91f533…, whose `wolf --version`
-printed the `PIN` string directly (and `paired with lupin 0.1.48 (reference
-interpreter), pin 294d626` on its second line). The darwin arm64 archive
-(sha256 202c8d6c…) was acquired and hashed member by member (eleven members
-each now — `libwolf_rt_none.a` is new — by name, `vendor/upstream/PIN`), and
-both digests matched the release API's own before anything was unpacked;
-never a local build. `PIN` records the peeled `v0.2.25^{commit}`,
-`6710f9e0cbc3a7264349093751ce7a46a407e473`.
+**Last reviewed against wolf pin `89dc139`, 2026-10-09** (tl19, the pin at
+0.2.26). That is the wolf-lang release tag `v0.2.26`, **one** release on from
+the `v0.2.25` this file was last stamped at, so the pinned version string is
+the bare `wolf 0.2.26 (wolfgang, pin 89dc139)` and `lspconf doctor` reports
+READY. The binary it reports is the **acquired release artifact**: the
+x86_64-unknown-linux-gnu archive of release 408143286, sha256 05acdc5e…, whose
+`wolf --version` printed the `PIN` string directly (and `paired with lupin
+0.1.49 (reference interpreter), pin 294d626` on its second line). The darwin
+arm64 archive (sha256 8ea7ef3b…) was acquired and hashed member by member
+(eleven members each, by name, `vendor/upstream/PIN`), and both digests
+matched the release API's own; never a local build. `PIN` records the peeled
+`v0.2.26^{commit}`, `89dc139443da38078df6093568da87bc6d0ee6f9`.
 
 **THE SCRIPTED HALF IS AT THIS PIN AND NOTHING BUT THE HEADER MOVED; THE
-CAPTURED HALF IS NOW SIX PINS BEHIND.** `lspconf --require-server replay`:
+CAPTURED HALF IS NOW SEVEN PINS BEHIND.** `lspconf --require-server replay`:
 **77 transcripts, 71 replayed ok, 0 mismatched, SIX SKIPPED, exit 0**.
 
 - **The 71 scripted transcripts were re-recorded: `71 files changed, 71
   insertions(+), 71 deletions(-)`, every hunk `@@ -1 +1 @@`.** Classified by
   the `dir` field: 142 changed lines, all headers, **0 `s2c`, 0 `c2s`**. The
-  fifteen samples are blob-identical across `cdde128a..6710f9e0` and the
-  query crates did not move; the parser (`extern "c" let`, the attribute
-  surface, #544/#589's recovery), the prelude, `wolf_diag` and `wolf_fmt`
-  did, on shapes no sample spells. `onetruth`: 15 samples × 9 profiles, 0
-  known divergences, zero unfiled.
+  fifteen samples are blob-identical across `6710f9e0..89dc1394`, and this
+  time the parser, lexer and formatter did not move either; `wolf_sema`
+  (`never`, `!` on an integer, the prelude's ten names), `wolf_mem`
+  (`copy region`) and `wolf_diag` did, on shapes no sample spells.
+  `onetruth`: 15 samples × 9 profiles, 0 known divergences, zero unfiled.
 - **None of the six captured smokes is re-captured** — still `30731a6`
-  (v0.2.14), now six pins behind (v0.2.15, v0.2.16, v0.2.18, v0.2.19,
-  v0.2.20, v0.2.25). wolf-lsp#26, unchanged.
+  (v0.2.14), now seven pins behind (v0.2.15, v0.2.16, v0.2.18, v0.2.19,
+  v0.2.20, v0.2.25, v0.2.26). wolf-lsp#26, unchanged.
 - **The declared range MOVED, it did not widen**: `min` and `max_tested` are
-  both `0.2.25`.
+  both `0.2.26`.
 
-**Three vendored data files moved, one of them new.** `spec/anchors.json`
-gained 51 keys (595 anchors, key sets diffed both ways, 0 dropped, 0
-retargeted); `spec/grammar.ebnf` gained `extern_let_item` (kw09; no keyword,
-no operator); and **`spec/prelude.json` is vendored for the first time**
-(wolf's published prelude list, s212, first released at v0.2.24): ruling
-#39's editor half (tl17) takes effect at this pin, and `type-names-check`
-now reads its candidates from that file — **25 prelude-list candidates**, 18
-painted, 8 unpainted, all classified against 0.2.25, and the acquired
-compiler's `wolf prelude --json` is the same bytes. `grammar-drift`,
-`nvim-check` and `emacs-check` found every EBNF-derived artifact current;
-only the two pin constants and the compat rows were regenerated.
+**Two vendored data files moved; the EBNF did not.** `spec/anchors.json`
+gained 12 keys (607 anchors, key sets diffed both ways, 0 dropped, 0
+retargeted); `spec/prelude.json` gained ten names (134; nine host functions
+and one `builtin_type`, **`never`**). `type-names-check` went red at the bump
+on exactly that name (`docs/PIN-0226.md` §3 item 2) and is green after
+`never` joined `TYPE_POSITION_UNPAINTED` beside `range` — a type-position-only
+name that programs also bind, which a word list cannot tell apart: **26
+prelude-list candidates, 18 painted, 9 unpainted**, all classified against
+0.2.26. `grammar-drift`, `nvim-check` and `emacs-check` found every
+EBNF-derived artifact current; only the two pin constants and the compat rows
+were regenerated.
 
-**The editors' grammar pin moves `1834e73` → `66a677f`** — tree-sitter-wolf's
-tl18 head (PR tree-sitter-wolf#26), which learns `extern "c" let` (its
-receiver had been red on trunk since the v0.2.23 dispatch, tree-sitter-wolf#25)
-and gates the 0.2.25 corpus at 969 files. zed's `highlights.scm` is
-unchanged and still tree-sitter-wolf's own byte for byte (the grammar's
-`queries/highlights.scm` is blob `eea87538…` at both revs). Against private
-builds of both revs the file loads on all fifteen samples with identical
-capture counts, and both corpus extern-let files parse clean only under
-`66a677f` (`docs/PIN-0225.md` §3 item 6).
+**The editors' grammar pin moves `66a677f` → `e738823`** — tree-sitter-wolf's
+tl19 head (PR tree-sitter-wolf#28), which gates the 0.2.26 corpus at 1019
+files and paints `never` as `@type.builtin` in a one-segment `type_path`
+only. zed's `highlights.scm` moves with it and is still tree-sitter-wolf's
+own byte for byte (blob `d2e3ff70…` at `e738823`). The parser did not move
+(`src/` is the same tree at both revs), so against private builds of both
+revs the file loads on all fifteen samples with identical capture counts; on
+the 0.2.26 corpus the new copy captures one more exactly where `never` is a
+type (`docs/PIN-0226.md` §3 item 7).
 
 ### Rulings #38 and #39 (tl17, 2026-10-05, still at `cdde128`)
 

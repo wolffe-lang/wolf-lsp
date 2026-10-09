@@ -1,5 +1,27 @@
 # Changelog
 
+## tl19 — 2026-10-09 — the pin at 0.2.26, `never` classified, and the editors' grammar paints it
+
+**Pinned to wolf 0.2.26** (`89dc139`, release 408143286), one release on from
+0.2.25; both archives of the pair acquired by digest and hashed member by
+member. Two vendored spec files moved — `anchors.json` (+12 keys, 0 dropped,
+0 retargeted) and `prelude.json` (+10 names, 0 removed) — and the EBNF did
+not: `-> never`, `!` on an integer and `copy region { … }` add no production.
+**`type-names-check` went red at the bump on `never`** (the list's one new
+`builtin_type`) and is green after `never` joined `TYPE_POSITION_UNPAINTED`
+beside `range`: written only as a return type, W0304-exempt, and bound as a
+value by wolf-std, so no word list can paint it (26 candidates, 18 painted, 9
+unpainted). Two xtask tests over the first published list moved with that row
+and now claim against the hand lists as they stood; a new test holds the real
+lists to the vendored list. **Transcripts: 71 of 71 header-only** (0 `s2c`,
+0 `c2s`); replay 71/0/6, onetruth zero unfiled, doctor READY at `89dc139`.
+The compat statement moves to 0.2.26 (the captured smokes are seven pins
+stale, #26). **helix and zed pin tree-sitter-wolf at `e738823`** (tl19,
+tree-sitter-wolf#28), whose highlights paint `never` as a builtin type in
+type position; zed's copy follows byte for byte. `docs/PIN-0226.md` has the
+contract, the prediction (seven of eight scored before CI held; the miss is a
+second test I had not read) and the evidence.
+
 ## tl18 — 2026-10-07 — the pin at 0.2.25, the prelude list vendored, and the editors' grammar at `extern "c" let`
 
 **Pinned to wolf 0.2.25** (`6710f9e`, release 406122367), five releases on

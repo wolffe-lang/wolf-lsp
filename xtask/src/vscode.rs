@@ -310,6 +310,17 @@ pub(crate) const TYPE_POSITION_UNPAINTED: &[(&str, &str)] = &[
          `Pool` and `Mutex`: it takes an argument, and painting the bare word would colour it \
          wherever the identifier appears.",
     ),
+    (
+        "never",
+        "s213 [type.fn.never] (wolf-lang#572, ruling #50 = A): the bottom type, written only as \
+         a fn's return type (`fn die(msg: str) -> never`). NEW at v0.2.26, the prelude list's \
+         one new `builtin_type`. wolfc also lists it in `BUILTIN_TYPE_ONLY` and exempts a \
+         binding named `never` from W0304, and programs bind one: wolf-std's tests do four times \
+         (`let never = fs.fstat(mut forged)?`). `range`'s case exactly — a `syn keyword` cannot \
+         tell the type from the binding — so the regular artifacts leave it to the server's \
+         semantic tokens and to tree-sitter-wolf, which paints it `@type.builtin` scoped to a \
+         one-segment `type_path` (tl19).",
+    ),
 ];
 
 /// Which scope each reserved keyword is painted with.

@@ -121,4 +121,26 @@ version = "wolf 0.2.29 (wolfgang, pin 6ffe7c6)"
 #
 # THE SIX CAPTURED EDITOR SMOKES remain at `30731a6` (v0.2.14), now eight
 # pins stale (wolf-lsp#26). `lspconf replay` skips them by name.
+#
+# THE TRANSCRIPTS, MEASURED. All 71 scripted sessions were re-recorded at this
+# pin against the acquired 0.2.29 linux binary, `std/` beside it and nothing
+# configured: `71 files changed, 71 insertions(+), 71 deletions(-)`, every hunk
+# `@@ -1 +1 @@` — line 1 alone (`wolf_pin`, `recorded`). Classified by the
+# `dir` field: 142 changed lines, all headers, 0 `s2c`, 0 `c2s`, as
+# docs/PIN-0229.md §3 (committed before the bump) predicted — the server's
+# code moved and no session reaches what moved, because no sample loads a std
+# module. `replay`: 71 ok, 0 mismatched, 6 skipped, exit 0. `onetruth`: 15
+# samples x 9 profiles, 0 known divergences, zero unfiled. `type-names-check
+# --require-server`: GREEN at the bump with no hand-list change — 18 painted,
+# 9 unpainted, 26 prelude-list candidates, all classified (the thirty new
+# names are functions). `doctor`: READY, serves LSP at pin 6ffe7c6.
+#
+# THE STD-LOADING SERVER, MEASURED BY HAND (docs/PIN-0229.md §3 item 7), on
+# wolf-lang's own fixture `crates/wolf_lsp/tests/fixtures/std_user/main.lu`
+# (`m.keys()` on a `Map`): the archive as unpacked publishes no diagnostic,
+# hovers `// std.map`, defines into `std/map/map.lu` and completes 13 members
+# after `m.`; the 0.2.26 archive answers E0301 and nothing else; through a
+# PATH symlink the 0.2.29 server still finds the std beside the real binary;
+# a copy of `wolf` with no `std/` beside it answers E0301 until `--std-root`
+# or `WOLF_STD` names one; either naming a non-directory exits 2.
 serves_lsp = true

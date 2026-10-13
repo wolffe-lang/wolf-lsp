@@ -1,5 +1,31 @@
 # Changelog
 
+## tl20 — 2026-10-13 — the pin at 0.2.29: three releases, thirty functions, and a server that loads std
+
+**Pinned to wolf 0.2.29** (`6ffe7c6`, release 411040788), three releases on
+from 0.2.26 (0.2.27 and 0.2.28 were never pinned); both archives of the pair
+acquired by digest and hashed member by member, the release and never
+wolf-lang's trunk. Two vendored spec files moved — `anchors.json` (+33 keys,
+0 dropped, 0 retargeted) and `prelude.json` (+30 names, 0 removed, **all
+functions**) — and the EBNF did not. With no new type name,
+`type-names-check` was green at the bump and no hand list changed (26
+candidates, 18 painted, 9 unpainted); no client paints a prelude function as
+a builtin, so the thirty names join no list. **The server's code moved for
+the first time since v0.2.16** (s235, wolf-lang#724: `wolf lsp` loads the
+standard library; `wolf lsp --std-root` exists) **and the transcripts are
+still 71 of 71 header-only** (0 `s2c`, 0 `c2s`): no sample loads a std
+module. Replay 71/0/6, onetruth zero unfiled, doctor READY at `6ffe7c6`.
+Measured by hand: the archive's server, nothing configured, answers hover,
+definition and member completion on a std method where 0.2.26 answered
+E0301; it finds `std/` beside the real binary through a `PATH` symlink; a
+lone `wolf` needs `--std-root` or `WOLF_STD`, and either naming a
+non-directory exits 2. So plain `wolf lsp` remains every client's command
+line. The compat statement moves to 0.2.29 (the captured smokes are eight
+pins stale, #26). **The editors' grammar pin stays `e738823`**: the grammar
+changed nothing but its corpus floor (tree-sitter-wolf#29). `docs/PIN-0229.md`
+has the contract, the prediction (nine of nine scored before CI held) and
+the evidence.
+
 ## tl19 — 2026-10-09 — the pin at 0.2.26, `never` classified, and the editors' grammar paints it
 
 **Pinned to wolf 0.2.26** (`89dc139`, release 408143286), one release on from

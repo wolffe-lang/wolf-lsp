@@ -601,9 +601,13 @@ fn raw_claims(bin: &Path, workspace: &Path, sample: &str) -> Result<Vec<Identity
 
 /// The `diag_schema` objects on `conform-run`'s stderr.
 fn diag_lines(bin: &Path, workspace: &Path, sample: &str) -> Result<Vec<Value>, Error> {
+    // The build side clears `WOLF_STD` exactly as the session side does
+    // (`session::server_command`, wolf-lsp#42): one truth needs both
+    // surfaces resolving the same std, and the shell's is neither's.
     let out = Command::new(bin)
         .args(["conform-run", sample, "--error-format=json"])
         .current_dir(workspace)
+        .env_remove(session::STD_ENV)
         .output()?;
     // A nonzero status is normal — a file that fails to compile is the point.
     let stderr = String::from_utf8_lossy(&out.stderr);

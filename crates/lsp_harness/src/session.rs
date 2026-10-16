@@ -182,16 +182,7 @@ impl Session {
         workspace: &Path,
         env: &[(String, String)],
     ) -> Result<Self, Error> {
-        let mut command = Command::new(bin);
-        command
-            .arg("lsp")
-            .current_dir(workspace)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
-        for (k, v) in env {
-            command.env(k, v);
-        }
+        let mut command = server_command(bin, workspace, env);
         let mut child = command.spawn()?;
 
         let stdout = child.stdout.take().expect("stdout was piped");
@@ -564,6 +555,36 @@ impl Drop for Session {
     }
 }
 
+/// The environment variable a `wolf` reads a std root from (wolf-lang
+/// s235): after `--std-root`, before a `wolf.pkg` `std` dependency and the
+/// `std/` beside the binary.
+pub const STD_ENV: &str = "WOLF_STD";
+
+/// The command every LSP session spawns: `<bin> lsp` in `workspace`, stdio
+/// piped, the caller's environment **without `WOLF_STD`**, then `env`.
+///
+/// Since 0.2.29 the server reads `WOLF_STD` (s235), so a stray one in the
+/// caller's shell would move what a transcript records, and one naming a
+/// non-directory makes the server exit 2 before `initialize`, failing every
+/// session at spawn (wolf-lsp#42). A session's std is the committed
+/// script's business, never the shell's: a script that wants a std root
+/// spells `env WOLF_STD …`, which is applied after the removal.
+#[must_use]
+pub fn server_command(bin: &Path, workspace: &Path, env: &[(String, String)]) -> Command {
+    let mut command = Command::new(bin);
+    command
+        .arg("lsp")
+        .current_dir(workspace)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .env_remove(STD_ENV);
+    for (k, v) in env {
+        command.env(k, v);
+    }
+    command
+}
+
 fn read_loop(stdout: BufReader<std::process::ChildStdout>, tx: &Sender<Incoming>) {
     let mut reader = FrameReader::new(stdout);
     loop {
@@ -709,6 +730,45 @@ mod tests {
         assert_eq!(
             uri_to_path(&uri).unwrap(),
             PathBuf::from(crate::slash_path(&p))
+        );
+    }
+
+    /// wolf-lsp#42: the caller's `WOLF_STD` never reaches a session.
+    /// `get_envs` lists a removed variable with the value `None`.
+    #[test]
+    fn the_server_command_clears_wolf_std() {
+        let cmd = server_command(Path::new("wolf"), Path::new("."), &[]);
+        let wolf_std: Vec<_> = cmd
+            .get_envs()
+            .filter(|(k, _)| *k == std::ffi::OsStr::new(STD_ENV))
+            .collect();
+        assert_eq!(
+            wolf_std,
+            vec![(std::ffi::OsStr::new(STD_ENV), None)],
+            "WOLF_STD must be removed from the server's environment"
+        );
+        assert_eq!(
+            cmd.get_args().collect::<Vec<_>>(),
+            vec![std::ffi::OsStr::new("lsp")]
+        );
+    }
+
+    /// A script's own `env WOLF_STD …` is committed input and is applied
+    /// after the removal.
+    #[test]
+    fn a_scripts_wolf_std_survives_the_clearing() {
+        let env = vec![(STD_ENV.to_string(), "fixture-std".to_string())];
+        let cmd = server_command(Path::new("wolf"), Path::new("."), &env);
+        let wolf_std: Vec<_> = cmd
+            .get_envs()
+            .filter(|(k, _)| *k == std::ffi::OsStr::new(STD_ENV))
+            .collect();
+        assert_eq!(
+            wolf_std,
+            vec![(
+                std::ffi::OsStr::new(STD_ENV),
+                Some(std::ffi::OsStr::new("fixture-std"))
+            )]
         );
     }
 

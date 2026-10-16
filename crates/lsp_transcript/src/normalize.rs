@@ -19,7 +19,7 @@
 
 use std::collections::BTreeMap;
 use std::fmt;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::str::FromStr;
 
 use serde::de::{self, Deserializer};
@@ -43,6 +43,14 @@ pub const TMP: &str = "$TMP";
 /// difference between a client that scoped itself to the workspace and one that
 /// did not.
 pub const REPO: &str = "$REPO";
+/// Standard-library-root placeholder (wolf-lsp#42).
+///
+/// Since 0.2.29 the server loads the std beside its own binary, and a
+/// `definition` on a std method answers that file's absolute URI: a path
+/// into whichever toolchain recorded it. Distinct from [`REPO`] because CI's
+/// toolchain sits INSIDE the checkout (`.wolf-bin/std`) while a developer's
+/// is anywhere, and the same answer must read `$STD/list/list.lu` on both.
+pub const STD: &str = "$STD";
 /// Placeholder for an elided `version` member.
 pub const VERSION: &str = "$VERSION";
 /// Placeholder for a fully-elided URI.
@@ -54,7 +62,8 @@ pub enum Stage {
     /// Renumber request/response ids by first appearance, 1-based.
     /// Unconditional.
     Ids,
-    /// Rewrite absolute workspace paths to `$WS`, repository roots to `$REPO`
+    /// Rewrite absolute workspace paths to `$WS`, the std root to `$STD`
+    /// (wolf-lsp#42), repository roots to `$REPO`
     /// and temp dirs to `$TMP`,
     /// inside plain strings and inside `file://` URIs alike — and, since
     /// le06, inside object KEYS as well, which is where
@@ -171,6 +180,7 @@ impl<'de> Deserialize<'de> for Stage {
 pub struct Normalizer {
     workspace: Option<PathBuf>,
     repo_root: Option<PathBuf>,
+    std_root: Option<PathBuf>,
     tmp: PathBuf,
     ids: BTreeMap<String, u64>,
     next_id: u64,
@@ -184,6 +194,7 @@ impl Normalizer {
         Self {
             workspace,
             repo_root: None,
+            std_root: None,
             tmp: std::env::temp_dir(),
             ids: BTreeMap::new(),
             next_id: 1,
@@ -202,6 +213,15 @@ impl Normalizer {
     #[must_use]
     pub fn with_repo_root(mut self, root: PathBuf) -> Self {
         self.repo_root = Some(root);
+        self
+    }
+
+    /// Also elide `root`, the standard library the server loaded, as `$STD`
+    /// (wolf-lsp#42). `None` elides nothing: a server with no std answers
+    /// no path into one.
+    #[must_use]
+    pub fn with_std_root(mut self, root: Option<PathBuf>) -> Self {
+        self.std_root = root;
         self
     }
 
@@ -225,17 +245,16 @@ impl Normalizer {
             match stage {
                 Stage::Ids => self.renumber_id(rec),
                 Stage::Paths => {
-                    let (ws, repo, tmp) = (
-                        self.workspace.clone(),
-                        self.repo_root.clone(),
-                        self.tmp.clone(),
-                    );
+                    let roots = Roots {
+                        workspace: self.workspace.clone(),
+                        std_root: self.std_root.clone(),
+                        repo_root: self.repo_root.clone(),
+                        tmp: self.tmp.clone(),
+                    };
                     for v in rec.values_mut() {
                         // KEYS TOO — see `map_strings_and_keys`. This is the
                         // one stage that walks them, and the one that has to.
-                        map_strings_and_keys(v, &mut |s| {
-                            elide_paths(s, ws.as_deref(), repo.as_deref(), &tmp)
-                        });
+                        map_strings_and_keys(v, &mut |s| elide_paths(s, &roots));
                     }
                 }
                 Stage::Pid => {
@@ -487,17 +506,25 @@ fn drop_nulls(value: &mut Value) {
 /// workspace is `C:\…\samples` on the Windows runner and `/…/samples`
 /// elsewhere, and LSP positions are byte offsets — a transcript that
 /// disagrees about separators disagrees about every column downstream.
-/// The workspace is elided FIRST and the repository root second: the workspace
+/// The workspace is elided FIRST and the repository root after it: the workspace
 /// is the deeper path, so a URI inside it must collapse to `$WS/...` rather than
 /// to `$REPO/vendor/upstream/samples/...`. Reversing the order would make every
-/// existing transcript's document URIs change shape.
-fn elide_paths(s: &str, workspace: Option<&Path>, repo_root: Option<&Path>, tmp: &Path) -> String {
+/// existing transcript's document URIs change shape. The std root goes between
+/// them for the same reason (wolf-lsp#42): in CI it is `.wolf-bin/std`, under
+/// the repository root, and must read `$STD/...` there as it does on a
+/// machine whose toolchain lives elsewhere.
+fn elide_paths(s: &str, roots: &Roots) -> String {
     let folded = s.replace('\\', "/");
     let mut out = folded;
     let home = home_dir();
-    for (root, placeholder) in [(workspace, WS), (repo_root, REPO), (Some(tmp), TMP)]
-        .into_iter()
-        .filter_map(|(p, ph)| p.map(|p| (p, ph)))
+    for (root, placeholder) in [
+        (roots.workspace.as_deref(), WS),
+        (roots.std_root.as_deref(), STD),
+        (roots.repo_root.as_deref(), REPO),
+        (Some(roots.tmp.as_path()), TMP),
+    ]
+    .into_iter()
+    .filter_map(|(p, ph)| p.map(|p| (p, ph)))
     {
         let root = root.to_string_lossy().replace('\\', "/");
         let root = root.trim_end_matches('/');
@@ -544,6 +571,14 @@ fn elide_paths(s: &str, workspace: Option<&Path>, repo_root: Option<&Path>, tmp:
         }
     }
     out
+}
+
+/// The machine-specific prefixes the `paths` stage elides, in elision order.
+struct Roots {
+    workspace: Option<PathBuf>,
+    std_root: Option<PathBuf>,
+    repo_root: Option<PathBuf>,
+    tmp: PathBuf,
 }
 
 /// The home directory, `/`-folded, or `None` when the environment names none.

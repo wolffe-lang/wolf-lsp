@@ -480,3 +480,67 @@ fn a_root_above_the_workspace_is_elided_to_repo() {
         "an absolute path survived normalization:\n{text}"
     );
 }
+
+// ------------------------------------------------ the std root (#42) --
+
+fn definition_answer(uri: &str) -> Transcript {
+    let header = r#"{"name":"t/std","profile":"minimal","recorded":"2026-10-16","transcript":1,"wolf_pin":"0000000000000000000000000000000000000000","workspace":"vendor/upstream/samples"}"#;
+    let range = r#"{"start":{"line":576,"character":7},"end":{"line":576,"character":10}}"#;
+    jsonl::parse(&format!(
+        "{header}\n{{\"dir\":\"s2c\",\"id\":2,\"kind\":\"response\",\"result\":{{\"uri\":\"{uri}\",\"range\":{range}}},\"seq\":1}}\n"
+    ))
+    .unwrap()
+}
+
+/// wolf-lsp#42: a `definition` into the std the server loaded answers that
+/// toolchain's absolute path; it elides to `$STD` on every machine.
+#[test]
+fn a_std_definition_elides_to_the_std_placeholder_on_unix_and_windows() {
+    let mut unix = definition_answer("file:///home/dev/wolf/std/list/list.lu");
+    Normalizer::new(Some("/home/dev/wolf-lsp/vendor/upstream/samples".into()))
+        .with_repo_root("/home/dev/wolf-lsp".into())
+        .with_std_root(Some("/home/dev/wolf/std".into()))
+        .run(&mut unix);
+    let mut win = definition_answer("file:///D:/a/wolf-lsp/wolf-lsp/.wolf-bin/std/list/list.lu");
+    Normalizer::new(Some(
+        r"D:\a\wolf-lsp\wolf-lsp\vendor\upstream\samples".into(),
+    ))
+    .with_repo_root(r"D:\a\wolf-lsp\wolf-lsp".into())
+    .with_std_root(Some(r"D:\a\wolf-lsp\wolf-lsp\.wolf-bin\std".into()))
+    .run(&mut win);
+    let a = unix.records[0].result.clone().unwrap()["uri"].clone();
+    let b = win.records[0].result.clone().unwrap()["uri"].clone();
+    assert_eq!(a, serde_json::json!("file://$STD/list/list.lu"));
+    assert_eq!(b, a);
+}
+
+/// CI's std is `.wolf-bin/std`, INSIDE the checkout: `$STD` must win over
+/// `$REPO`, or a CI replay reads `$REPO/.wolf-bin/std/…` against a
+/// transcript recorded elsewhere.
+#[test]
+fn a_std_inside_the_repository_is_std_not_repo() {
+    let mut t = definition_answer("file:///w/wolf-lsp/.wolf-bin/std/list/list.lu");
+    Normalizer::new(Some("/w/wolf-lsp/vendor/upstream/samples".into()))
+        .with_repo_root("/w/wolf-lsp".into())
+        .with_std_root(Some("/w/wolf-lsp/.wolf-bin/std".into()))
+        .run(&mut t);
+    assert_eq!(
+        t.records[0].result.clone().unwrap()["uri"],
+        serde_json::json!("file://$STD/list/list.lu")
+    );
+}
+
+/// No std root, no `$STD`: the path is left for `$REPO`/`$TMP` or the
+/// absolute-path guard to catch, never silently guessed.
+#[test]
+fn without_a_std_root_nothing_becomes_std() {
+    let mut t = definition_answer("file:///w/wolf-lsp/.wolf-bin/std/list/list.lu");
+    Normalizer::new(Some("/w/wolf-lsp/vendor/upstream/samples".into()))
+        .with_repo_root("/w/wolf-lsp".into())
+        .with_std_root(None)
+        .run(&mut t);
+    assert_eq!(
+        t.records[0].result.clone().unwrap()["uri"],
+        serde_json::json!("file://$REPO/.wolf-bin/std/list/list.lu")
+    );
+}

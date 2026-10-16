@@ -151,6 +151,10 @@ pub struct Session {
     encoding: Encoding,
     next_id: i64,
     timeout: Duration,
+    /// The scratch copy a [`StdMode::None`] session runs. Declared last so
+    /// it drops after `Session`'s own `Drop` has killed and reaped the
+    /// child: a running executable cannot be deleted on Windows.
+    _lone: Option<LoneBinary>,
 }
 
 impl Session {
@@ -182,7 +186,32 @@ impl Session {
         workspace: &Path,
         env: &[(String, String)],
     ) -> Result<Self, Error> {
-        let mut command = server_command(bin, workspace, env);
+        Self::spawn_with_std(bin, workspace, env, StdMode::Installed)
+    }
+
+    /// Spawn with extra environment variables and a choice of standard
+    /// library (wolf-lsp#42).
+    ///
+    /// [`StdMode::Installed`] runs `bin` itself, so the server loads the
+    /// `std/` beside it as an installed toolchain does. [`StdMode::None`]
+    /// runs a lone hard link (or, across file systems, a copy) of `bin` in a
+    /// scratch directory with nothing beside it: the server then has no std,
+    /// which is the one way to reach that answer, because the default root
+    /// is found from `current_exe` (symlinks resolved), and a std root
+    /// naming an empty directory is a different answer (E0403). The scratch
+    /// directory is removed when the session drops.
+    pub fn spawn_with_std(
+        bin: &Path,
+        workspace: &Path,
+        env: &[(String, String)],
+        std_mode: StdMode,
+    ) -> Result<Self, Error> {
+        let lone = match std_mode {
+            StdMode::Installed => None,
+            StdMode::None => Some(LoneBinary::new(bin)?),
+        };
+        let program = lone.as_ref().map_or(bin, |l| l.path.as_path());
+        let mut command = server_command(program, workspace, env);
         let mut child = command.spawn()?;
 
         let stdout = child.stdout.take().expect("stdout was piped");
@@ -227,6 +256,7 @@ impl Session {
             encoding: Encoding::Utf16,
             next_id: 1,
             timeout: DEFAULT_TIMEOUT,
+            _lone: lone,
         })
     }
 
@@ -560,6 +590,17 @@ impl Drop for Session {
 /// `std/` beside the binary.
 pub const STD_ENV: &str = "WOLF_STD";
 
+/// Where a spawned server's standard library comes from (wolf-lsp#42).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum StdMode {
+    /// The `std/` beside the binary, as an installed toolchain finds it (or a
+    /// script's own `env WOLF_STD …`).
+    #[default]
+    Installed,
+    /// No std at all: a lone copy of the binary with nothing beside it.
+    None,
+}
+
 /// The command every LSP session spawns: `<bin> lsp` in `workspace`, stdio
 /// piped, the caller's environment **without `WOLF_STD`**, then `env`.
 ///
@@ -583,6 +624,80 @@ pub fn server_command(bin: &Path, workspace: &Path, env: &[(String, String)]) ->
         command.env(k, v);
     }
     command
+}
+
+/// The std root a session spawned this way will load, for the recorder's
+/// `$STD` elision (wolf-lsp#42), or `None` when it loads none.
+///
+/// Mirrors the server's own order for the two sources a session can have: a
+/// script's `WOLF_STD` (relative to the workspace, the server's cwd), else
+/// the `std/` beside the binary as `current_exe` names it, i.e. with
+/// symlinks resolved. Windows' `canonicalize` answers a verbatim `\\?\`
+/// path, which no server URI carries, so that prefix is stripped.
+#[must_use]
+pub fn std_root(
+    bin: &Path,
+    workspace: &Path,
+    env: &[(String, String)],
+    std_mode: StdMode,
+) -> Option<PathBuf> {
+    if std_mode == StdMode::None {
+        return None;
+    }
+    if let Some((_, v)) = env.iter().rev().find(|(k, _)| k == STD_ENV)
+        && !v.is_empty()
+    {
+        return Some(workspace.join(v));
+    }
+    let real = std::fs::canonicalize(bin).ok()?;
+    let root = real.parent()?.join("std");
+    root.is_dir().then(|| strip_verbatim(&root))
+}
+
+/// `\\?\C:\x` → `C:\x`; `\\?\UNC\h\s` → `\\h\s`; anything else unchanged.
+fn strip_verbatim(p: &Path) -> PathBuf {
+    let s = p.to_string_lossy();
+    if let Some(rest) = s.strip_prefix(r"\\?\UNC\") {
+        PathBuf::from(format!(r"\\{rest}"))
+    } else if let Some(rest) = s.strip_prefix(r"\\?\") {
+        PathBuf::from(rest)
+    } else {
+        p.to_path_buf()
+    }
+}
+
+/// A hard link or copy of the server binary alone in a scratch directory.
+struct LoneBinary {
+    dir: PathBuf,
+    path: PathBuf,
+}
+
+impl LoneBinary {
+    fn new(bin: &Path) -> std::io::Result<Self> {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static NEXT: AtomicU64 = AtomicU64::new(0);
+        let real = std::fs::canonicalize(bin)?;
+        let name = real
+            .file_name()
+            .ok_or_else(|| std::io::Error::other("server binary has no file name"))?;
+        let dir = std::env::temp_dir().join(format!(
+            "wolf-lsp-nostd-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        std::fs::create_dir_all(&dir)?;
+        let path = dir.join(name);
+        if std::fs::hard_link(&real, &path).is_err() {
+            std::fs::copy(&real, &path)?;
+        }
+        Ok(Self { dir, path })
+    }
+}
+
+impl Drop for LoneBinary {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.dir);
+    }
 }
 
 fn read_loop(stdout: BufReader<std::process::ChildStdout>, tx: &Sender<Incoming>) {
@@ -770,6 +885,60 @@ mod tests {
                 Some(std::ffi::OsStr::new("fixture-std"))
             )]
         );
+    }
+
+    #[test]
+    fn std_root_is_the_std_beside_the_real_binary() {
+        let dir = std::env::temp_dir().join(format!("wolf-lsp-stdroot-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("std")).unwrap();
+        let bin = dir.join("wolf");
+        std::fs::write(&bin, b"").unwrap();
+        let ws = dir.join("ws");
+        let want = strip_verbatim(&std::fs::canonicalize(dir.join("std")).unwrap());
+        assert_eq!(std_root(&bin, &ws, &[], StdMode::Installed), Some(want));
+        assert_eq!(std_root(&bin, &ws, &[], StdMode::None), None);
+        let env = vec![(STD_ENV.to_string(), "s".to_string())];
+        assert_eq!(
+            std_root(&bin, &ws, &env, StdMode::Installed),
+            Some(ws.join("s"))
+        );
+        std::fs::remove_dir(dir.join("std")).unwrap();
+        assert_eq!(std_root(&bin, &ws, &[], StdMode::Installed), None);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn verbatim_prefixes_are_stripped() {
+        assert_eq!(
+            strip_verbatim(Path::new(r"\\?\D:\a\std")),
+            PathBuf::from(r"D:\a\std")
+        );
+        assert_eq!(
+            strip_verbatim(Path::new(r"\\?\UNC\host\share\std")),
+            PathBuf::from(r"\\host\share\std")
+        );
+        assert_eq!(strip_verbatim(Path::new("/a/std")), PathBuf::from("/a/std"));
+    }
+
+    #[test]
+    fn a_lone_binary_has_nothing_beside_it_and_is_removed_on_drop() {
+        let dir = std::env::temp_dir().join(format!("wolf-lsp-lone-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("std")).unwrap();
+        let bin = dir.join("wolf");
+        std::fs::write(&bin, b"not a server").unwrap();
+        let lone = LoneBinary::new(&bin).unwrap();
+        assert_eq!(std::fs::read(&lone.path).unwrap(), b"not a server");
+        let beside: Vec<_> = std::fs::read_dir(&lone.dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name())
+            .collect();
+        assert_eq!(beside, vec![std::ffi::OsString::from("wolf")]);
+        let lone_dir = lone.dir.clone();
+        drop(lone);
+        assert!(!lone_dir.exists());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

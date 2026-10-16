@@ -30,7 +30,7 @@ use lsp_transcript::{Matcher, Normalizer, jsonl, normalize};
 use serde_json::Value;
 
 use crate::profiles::Profile;
-use crate::session::{self, Session};
+use crate::session::{self, Session, StdMode};
 
 /// What a replay concluded.
 #[derive(Debug, Clone, Default)]
@@ -256,8 +256,12 @@ pub fn replay(
     // transcript. A transcript captured from a real client (ls02–ls06) has no
     // script and therefore no env, which is correct: a real editor spawns the
     // server with the user's environment and nothing more.
-    let env = script_env(path);
-    let mut session = Session::spawn_with_env(bin, &workspace, &env)?;
+    let (env, std_mode) = script_spawn(path);
+    let mut session = Session::spawn_with_std(bin, &workspace, &env, std_mode)?;
+    // `$STD` (wolf-lsp#42): the std root THIS run's server loads, so a
+    // transcript recorded against one machine's toolchain replays against
+    // another's. Elided on both sides, like `$WS`.
+    let std_root = session::std_root(bin, &workspace, &env, std_mode);
     let ws = crate::slash_path(&workspace);
 
     let mut report = Report {
@@ -283,9 +287,12 @@ pub fn replay(
     // transcript may legitimately carry one: helix and eglot resolve their root
     // above the workspace (`.git`), so `$REPO` appears in `rootUri` where `$WS`
     // appears in every document URI.
-    let mut live = Normalizer::new(Some(workspace.clone())).with_repo_root(repo_root.to_path_buf());
-    let mut expected =
-        Normalizer::new(Some(workspace.clone())).with_repo_root(repo_root.to_path_buf());
+    let mut live = Normalizer::new(Some(workspace.clone()))
+        .with_repo_root(repo_root.to_path_buf())
+        .with_std_root(std_root.clone());
+    let mut expected = Normalizer::new(Some(workspace.clone()))
+        .with_repo_root(repo_root.to_path_buf())
+        .with_std_root(std_root);
 
     for (i, rec) in transcript.records.iter().enumerate() {
         match rec.dir {
@@ -381,13 +388,15 @@ fn answer_trailing_shutdown(
     }
 }
 
-/// The `env` directives of the `.lsps` beside a transcript, or nothing.
-fn script_env(transcript: &Path) -> Vec<(String, String)> {
+/// The spawn-time directives (`env`, `std`) of the `.lsps` beside a
+/// transcript, or the defaults when there is none (a captured transcript:
+/// a real editor spawns the installed server with the user's environment).
+fn script_spawn(transcript: &Path) -> (Vec<(String, String)>, StdMode) {
     let script = transcript.with_extension("lsps");
     std::fs::read_to_string(script)
         .ok()
         .and_then(|t| crate::Script::parse(&t).ok())
-        .map(|s| s.env)
+        .map(|s| (s.env, s.std))
         .unwrap_or_default()
 }
 

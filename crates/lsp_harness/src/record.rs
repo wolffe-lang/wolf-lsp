@@ -101,7 +101,8 @@ pub fn record(
             script.workspace
         )));
     }
-    let mut session = Session::spawn_with_env(bin, &workspace, &script.env)?;
+    let mut session = Session::spawn_with_std(bin, &workspace, &script.env, script.std)?;
+    let std_root = crate::session::std_root(bin, &workspace, &script.env, script.std);
 
     let mut records: Vec<Record> = Vec::new();
     let mut seq = 0u32;
@@ -127,6 +128,7 @@ pub fn record(
     };
     Normalizer::new(Some(workspace))
         .with_repo_root(repo_root.to_path_buf())
+        .with_std_root(std_root)
         .run(&mut transcript);
     Ok(transcript)
 }

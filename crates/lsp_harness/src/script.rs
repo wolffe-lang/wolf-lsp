@@ -35,6 +35,8 @@ use std::path::PathBuf;
 
 use serde_json::Value;
 
+use crate::session::StdMode;
+
 /// One request the script issues.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Req {
@@ -256,6 +258,13 @@ pub struct Script {
     /// is the committed input a re-record reads. `replay` picks these up from
     /// the `.lsps` beside the `.jsonl` for exactly that reason.
     pub env: Vec<(String, String)>,
+    /// Where the server's standard library comes from (`std none`, wolf-lsp#42).
+    ///
+    /// Spawn-time state like `env`, and for the same reason a header
+    /// directive. The default is the std installed beside the binary; `std
+    /// none` runs a lone copy of the binary with nothing beside it, the only
+    /// way to reach the no-std server.
+    pub std: StdMode,
     pub steps: Vec<Step>,
 }
 
@@ -285,6 +294,7 @@ impl Script {
         let mut workspace = None;
         let mut about = Vec::new();
         let mut env: Vec<(String, String)> = Vec::new();
+        let mut std_mode = StdMode::Installed;
         let mut steps = Vec::new();
         // Request ids are implicit and sequential in send order, starting at
         // 1 for `initialize` — so the FIRST `req` or `send` in a script is
@@ -319,6 +329,17 @@ impl Script {
                         return Err(err("`env` needs a NAME and a value".to_string()));
                     }
                     env.push((key.to_string(), value.to_string()));
+                }
+                "std" => {
+                    std_mode = match rest {
+                        "none" => StdMode::None,
+                        "installed" => StdMode::Installed,
+                        other => {
+                            return Err(err(format!(
+                                "`std` wants `none` or `installed`, got {other:?}"
+                            )));
+                        }
+                    };
                 }
                 "initialize" => {
                     steps.push(Step::Initialize);
@@ -449,7 +470,7 @@ impl Script {
                 other => {
                     return Err(err(format!(
                         "unknown verb `{other}` — expected one of: name, profile, workspace, \
-                         env, initialize, open, edit, edit-version, edit-from, splice, save, \
+                         env, std, initialize, open, edit, edit-version, edit-from, splice, save, \
                          close, req, send, cancel, wait, sleep, shutdown, shutdown-only, exit, raw"
                     )));
                 }
@@ -472,6 +493,7 @@ impl Script {
             workspace: workspace.unwrap_or_else(|| DEFAULT_WORKSPACE.to_string()),
             about,
             env,
+            std: std_mode,
             steps,
         })
     }
@@ -728,6 +750,17 @@ shutdown
             vec![("WOLF_QUERY_TEST_SLOW_MS".to_string(), "1200".to_string())]
         );
         assert_eq!(s.steps, vec![Step::Initialize]);
+    }
+
+    #[test]
+    fn std_is_a_header_directive_and_defaults_to_installed() {
+        let s = Script::parse("name a/b\nprofile p\ninitialize\n").unwrap();
+        assert_eq!(s.std, StdMode::Installed);
+        let s = Script::parse("name a/b\nprofile p\nstd none\ninitialize\n").unwrap();
+        assert_eq!(s.std, StdMode::None);
+        assert_eq!(s.steps, vec![Step::Initialize]);
+        let err = Script::parse("name a/b\nprofile p\nstd maybe\n").unwrap_err();
+        assert!(err.message.contains("`std` wants"), "{err}");
     }
 
     #[test]

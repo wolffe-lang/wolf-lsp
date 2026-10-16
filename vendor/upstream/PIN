@@ -1,23 +1,21 @@
 # The wolf-lang commit this repo is keyed to. A bump is its own commit, with
 # the re-vendored data, and nothing else (vendor/README.md).
 #
-# tl20 pins the RELEASE TAG `v0.2.29`, an ANNOTATED tag (object `6f732110…`)
-# peeling to the commit below — tl19 pinned v0.2.26, tl18 v0.2.25, tl16
-# v0.2.20, tl15 v0.2.19, tl14 v0.2.18, tl11 v0.2.16, tl09 v0.2.15, tl07
-# v0.2.14, tl02 v0.2.12 and le04..le08 v0.2.1..v0.2.5 the same way. THREE
-# releases this time (v0.2.27 `0ddda6b7`, v0.2.28 `f71ece8e`, v0.2.29; v0.2.26
-# was this file's previous pin). Note the peel: `git rev-parse v0.2.29`
-# answers the TAG object; `v0.2.29^{commit}` is what belongs here.
-# wolf-lang's default branch was AHEAD of the tag when this was written
-# (`b407c73b`: three prelude names and four anchors no release carries); the
-# pin is the release, never trunk.
-commit = 6ffe7c6056eeb8c661b37e38d99b91166e8c1add
+# tl24 pins the RELEASE TAG `v0.2.30`, an ANNOTATED tag (object `ffb7c5b3…`)
+# peeling to the commit below — tl20 pinned v0.2.29, tl19 v0.2.26, tl18
+# v0.2.25, tl16 v0.2.20, tl15 v0.2.19, tl14 v0.2.18, tl11 v0.2.16, tl09
+# v0.2.15, tl07 v0.2.14, tl02 v0.2.12 and le04..le08 v0.2.1..v0.2.5 the same
+# way. One release this time (v0.2.29 `6ffe7c60` was this file's previous
+# pin). Note the peel: `git rev-parse v0.2.30` answers the TAG object;
+# `v0.2.30^{commit}` is what belongs here. The pin is the release, never
+# wolf-lang's trunk.
+commit = 1b37f368228db92eca505c8c4cd3c531ea60be48
 # The exact `wolf --version` string that commit produces (first line). The
-# binary's second line names its lupin pairing: `paired with lupin 0.1.52
-# (reference interpreter), pin 294d626` — lupin 0.1.52 (wolf-interp
-# `025428b7`, release 410845419) declares conformance to wolf-lang `294d626`,
+# binary's second line names its lupin pairing: `paired with lupin 0.1.53
+# (reference interpreter), pin 294d626` — lupin 0.1.53 (wolf-interp
+# `7896eddc`, release 413375414) declares conformance to wolf-lang `294d626`,
 # which is v0.2.24 (`crates/wolf_driver/PAIRING` at the tag: `lupin-version =
-# 0.1.52`, `lupin-pin = 294d626`). The pairing sha is a wolf-LANG commit,
+# 0.1.53`, `lupin-pin = 294d626`). The pairing sha is a wolf-LANG commit,
 # never a wolf-interp one. wolf-lsp never runs lupin; the pairing enters this
 # repo only as that line.
 #
@@ -30,117 +28,83 @@ commit = 6ffe7c6056eeb8c661b37e38d99b91166e8c1add
 #
 # SEVEN HEX DIGITS, READ OFF THE ACQUIRED ARTIFACT (wolf-lang#199 still open:
 # the clause's abbreviation length depends on the building clone's packed
-# object count). The x86_64-unknown-linux-gnu archive of release 411040788,
-# sha256 ae466e85418a48758460a981c9fab690462f779dae967cface86c555e649d7c1
-# (the release asset's own digest, read from the API twice, and the
-# downloaded file's sha256), prints exactly the string below.
-version = "wolf 0.2.29 (wolfgang, pin 6ffe7c6)"
+# object count). The x86_64-unknown-linux-gnu archive of release 413582739,
+# sha256 4e55b39ed243d3e8ed3be24f716186529e1942935464476d47c4bc983329fe89
+# (the release asset's own digest, read from the API, and the downloaded
+# file's sha256 on kasumi), prints exactly the string below.
+version = "wolf 0.2.30 (wolfgang, pin 1b37f36)"
 # Does `wolf lsp` exist at this commit? YES, and it annotates, as it has since
-# the v0.2.5 pin (s52 the subcommand; s133 definition/references/rename; s134
-# signatureHelp, semanticTokens, inlayHint). NEW AT THIS PIN (s235,
-# wolf-lang#724): the server loads the standard library, found as `wolf build`
-# finds it — `wolf lsp --std-root <dir>`, then `WOLF_STD`, then a `std` path
-# dependency in the opened file's `wolf.pkg`, then the `std/` beside `wolf`.
-# `wolf lsp --help` at the pin: `usage: wolf lsp [--stdio] [--std-root <dir>]`.
+# the v0.2.5 pin, and it loads the standard library as `wolf build` finds it
+# (since v0.2.29, s235): `wolf lsp --std-root <dir>`, then `WOLF_STD`, then a
+# `std` path dependency in the opened file's `wolf.pkg`, then the `std/`
+# beside `wolf`. `wolf lsp --help` at the pin: `usage: wolf lsp [--stdio]
+# [--std-root <dir>]`.
 #
-# THE RELEASE. Id 411040788, `draft=false`, published 2026-10-12T23:22:55Z,
-# target `trunk`, four assets (the four-triple set since v0.2.3), and EXACTLY
-# ONE release carries the tag (wolf-lang#226's fix holds for a fourteenth cut):
-#   wolf-0.2.29-aarch64-apple-darwin.tar.gz       18,536,271  a79928ba…
-#   wolf-0.2.29-aarch64-unknown-linux-gnu.tar.gz  74,761,726  584b8fc2…
-#   wolf-0.2.29-x86_64-pc-windows-msvc.tar.gz     15,710,472  e8a37a7f…
-#   wolf-0.2.29-x86_64-unknown-linux-gnu.tar.gz   78,902,948  ae466e85…
+# THE RELEASE. Id 413582739, `draft=false`, published 2026-10-15T08:53:05Z,
+# target `trunk`, four assets (the four-triple set since v0.2.3):
+#   wolf-0.2.30-aarch64-apple-darwin.tar.gz       18,686,172  f3257e74…
+#   wolf-0.2.30-aarch64-unknown-linux-gnu.tar.gz  75,687,226  34237d4a…
+#   wolf-0.2.30-x86_64-pc-windows-msvc.tar.gz     15,792,611  2772a997…
+#   wolf-0.2.30-x86_64-unknown-linux-gnu.tar.gz   79,910,152  4e55b39e…
 #
 # THE ARCHIVE PAIR, EVERY MEMBER OUTSIDE `std/` HASHED BY NAME (ELEVEN per
-# archive, as at 0.2.26). Full sha256, linux-x64 / darwin-arm64:
+# archive, as at 0.2.29). Full sha256, linux-x64 / darwin-arm64:
 #
-#   wolf                07f1215832be38f619b966510eb48ee2d6c13f51343502c7cf82ab87e3901c80  294,347,688
-#                       615f6b8bd8b78c33f4547807a932ead630fb3a67b3e91dbd1d53e7786809b7ea   20,179,640
-#   libwolf_rt.a        fa0a0ae508c75d827bc15e495e7570bd82aa977f601882a1e5329fb35f4d3f98   42,604,436
-#                       9fba7340d7554e39090aa37b202e6018eab05511c36a65684b9edacf64306a29   30,181,184
-#   libwolf_rt_none.a   fdd229bb04a341277fd97064373393deb98619ae9ccab782139536a4fea73be4   10,810,892
-#                       43238b23201603127f179f19b348e1c09e4144f94395dd2ef3d0d14a5d42b0a0   10,810,892
-#   wolf-cimport-worker ebd3b809ec3b4ad6526fece3f4fd6b05d0c844e1660feaae05e9a6dbee18771d   10,769,680
-#                       4464f9e590f2c5a644a16b143d60bf6ebc7cd335d08f44ac4c7c576950bf4341      702,184
+#   wolf                061641568eabc2fb552d7ee4fce6e7fd0503d47b64cf6e1744b981e96d8781a2  298,428,864
+#                       8aed510c49eb04898ad647379e2c1e059ff1619057262a5f3c94e2c1552b30c6   20,387,896
+#   libwolf_rt.a        b0fb9bce2fd27d1896efec590118c349ee4a6016d3f29f7c8b11fae2d70d68c1   43,535,634
+#                       c96bc8c11163c037cd8b22bdc6a67baf413c19dae4917e599af48cc871e58dc2   30,457,960
+#   libwolf_rt_none.a   4c9650a1d7088b4f41aebcde6f0276695028ff0d14309a448724b56592c49b10   10,810,892
+#                       ab68f509e9e063167859d8f3e4b39c322c682a034f2510e3258c47d590d3bb50   10,810,892
+#   wolf-cimport-worker c12dd092aa8dcf9715108efd825b5b04d9728b8b6e2ad5c28576887142e8b496   10,769,688
+#                       f95c90f8dfeef1ddf87082d8097d1184bd5ff0e45a9c144c144efdc7cac0dec5      702,216
 #
 # identical on both platforms:
 #
-#   wolf.1              f51a5b5a10afa5da77b34fc18c01ac0be13e53f183828c5e4f53d917b3f6bd1e   12,219  (moved; 99ac2a0a… at 0.2.26)
-#   README.md           75ea2850878ee0c0f18d0f85fc35de22a7212f42ebb328cc927de6f3d840b78c    5,733  (moved; 2ccbb2fc… at 0.2.26)
+#   wolf.1              d3687313ef52fd231629c8860caab6964237f795dd6f49d866f636e1a46e714d   12,219  (moved; f51a5b5a… at 0.2.29)
+#   README.md           e41735904a7bd7a39768bbfac32d31c9c35e129f92f66cf872c3cbc2345b19f5    5,733  (moved; 75ea2850… at 0.2.29)
 #   _wolf               a368c8eccce8b1800c80aa818ae482e541aa9636b676540851e23863d333eb8b    1,975  (unchanged since 0.2.25)
 #   wolf.bash           1b1d88530b5ae44120cb7e93b80c7054e3e28c61347fe3723f2608e44ebf0550      523  (unchanged)
 #   wolf.fish           180de0ecb67f49ff127fc84d92ad6c6182b5195db1ce2b0fc63734e7abe46407    2,963  (unchanged)
 #   LICENSE             3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986   35,149
 #   LICENSE-EXCEPTION   a0eec20d7b98b1cd0e5b4d23c3965667c97b68fb365ec95a9516b0c3cbc4fec4    1,273
 #
-# AND A TWELFTH MEMBER, NEW SINCE 0.2.27 (s204, ruling #59): `std/`, the
-# standard library beside the binary — 57 files in each archive, `std/STD-REV`
-# naming wolf-std d7c2968cbba1a855a58b4aabf3e55edcf7282992, and the sha256 of
-# the sorted `sha256  path` list of those 57 files equal on both platforms:
-# b7b72ca718fbeb586b30e0fe5f92cec77913fa10b0f8b801a5a87c823da92deb. This is
-# the std the acquired server loads with nothing configured, on a developer's
-# box and in CI alike (`.github/actions/acquire-wolf` unpacks the whole
-# archive into `.wolf-bin/`).
+# AND `std/`, the standard library beside the binary (since 0.2.27, s204,
+# ruling #59): 57 files in each archive, `std/STD-REV` naming wolf-std
+# fd6bcdcb1dfe03ea5092f10316b7abe81f2df41e (0.2.29 shipped d7c2968c…), and the
+# sha256 of the sorted `sha256  path` list of those 57 files equal on both
+# platforms: 5af0a8e36074b3e1e059749b23fedb5f12941d71514b1f633f95d26ed11a71a6.
+# This is the std the acquired server loads with nothing configured, on a
+# developer's box and in CI alike (`.github/actions/acquire-wolf` unpacks the
+# whole archive into `.wolf-bin/`).
 #
 # GLIBC FLOOR: the highest GLIBC symbol the linux `wolf` imports is
-# GLIBC_2.34, as at 0.2.16 through 0.2.26.
+# GLIBC_2.34, as at 0.2.16 through 0.2.29.
 #
-# WHAT v0.2.26..v0.2.29 ADDS THAT THIS REPO CAN SEE — measured, not swept.
-# 398 commits, three releases.
+# WHAT v0.2.29..v0.2.30 ADDS THAT THIS REPO CAN SEE — measured, not swept.
+# 106 commits, one release.
 #
-# THE SERVER'S CODE MOVES, for the first time since v0.2.16: `crates/wolf_query/`
-# is tree a9d98535… at v0.2.26, v0.2.27 and v0.2.28 and 0827b664… at v0.2.29;
-# `crates/wolf_lsp/` is 9c59202a… at the first three and 9b91e8ed… at v0.2.29.
-# That is s235 (`58e53fd6`): the std roots above, hover and definition on a
-# std method, member completion of a home module's methods, rename's refusal
-# of a std or dependency declaration; `wolf_query` contract v6
-# (`QueryHost::with_roots`). THE FRONT END DOES NOT MOVE: `crates/wolf_parse/src`
-# (03b61b38…), `crates/wolf_lex/src` (9166b9fd…) and `crates/wolf_fmt/src`
-# (c29a0c87…) are the same trees at all four tags.
+# THE SERVER'S CODE DOES NOT MOVE: `crates/wolf_query/` (0827b664…) and
+# `crates/wolf_lsp/` (9b91e8ed…) are the same trees at both tags, and so is the
+# front end (`crates/wolf_parse/src` 03b61b38…, `crates/wolf_lex/src`
+# 9166b9fd…, `crates/wolf_fmt/src` c29a0c87…). What moves under it is
+# semantic: s233's E1010, s755's lowering fix, s234/s236's eleven builtins.
 #
 # TWO VENDORED DATA FILES MOVE; THE EBNF DOES NOT.
-#   * `spec/anchors.json` a24351f4… → c5173775…: 607 → 640 keys over
-#     `.anchors`, diffed as KEY SETS BOTH WAYS — 33 added (16 at 0.2.27, 11 at
-#     0.2.28, 6 at 0.2.29), 0 dropped, 0 retargeted.
-#   * `spec/prelude.json` 21a2561c… → f0fd9c54…: 134 → 164 names, 0 removed —
-#     thirty `function` and nothing else: 17 at 0.2.27 (`fs_stat`, `fs_lstat`,
-#     `fs_read_link`, `fs_read_dir_entries`, `env_unset`, `os_exec`,
-#     `os_signal_ignore`, `os_signal_default`, `os_signal_poll`,
-#     `os_spawn_job`, `os_proc_pid`, `os_wait_status`, `os_pgid`,
-#     `os_term_foreground`, `os_term_set_foreground`, `os_term_mode`,
-#     `os_term_set_mode`), 8 at 0.2.28 (`fs_set_mode`, `fs_open_perm`,
-#     `fs_create_dir_mode`, `fs_symlink`, `fs_link`, `fs_set_times`,
-#     `fs_truncate`, `os_umask`), 5 at 0.2.29 (`os_signal_ignored`,
-#     `os_signal_send`, `os_signal_number`, `os_pid`, `os_ppid`). 26 type
-#     names at every tag. The acquired binary's `wolf prelude --json` is the
-#     same blob.
-#   * `spec/grammar.ebnf` stays 29d5de10… at all four tags: three releases add
-#     no production, keyword or operator.
+#   * `spec/anchors.json` c5173775… → e3d3cdfe…: 640 → 648 keys over
+#     `.anchors`, diffed as KEY SETS BOTH WAYS — 8 added (`os.fs.owner`,
+#     `os.proc.ids`, `os.proc.ids.note`, `os.proc.ids.set`,
+#     `os.signal.wait.fd`, `os.term.chars`, `os.term.editor.note`,
+#     `os.term.size`), 0 dropped, 0 retargeted.
+#   * `spec/prelude.json` f0fd9c54… → 8816efac…: 164 → 175 names, 0 removed —
+#     eleven `function` and nothing else (`fs_set_owner`, `fs_set_owner_fd`,
+#     `os_uid`, `os_euid`, `os_gid`, `os_egid`, `os_groups`, `os_set_ids`,
+#     `os_term_size`, `os_term_chars`, `os_signal_wait_fd`). 26 type names at
+#     both tags. The acquired binary's `wolf prelude --json` is the same blob.
+#   * `spec/grammar.ebnf` stays 29d5de10…: no production, keyword or operator.
 # The fifteen samples are blob-identical per `samples.toml` path. After the
 # re-vendor, all eighteen data files here are blob-identical to the tag's.
 #
-# THE SIX CAPTURED EDITOR SMOKES remain at `30731a6` (v0.2.14), now eight
+# THE SIX CAPTURED EDITOR SMOKES remain at `30731a6` (v0.2.14), now nine
 # pins stale (wolf-lsp#26). `lspconf replay` skips them by name.
-#
-# THE TRANSCRIPTS, MEASURED. All 71 scripted sessions were re-recorded at this
-# pin against the acquired 0.2.29 linux binary, `std/` beside it and nothing
-# configured: `71 files changed, 71 insertions(+), 71 deletions(-)`, every hunk
-# `@@ -1 +1 @@` — line 1 alone (`wolf_pin`, `recorded`). Classified by the
-# `dir` field: 142 changed lines, all headers, 0 `s2c`, 0 `c2s`, as
-# docs/PIN-0229.md §3 (committed before the bump) predicted — the server's
-# code moved and no session reaches what moved, because no sample loads a std
-# module. `replay`: 71 ok, 0 mismatched, 6 skipped, exit 0. `onetruth`: 15
-# samples x 9 profiles, 0 known divergences, zero unfiled. `type-names-check
-# --require-server`: GREEN at the bump with no hand-list change — 18 painted,
-# 9 unpainted, 26 prelude-list candidates, all classified (the thirty new
-# names are functions). `doctor`: READY, serves LSP at pin 6ffe7c6.
-#
-# THE STD-LOADING SERVER, MEASURED BY HAND (docs/PIN-0229.md §3 item 7), on
-# wolf-lang's own fixture `crates/wolf_lsp/tests/fixtures/std_user/main.lu`
-# (`m.keys()` on a `Map`): the archive as unpacked publishes no diagnostic,
-# hovers `// std.map`, defines into `std/map/map.lu` and completes 13 members
-# after `m.`; the 0.2.26 archive answers E0301 and nothing else; through a
-# PATH symlink the 0.2.29 server still finds the std beside the real binary;
-# a copy of `wolf` with no `std/` beside it answers E0301 until `--std-root`
-# or `WOLF_STD` names one; either naming a non-directory exits 2.
 serves_lsp = true

@@ -107,4 +107,23 @@ version = "wolf 0.2.30 (wolfgang, pin 1b37f36)"
 #
 # THE SIX CAPTURED EDITOR SMOKES remain at `30731a6` (v0.2.14), now nine
 # pins stale (wolf-lsp#26). `lspconf replay` skips them by name.
+# THE TRANSCRIPTS, MEASURED. All 71 scripted sessions were re-recorded at this
+# pin against the acquired 0.2.30 linux binary, `std/` beside it and nothing
+# configured: `71 files changed, 71 insertions(+), 71 deletions(-)`, every hunk
+# `@@ -1 +1 @@` — line 1 alone (`wolf_pin`, `recorded`). Classified by the
+# `dir` field: 142 changed lines, all headers, 0 `s2c`, 0 `c2s`, as
+# docs/PIN-0230.md §3 (committed before the bump) predicted. `type-names-check
+# --require-server`: GREEN at the bump with no hand-list change — 18 painted,
+# 9 unpainted, 26 prelude-list candidates, all classified. `doctor`: READY,
+# serves LSP at pin 1b37f36.
+#
+# THE LIBRARY REACHES STD AT THIS PIN (wolf-lsp#42). A sixteenth sample,
+# `typecheck/method_home_no_std.lu` (blob 7b360821…, the tag's), and two
+# transcripts: `std/reach` (the server as installed: clean, hover `// std.list`,
+# definition `file://$STD/list/list.lu` 576:7–576:10, 36 completions after a
+# typed `xs.`) and `std/no-std` (`std none`, a lone copy of the binary: E0301,
+# null, null, none). The recorder and replay elide the std root the spawned
+# server loads as `$STD`; the harness clears `WOLF_STD` from every `wolf` it
+# spawns. `replay`: 73 ok, 0 mismatched, 6 skipped, exit 0. `onetruth`: 16
+# samples x 9 profiles, 0 known divergences, zero unfiled.
 serves_lsp = true

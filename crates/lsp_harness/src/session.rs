@@ -618,7 +618,8 @@ pub fn server_command(bin: &Path, workspace: &Path, env: &[(String, String)]) ->
         .current_dir(workspace)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+        .stderr(Stdio::piped())
+        .env_remove(STD_ENV);
     for (k, v) in env {
         command.env(k, v);
     }

@@ -50,6 +50,19 @@ which is where they are.
   semantic targets sit at different `character` numbers in each, and a shim
   that treated all encodings alike would produce three identical transcripts.
 
+- `std/` — wolf-lsp#42 (tl24): the only sessions whose answers depend on
+  which standard library the SERVER loads. `reach` runs the binary as
+  installed, `std/` beside it: `typecheck/method_home_no_std.lu` is clean,
+  `xs.any` hovers as `std.list`'s, its definition lands in the std's own
+  `list/list.lu` (`file://$STD/…`: the recorder and replay elide the std
+  root the spawned server loads, after `$WS` and before `$REPO`), and `xs.`
+  completes the module's functions. `no-std` is the same file and requests
+  under `std none`, a script directive that runs a lone hard link or copy of
+  the binary with nothing beside it: E0301, `null`, `null`, nothing. The
+  harness clears the caller's `WOLF_STD` from every `wolf` it spawns, so a
+  session's std is its script's business (an `env WOLF_STD …` line), never
+  the shell's.
+
 `diagnostics/cross-file-e0302.jsonl` used to record a **known bug** on purpose
 (`divergences.toml`, DIV-LSP-001): the E0302 whose primary span lands in
 `twice.lu` reached no document at all, and the empty diagnostics array was the

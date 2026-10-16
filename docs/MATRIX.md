@@ -6,6 +6,65 @@ verified at, the evidence for that tier, and (for T1 and T2) the CI job that
 re-checks the evidence on every push. A row that claims a verification it does
 not have is a bug in this file.
 
+**Last reviewed against wolf pin `1b37f36`, 2026-10-16** (tl24, the pin at
+0.2.30). That is the wolf-lang release tag `v0.2.30`, **one** release on from
+the `v0.2.29` this file was last stamped at, so the pinned version string is
+the bare `wolf 0.2.30 (wolfgang, pin 1b37f36)` and `lspconf doctor` reports
+READY. The binary it reports is the **acquired release artifact**: the
+x86_64-unknown-linux-gnu archive of release 413582739, sha256 4e55b39e…, whose
+`wolf --version` printed the `PIN` string directly (and `paired with lupin
+0.1.53 (reference interpreter), pin 294d626` on its second line). The darwin
+arm64 archive (sha256 f3257e74…) was acquired and hashed member by member
+(eleven members each outside `std/`, by name, `vendor/upstream/PIN`), and
+both digests matched the release API's own; never a local build, never
+wolf-lang's trunk. `PIN` records the peeled `v0.2.30^{commit}`,
+`1b37f368228db92eca505c8c4cd3c531ea60be48`.
+
+**THE SCRIPTED HALF IS AT THIS PIN, NOTHING BUT THE HEADER MOVED, AND FOR THE
+FIRST TIME TWO TRANSCRIPTS REACH THE STANDARD LIBRARY; THE CAPTURED HALF IS
+NOW NINE PINS BEHIND.** `lspconf --require-server replay`: **79 transcripts,
+73 replayed ok, 0 mismatched, SIX SKIPPED, exit 0**.
+
+- **The 71 scripted transcripts were re-recorded: `71 files changed, 71
+  insertions(+), 71 deletions(-)`, every hunk `@@ -1 +1 @@`.** Classified by
+  the `dir` field: 142 changed lines, all headers, **0 `s2c`, 0 `c2s`**. The
+  fifteen earlier samples are blob-identical across `6ffe7c60..1b37f368`, and
+  neither the server's crates nor the front end moved.
+- **`transcripts/std/` is new (wolf-lsp#42).** A sixteenth sample,
+  `typecheck/method_home_no_std.lu`, calls `xs.any(…)` on a `List`, which
+  resolves to `std.list`. `std/reach` runs the server as installed: no
+  diagnostic, a hover naming `// std.list`, a definition at
+  `file://$STD/list/list.lu` (the recorder and replay now elide the std root
+  the spawned server loads, before `$REPO`, because CI's is
+  `.wolf-bin/std`, inside the checkout), and `xs.` completing the module's
+  functions. `std/no-std` runs a lone copy of the binary (`std none`): E0301,
+  `null`, `null`, nothing. The harness clears the caller's `WOLF_STD` from
+  every `wolf` it spawns. `onetruth`: 16 samples × 9 profiles, 0 known
+  divergences, zero unfiled.
+- **None of the six captured smokes is re-captured** — still `30731a6`
+  (v0.2.14), now nine pins behind (v0.2.15, v0.2.16, v0.2.18, v0.2.19,
+  v0.2.20, v0.2.25, v0.2.26, v0.2.29, v0.2.30). wolf-lsp#26, unchanged.
+- **The declared range MOVED, it did not widen**: `min` and `max_tested` are
+  both `0.2.30`.
+
+**Two vendored data files moved; the EBNF did not.** `spec/anchors.json`
+gained 8 keys (648 anchors, key sets diffed both ways, 0 dropped, 0
+retargeted); `spec/prelude.json` gained eleven names (175), **every one a
+`function`** (s234's three terminal calls, s236's eight ids and owners
+calls). No type name was added, so `type-names-check` was green at the bump
+with no hand-list change: **26 prelude-list candidates, 18 painted, 9
+unpainted**, all classified against 0.2.30. Prelude functions do not
+highlight as builtins (ruling #77), so the eleven join no list.
+`grammar-drift`, `nvim-check` and `emacs-check` found every EBNF-derived
+artifact current; only the two pin constants and the compat rows were
+regenerated.
+
+**The editors' grammar pin does not move: still `e738823`.** tree-sitter-wolf's
+tl24 branch changes only its corpus floor (1103 files at v0.2.30) and its
+record; helix and zed would get nothing from a new rev.
+
+<details><summary>The previous stamp (tl20, 6ffe7c6)</summary>
+
 **Last reviewed against wolf pin `6ffe7c6`, 2026-10-13** (tl20, the pin at
 0.2.29). That is the wolf-lang release tag `v0.2.29`, **three** releases on
 from the `v0.2.26` this file was last stamped at (v0.2.27 and v0.2.28 were
@@ -88,6 +147,8 @@ tl20 branch changes only its corpus floor (1092 files at v0.2.29) and its
 record; `grammar.js`, `src/` and `queries/` are the trees `e738823` holds, so
 helix and zed would get nothing from a new rev, and zed's `highlights.scm`
 is still tree-sitter-wolf's own byte for byte (blob `d2e3ff70…`).
+
+</details>
 
 ### Rulings #38 and #39 (tl17, 2026-10-05, still at `cdde128`)
 

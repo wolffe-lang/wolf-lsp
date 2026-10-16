@@ -1,5 +1,32 @@
 # Changelog
 
+## tl24 — 2026-10-16 — the pin at 0.2.30, and a transcript that reaches std
+
+**Pinned to wolf 0.2.30** (`1b37f36`, release 413582739), one release on from
+0.2.29; both archives of the pair acquired by digest and hashed member by
+member, the release and never wolf-lang's trunk. Two vendored spec files
+moved — `anchors.json` (+8 keys, 0 dropped, 0 retargeted) and `prelude.json`
+(+11 names, 0 removed, **all functions**) — and the EBNF did not;
+`type-names-check` green at the bump with no hand-list change (26 candidates,
+18 painted, 9 unpainted). Prelude functions do not highlight as builtins
+(ruling #77). The 71 scripted transcripts re-recorded header-only (0 `s2c`, 0
+`c2s`): the server's crates did not move.
+
+**wolf-lsp#42: the library reaches the standard library.** A sixteenth sample,
+`typecheck/method_home_no_std.lu`, and `transcripts/std/`: `reach` (the
+server as installed: clean, hover `// std.list`, definition into the std as
+`file://$STD/list/list.lu`, 36 completions after `xs.`) and `no-std` (a new
+`std none` script directive runs a lone copy of the binary: E0301, `null`,
+`null`, nothing). The recorder and replay elide the std root the spawned
+server loads as `$STD`, before `$REPO` (CI's std is `.wolf-bin/std`, inside the
+checkout). The harness clears the caller's `WOLF_STD` from every `wolf` it
+spawns, sessions and onetruth's `conform-run` alike; a script's own `env
+WOLF_STD` still applies. `replay` 73 ok, 0 mismatched, 6 skipped; `onetruth`
+16 × 9, zero unfiled. The six captured smokes are nine pins stale (#26).
+`docs/PIN-0230.md` has the contract, the prediction (ten of ten scored before
+CI held) and the evidence; the grammar half is tree-sitter-wolf
+`docs/spec-findings-tl24.md`.
+
 ## tl20 — 2026-10-13 — the pin at 0.2.29: three releases, thirty functions, and a server that loads std
 
 **Pinned to wolf 0.2.29** (`6ffe7c6`, release 411040788), three releases on

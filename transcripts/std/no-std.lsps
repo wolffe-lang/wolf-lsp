@@ -1,0 +1,21 @@
+#! wolf-lsp#42: the no-std case. `std none` runs a lone copy of the server
+#! binary in a scratch directory with nothing beside it, which is the only
+#! way to reach a server with no standard library (the default root is the
+#! `std/` beside `current_exe`, symlinks resolved; a root naming an empty
+#! directory is E0403, a different answer). The sample's own pinned verdict
+#! is what this server answers: E0301 on `any`, "no std root is configured".
+#! Same requests as `std/reach`, so the two transcripts differ only by where
+#! the std came from.
+name      std/no-std
+profile   minimal
+std       none
+
+initialize
+open      typecheck/method_home_no_std.lu
+wait      diagnostics typecheck/method_home_no_std.lu
+req       hover typecheck/method_home_no_std.lu 10:15
+req       definition typecheck/method_home_no_std.lu 10:15
+edit      typecheck/method_home_no_std.lu "//! check: fail(E0301)\n//! phase: resolve\n//! conforms: type.method.root\n//!\n//! s166 — `any` is not a builtin method of `List`, so it comes from\n//! `std.list`, and no std root is configured for this directory: E0301\n//! naming the ways to configure one, never a builtin stand-in.\n\nfn main() -> !int {\n    let xs = [1, 2, 3]\n    let p = xs.\n    let b = xs.any(fn(x: int) { x > 1 })\n    0\n}\n"
+wait      diagnostics typecheck/method_home_no_std.lu
+req       completion typecheck/method_home_no_std.lu 10:15 .
+shutdown

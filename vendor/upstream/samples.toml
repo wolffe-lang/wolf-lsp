@@ -72,6 +72,10 @@ reason = "the contextual `error` item (s158, wolf-lang#36, wolf-lsp#22): the ONE
 path = "rows/error_alias_ident.lu"
 reason = "the cost of guessing `error` from a word list (s158, wolf-lang#36, wolf-lsp#22): a struct FIELD, a FUNCTION, a BINDING and two expression uses all named `error` in one file, and none of them is the keyword. The negative half of `rows/error_alias_union.lu`'s transcript — every one of these must keep its identifier token type (`property`, `function`, `variable`) at a pin whose server paints the item keyword, or the walk has started matching the word. `phase: run`, so it is also a clean-diagnostics document."
 
+[[sample]]
+path = "typecheck/method_home_no_std.lu"
+reason = "the standard library, reached and not (wolf-lsp#42, tl24): `xs.any(…)` on a `List` is no builtin method — it resolves to `std.list`'s `any`, so this is the one sample whose answers depend on which std the SERVER loads. Since 0.2.29 (s235) `wolf lsp` loads the `std/` beside its binary: under the installed toolchain the file is clean, hover names `std.list`, definition lands in the std's own `list/list.lu` (elided `$STD`) and `xs.` completes the module's functions (`transcripts/std/reach`). Its own pinned verdict, `fail(E0301)` with 'no std root is configured for this directory', is the other half: a server with no std beside it answers exactly that (`transcripts/std/no-std`, `std none`). The corpus pins the no-std reading because wolf-lang's corpus runs a checkout build with nothing beside it; a released server reads it the other way, and both transcripts are meant to be read together. Vendored at the v0.2.30 pin; the bytes are unchanged since 0.2.29."
+
 # --- Known gap, deliberately not papered over -------------------------------
 #
 # ls01 §5 requires **astral-plane** text (an emoji: one char, two UTF-16 units,

@@ -143,7 +143,6 @@
     {"name": "os_signal_last", "kind": "function", "anchor": "os.host.sigs", "w0304": true},
     {"name": "os_signal_realtime", "kind": "function", "anchor": "os.host.sigs", "w0304": true},
     {"name": "os_signal_text", "kind": "function", "anchor": "os.host.sigs", "w0304": true},
-    {"name": "os_wait_poll", "kind": "function", "anchor": "os.host.sigs", "w0304": true},
     {"name": "os_random", "kind": "function", "anchor": "os.host.sigs", "w0304": true},
     {"name": "os_error", "kind": "function", "anchor": "os.host.sigs", "w0304": true},
     {"name": "os_error_text", "kind": "function", "anchor": "os.host.sigs", "w0304": true},

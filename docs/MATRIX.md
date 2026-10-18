@@ -6,6 +6,62 @@ verified at, the evidence for that tier, and (for T1 and T2) the CI job that
 re-checks the evidence on every push. A row that claims a verification it does
 not have is a bug in this file.
 
+**Last reviewed against wolf pin `72de141`, 2026-10-18** (tl25, the pin at
+0.2.32). That is the wolf-lang release tag `v0.2.32`, **two** releases on
+from the `v0.2.30` this file was last stamped at (v0.2.31 was never pinned
+here), so the pinned version string is the bare `wolf 0.2.32 (wolfgang, pin
+72de141)` and `lspconf doctor` reports READY. The binary it reports is the
+**acquired release artifact**: the x86_64-unknown-linux-gnu archive of
+release 416327027, sha256 4c37f9c5…, whose `wolf --version` printed the
+`PIN` string directly (and `paired with lupin 0.1.54 (reference
+interpreter), pin 294d626` on its second line). The darwin arm64 archive
+(sha256 061ea7e5…) was acquired and hashed member by member (eleven members
+each outside `std/`, by name, `vendor/upstream/PIN`), and both digests
+matched the release API's own, each read twice; never a local build, never
+wolf-lang's trunk. `PIN` records the peeled `v0.2.32^{commit}`,
+`72de141f624662fdff522e8beba459fab7c5cf66`.
+
+**THE SCRIPTED HALF IS AT THIS PIN AND NOTHING BUT THE HEADER MOVED; THE
+CAPTURED HALF IS NOW TEN PINS BEHIND.** `lspconf --require-server replay`:
+**79 transcripts, 73 replayed ok, 0 mismatched, SIX SKIPPED, exit 0**.
+
+- **The 73 scripted transcripts were re-recorded: `73 files changed, 73
+  insertions(+), 73 deletions(-)`, every hunk `@@ -1 +1 @@`.** Classified by
+  the `dir` field: 146 changed lines, all headers, **0 `s2c`, 0 `c2s`** —
+  `std/reach` and `std/no-std` included, though the std beside the binary
+  moved from wolf-std `fd6bcdc` to `d37c911` at 0.2.31 (`list/list.lu`, the
+  one std file they reach, is the same blob at both). The sixteen samples are
+  blob-identical across `1b37f368..72de141f`, and neither the server's crates
+  nor the front end moved. `onetruth`: 16 samples × 9 profiles, 0 known
+  divergences, zero unfiled.
+- **None of the six captured smokes is re-captured** — still `30731a6`
+  (v0.2.14), now ten pins behind (v0.2.15, v0.2.16, v0.2.18, v0.2.19,
+  v0.2.20, v0.2.25, v0.2.26, v0.2.29, v0.2.30, v0.2.32). wolf-lsp#26,
+  unchanged: no host has all six editors (nomad-1 lacks `code`; kasumi
+  lacks hx, emacs and fackr; hasu lacks hx and emacs).
+- **The declared range MOVED, it did not widen**: `min` and `max_tested` are
+  both `0.2.32`.
+
+**Two vendored data files moved; the EBNF did not.** Both moved at v0.2.31
+and are the same blobs at v0.2.32. `spec/anchors.json` gained 13 keys (661
+anchors, key sets diffed both ways, 0 dropped, 0 retargeted);
+`spec/prelude.json` gained seven names (182), **every one a `function`**
+(s241's `os_signal_send_group`, `os_signal_send_all`, `os_set_pgid`,
+`os_signal_last`, `os_signal_realtime`, `os_signal_text`; s242's
+`os_wait_poll`), and v0.2.32 added none. No type name was added, so
+`type-names-check` was green at the bump with no hand-list change: **26
+prelude-list candidates, 18 painted, 9 unpainted**, all classified against
+0.2.32. Prelude functions do not highlight as builtins (ruling #77), so the
+seven join no list. `grammar-drift`, `nvim-check` and `emacs-check` found
+every EBNF-derived artifact current; only the two pin constants and the
+compat rows were regenerated.
+
+**The editors' grammar pin does not move: still `e738823`.** tree-sitter-wolf's
+tl25 branch changes only its corpus floor (1116 files at v0.2.32) and its
+record; helix and zed would get nothing from a new rev.
+
+<details><summary>The previous stamp (tl24, 1b37f36)</summary>
+
 **Last reviewed against wolf pin `1b37f36`, 2026-10-16** (tl24, the pin at
 0.2.30). That is the wolf-lang release tag `v0.2.30`, **one** release on from
 the `v0.2.29` this file was last stamped at, so the pinned version string is
@@ -62,6 +118,8 @@ regenerated.
 **The editors' grammar pin does not move: still `e738823`.** tree-sitter-wolf's
 tl24 branch changes only its corpus floor (1103 files at v0.2.30) and its
 record; helix and zed would get nothing from a new rev.
+
+</details>
 
 <details><summary>The previous stamp (tl20, 6ffe7c6)</summary>
 

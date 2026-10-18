@@ -119,4 +119,16 @@ version = "wolf 0.2.32 (wolfgang, pin 72de141)"
 #
 # THE SIX CAPTURED EDITOR SMOKES remain at `30731a6` (v0.2.14), now ten pins
 # stale (wolf-lsp#26). `lspconf replay` skips them by name.
+# THE TRANSCRIPTS, MEASURED. All 73 scripted sessions were re-recorded at this
+# pin against the acquired 0.2.32 linux binary, `std/` beside it and nothing
+# configured: `73 files changed, 73 insertions(+), 73 deletions(-)`, every hunk
+# `@@ -1 +1 @@` — line 1 alone (`wolf_pin`, `recorded`). Classified by the
+# `dir` field: 146 changed lines, all headers, 0 `s2c`, 0 `c2s`, as
+# docs/PIN-0232.md §3 (committed before the bump) predicted — `std/reach` and
+# `std/no-std` included, though the std beside the binary moved to d37c911.
+# `type-names-check --require-server`: GREEN at the bump with no hand-list
+# change — 18 painted, 9 unpainted, 26 prelude-list candidates, all
+# classified. `doctor`: READY, serves LSP at pin 72de141. `replay`: 73 ok, 0
+# mismatched, 6 skipped, exit 0. `onetruth`: 16 samples x 9 profiles, 0 known
+# divergences, zero unfiled.
 serves_lsp = true

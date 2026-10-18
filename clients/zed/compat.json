@@ -3,18 +3,18 @@
   "client_version": "0.0.1",
   "artifact": "wasm32-wasip2 component + manifest — clients/zed/",
   "wolf": {
-    "min": "0.2.30",
-    "max_tested": "0.2.30",
-    "pin": "1b37f368228db92eca505c8c4cd3c531ea60be48",
-    "pin_version_string": "wolf 0.2.30 (wolfgang, pin 1b37f36)"
+    "min": "0.2.32",
+    "max_tested": "0.2.32",
+    "pin": "72de141f624662fdff522e8beba459fab7c5cf66",
+    "pin_version_string": "wolf 0.2.32 (wolfgang, pin 72de141)"
   },
   "verified": {
-    "date": "2026-10-16",
-    "host": "kasumi (linux x86_64), against the ACQUIRED v0.2.30 x86_64-unknown-linux-gnu artifact (sha256 4e55b39e…), not a local build — every cargo invocation runs there (wave 45). The PIN `version` string was read off that same linux artifact: `wolf --version` printed \"wolf 0.2.30 (wolfgang, pin 1b37f36)\". The darwin arm64 archive (sha256 f3257e74…) was acquired and hashed member by member all the same, and both digests matched the release API's own before anything was unpacked",
+    "date": "2026-10-18",
+    "host": "kasumi (linux x86_64), against the ACQUIRED v0.2.32 x86_64-unknown-linux-gnu artifact (sha256 4c37f9c5…), not a local build — every cargo invocation runs there (wave 45). The PIN `version` string was read off that same linux artifact: `wolf --version` printed \"wolf 0.2.32 (wolfgang, pin 72de141)\". The darwin arm64 archive (sha256 061ea7e5…) was acquired and hashed member by member all the same, and both digests matched the release API's own before anything was unpacked",
     "evidence": [
       "cargo build --target wasm32-wasip2 (CI job `zed-extension`)",
       "cargo xtask config-check",
-      "lspconf replay + onetruth at pin 1b37f36 (v0.2.30), 2026-10-16 — under the OTHER clients' derived profiles; Zed still has no recorded session of its own. The suite itself: the 71 scripted transcripts re-recorded and matched, and two new ones recorded (wolf-lsp#42): replay 73 ok, 0 mismatched, 6 skipped; onetruth 16 samples × 9 profiles, 0 known divergences, zero unfiled. NOTHING BUT THE HEADER MOVED in the 71: 71 files, 71 insertions, 71 deletions, every one of them line 1's wolf_pin and recorded; classified by the `dir` field, 0 s2c and 0 c2s lines changed. The span is one release (v0.2.30); crates/wolf_query/, crates/wolf_lsp/, crates/wolf_lex/src, crates/wolf_parse/src and crates/wolf_fmt/src are byte-identical across it and the fifteen earlier samples are blob-identical — the evidence is the re-record, not those facts (tl09's lesson). THE LIBRARY NOW REACHES THE STANDARD LIBRARY: transcripts/std/reach (the server as installed, std/ beside it) is clean on typecheck/method_home_no_std.lu, hovers `xs.any` as std.list's, defines into the std's own list/list.lu (elided `$STD`) and completes its functions after `xs.`; transcripts/std/no-std (a lone binary, `std none`) answers E0301, null, null and nothing. Both run under the minimal profile, not this client's. The library is 79 files and 73 of them were replayed (wolf-lsp#26)"
+      "lspconf replay + onetruth at pin 72de141 (v0.2.32), 2026-10-18 — under the OTHER clients' derived profiles; Zed still has no recorded session of its own. The suite itself: the suite: the 73 scripted transcripts re-recorded and matched: replay 73 ok, 0 mismatched, 6 skipped; onetruth 16 samples × 9 profiles, 0 known divergences, zero unfiled. NOTHING BUT THE HEADER MOVED: 73 files, 73 insertions, 73 deletions, every one of them line 1's wolf_pin and recorded; classified by the `dir` field, 0 s2c and 0 c2s lines changed, std/reach and std/no-std included (the bundled std moved fd6bcdc → d37c911 at v0.2.31; std/list/list.lu, the one std file the library reaches, is the same blob at both). The span is two releases (v0.2.31, never pinned here, and v0.2.32); crates/wolf_query/, crates/wolf_lsp/, crates/wolf_lex/src, crates/wolf_parse/src and crates/wolf_fmt/src are byte-identical across it and the sixteen samples are blob-identical — the evidence is the re-record, not those facts (tl09's lesson). 0.2.31's seven prelude names (all functions) are vendored in spec/prelude.json and no client paints them (ruling #77). The library is 79 files and 73 of them were replayed (wolf-lsp#26)"
     ],
     "caveat": "NO SESSION HAS EVER BEEN RECORDED. Zed has never been run against this extension by CI or by hand (docs/MATRIX.md). Its row inherits the range from the pin the other clients' scripted suites were verified at; a Zed session did not earn it — profiles/zed.json and transcripts/zed/smoke.jsonl are still owed. Read the row as 'the wasm builds and the config is statically consistent at this pin', which is the whole T2 claim. (tl11 briefly wrote the six-smokes caveat here by bulk edit and caught it: there is no transcripts/zed/smoke.jsonl to be stale, and a row claiming a capture that does not exist is worse than the gap it papers over.)"
   },

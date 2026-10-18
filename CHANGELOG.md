@@ -1,5 +1,26 @@
 # Changelog
 
+## tl25 — 2026-10-18 — the pin at 0.2.32, and 0.2.31's seven prelude names
+
+**Pinned to wolf 0.2.32** (`72de141`, release 416327027), two releases on
+from 0.2.30 (0.2.31 was never pinned); both archives of the pair acquired by
+digest, each digest read twice, and hashed member by member, the release and
+never wolf-lang's trunk. Two vendored spec files moved, both at 0.2.31 —
+`anchors.json` (+13 keys, 0 dropped, 0 retargeted) and `prelude.json` (+7
+names, 0 removed, **all functions**: `os_signal_send_group`,
+`os_signal_send_all`, `os_set_pgid`, `os_signal_last`, `os_signal_realtime`,
+`os_signal_text`, `os_wait_poll`; none new at 0.2.32) — and the EBNF did
+not; `type-names-check` green at the bump with no hand-list change (26
+candidates, 18 painted, 9 unpainted). Prelude functions do not highlight as
+builtins (ruling #77). The 73 scripted transcripts re-recorded header-only
+(0 `s2c`, 0 `c2s`), `std/reach` and `std/no-std` included though the std
+beside the binary moved to wolf-std `d37c911`: the server's crates did not
+move, and `list/list.lu` is the same blob. `replay` 73 ok, 0 mismatched, 6
+skipped; `onetruth` 16 × 9, zero unfiled. The six captured smokes are ten
+pins stale (#26: no host has all six editors). `docs/PIN-0232.md` has the
+contract, the prediction and the evidence; the grammar half is
+tree-sitter-wolf `docs/spec-findings-tl25.md`.
+
 ## tl24 — 2026-10-16 — the pin at 0.2.30, and a transcript that reaches std
 
 **Pinned to wolf 0.2.30** (`1b37f36`, release 413582739), one release on from

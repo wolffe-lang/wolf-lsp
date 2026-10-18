@@ -20,7 +20,8 @@ It holds exactly five things:
   The type-names gate's candidate set is its `builtin_type` and `type`
   entries (25 at v0.2.25; 26 at v0.2.26, `never` the one new; 26 still at
   v0.2.29, whose thirty new names are all functions; 26 still at v0.2.30,
-  whose eleven new names are all functions), and the gate also requires the pinned compiler's
+  whose eleven new names are all functions; 26 still at v0.2.32, whose
+  seven new names, all at v0.2.31, are all functions), and the gate also requires the pinned compiler's
   `wolf prelude --json` to be the same bytes; `vendor-check` compares the
   file with the submodule both ways.
 - `samples/` + `samples.toml` — the only `.lu` files any test in this repo may

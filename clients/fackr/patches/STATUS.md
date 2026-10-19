@@ -26,11 +26,23 @@ Apply with `git apply` from a fackr checkout, or read the branch directly:
 the lockfile up to `Cargo.toml`). It is unrelated to this work and belongs in
 its own commit, or dropped.
 
-## Nothing here is committed
+## Nothing here is committed — here; upstream, all of it is (measured at tl26)
 
 Per the ls02 working agreement, every change sits uncommitted in a dedicated
 worktree branch for review. The diff in this directory is the reviewable
 artifact; the branch is the working copy.
+
+**Upstream has since landed the whole series, as one commit.**
+`github.com/tenseleyFlow/fackr` trunk is `e9ed924` (2026-08-10), the one
+commit after `496c7e2`: "wolf language support: .lu filetype, wolf lsp server
+registration, syntax entries, utf-32 position encoding declared and verified,
+stderr drain, smoke module". In a clean clone on kasumi:
+`git apply --check` of `wolf-integration.diff` exits 0 at `496c7e2` and
+refuses ten files at `e9ed924`; `git apply --check -R` exits 0 at `e9ed924`;
+and `496c7e2` with the series applied has the same tree as `e9ed924`
+(`3f85d4cc…`), the `Cargo.lock` line included. So the series does not apply
+at trunk because it is trunk. The smoke's recorded base stays `496c7e2`; the
+table's "uncommitted" column describes the worktree, not upstream.
 
 ## What was deliberately not patched
 

@@ -276,6 +276,16 @@ tarball's string because Homebrew's neovim would not start on that box at all
 (it links `libtree-sitter.0.26.dylib` against an installed `tree-sitter`
 0.27.0, and dies in dyld before `main`).
 
+**A note on `didChangeWatchedFiles`, measured at tl26.** The same NVIM
+v0.12.5 declares `workspace.didChangeWatchedFiles.dynamicRegistration: true`
+on macOS and `false` on linux. Captured on kasumi (linux x86-64, the
+distribution's `neovim 0.12.5-1.1`), that is the one field besides the header
+that moved; `vim.lsp.protocol.make_client_capabilities()` answers `false`
+there with or without an `inotifywait` on `PATH`, so it follows the platform,
+not a tool. (The distribution build stamps `0.12.5+v0.12.5` too, so
+`clientInfo.version` did not move.) `profiles/nvim.json` keeps the macOS
+value; the server registers no file watchers and reads neither.
+
 Getting to byte-identity found a bug in the harness rather than in the plugin. `lspconf
 capture`'s pumps forward a frame before recording it — correctly, so the proxy
 never changes a session's timing — which left a window in which the server

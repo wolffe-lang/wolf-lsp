@@ -1,0 +1,2 @@
+tl28 plant: a path no rule of ci/tiers.py names. A dispatch with -f tier=pr
+of this branch must come out tier full. Never merged.

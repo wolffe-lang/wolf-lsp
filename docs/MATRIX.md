@@ -6,6 +6,12 @@ verified at, the evidence for that tier, and (for T1 and T2) the CI job that
 re-checks the evidence on every push. A row that claims a verification it does
 not have is a bug in this file.
 
+**The six captured smokes are at the pin too, since tl26 (2026-10-19), and
+they were captured on linux**: all six driven on kasumi (linux x86-64), the
+first capture host that is not nomad-1 (darwin arm64). `replay`: 79 of 79,
+nothing skipped. What moved and why is *THE SIX CAPTURED SMOKES AT tl26*
+below; the tl25 stamp that follows is kept as written.
+
 **Last reviewed against wolf pin `72de141`, 2026-10-18** (tl25, the pin at
 0.2.32). That is the wolf-lang release tag `v0.2.32`, **two** releases on
 from the `v0.2.30` this file was last stamped at (v0.2.31 was never pinned
@@ -59,6 +65,78 @@ compat rows were regenerated.
 **The editors' grammar pin does not move: still `e738823`.** tree-sitter-wolf's
 tl25 branch changes only its corpus floor (1116 files at v0.2.32) and its
 record; helix and zed would get nothing from a new rev.
+
+## THE SIX CAPTURED SMOKES AT tl26: ALL SIX, DRIVEN AGAIN AT `72de141f`, ON LINUX
+
+**The captured half caught up (2026-10-19, wolf-lsp#26).** The stamp above
+says the six smokes are ten pins behind; tl26 re-captured all six at the
+pin, so `lspconf --require-server replay` is now **79 transcripts, 79 ok, 0
+mismatched, nothing skipped, exit 0**. Full record: `docs/SMOKES-0232.md`.
+
+**THE CAPTURE HOST MOVED.** Every capture before this one (le08, tl03, tl07)
+was driven on nomad-1, **darwin arm64**. All six of these were driven on
+**kasumi, linux x86-64** (CachyOS, kernel 7.2.8), one host for all six,
+against the acquired `wolf 0.2.32 (wolfgang, pin 72de141)` archive unpacked
+as `.wolf-bin/`, each client's capture shim first on `PATH`, from a checkout
+literally named `wolf-lsp` (wolf-lsp#18). Every count is protocol records.
+
+Before any capture, the committed `30731a6` traffic was replayed at the new
+pin with only its header's `wolf_pin` swapped (in scratch): all six matched
+(10/9/7/9/15/26 records). So no field below moved because the server did.
+
+| smoke | editor on kasumi | records | what moved, and why |
+|---|---|---|---|
+| **emacs** | GNU Emacs 31.1 (`emacs-nox 31.1-2`), built-in eglot 1.24.31 | 23 | **header only** (`wolf_pin`, `recorded`). Three runs byte-identical, 1/1 while recording. |
+| **fackr** | `cargo test lsp::smoke_wolf::wolf_lsp_corpus_session` in a clone from GitHub at `496c7e2` + `patches/wolf-integration.diff` (`git apply --check` exit 0), rustc 1.97.1 | 19 | **header only**. Three runs byte-identical. |
+| **facsimile** | `fac` v0.35.0 built with `fpm` 0.13.0 from a clone at `a121ab3` (the packaged `/usr/bin/fac` 0.35.0-1 not used) | 15 | **header only**, rung for rung. One full run (see the trap below). |
+| **helix** | helix 25.07.1, `hx --version` `25.07.1 (4746c276)` (package `helix 25.07.1-2.1`) | 19 | header, and **`clientInfo.version` `25.07.1 (a05c151b)` → `25.07.1 (4746c276)`: EDITOR BUILD.** `a05c151b` is helix's own `25.07.1` release commit; `4746c276` is no helix commit at all (the GitHub API answers 422), so it is the packager's build stamp on the same tag. `workspaceFolders[0].name` stays `wolf-lsp`. Three runs byte-identical. |
+| **nvim** | NVIM v0.12.5 (`neovim 0.12.5-1.1`, `RelWithDebInfo`) | 32 | header, and **`initialize` `capabilities.workspace.didChangeWatchedFiles.dynamicRegistration` `true` → `false`: HOST.** Measured black-box: `vim.lsp.protocol.make_client_capabilities()` on kasumi answers `false` with and without an `inotifywait` on `PATH` (a stub was put first to rule the watcher out), so this NVIM gates the capability on the platform, not on a tool. `clientInfo.version` did NOT move: the distribution build also stamps `0.12.5+v0.12.5`. Four runs byte-identical, the cold first one included; 7/7 while recording. `profiles/nvim.json` keeps `true`, which is what NVIM sends on macOS; the server reads neither value (it registers no file watchers). |
+| **vscode** | VS Code 1.136.1 (`a44adf7f…`, x64), **no display**: `WOLF_VSCODE_EXECUTABLE` pointed at a two-line wrapper that execs `/usr/share/code/code --ozone-platform=headless "$@"` | 68 | header, **`clientInfo.version` `1.120.0` → `1.136.1`: EDITOR BUILD**, and the background rungs. 16/16 on three runs (70, 67, 68 records). Every test-driven rung has tl07's count (`didOpen` 2, `hover` 1, `formatting` 1, `publishDiagnostics` 2, `semanticTokens/full` 2, `/range` 1, `documentSymbol` 3, `inlayHint` 5, the lifecycle 1 each, the `E0002` quickfix `codeAction` answered with its one action). Moved, all client-timed: `$/setTrace` 1 → **5** (all `"off"`, on all three runs), `codeAction` 9 → 14/13/13 (the extra ones are lightbulb probes of `hello.lu` line 0, answered `[]`), and one `$/cancelRequest` (for id 4, after its answer) on two runs of three. Classified **editor build** (sixteen minor releases), with the caveat that one host cannot separate it from the host move: no VS Code 1.120.0 exists on kasumi and nomad-1 has none at all. The `initialize` capabilities are otherwise identical. The committed run is the third. |
+
+**Nothing moved for the wolf pin but the header**, on all six; no
+server→client record moved in any field. No moved field is a server change,
+so there is no finding against the server. `replay` matches emacs 10, fackr
+9, facsimile 7, helix 9, nvim 15, vscode 30 records.
+
+### VS Code runs with no display, on linux
+
+kasumi has no X server and no `xvfb-run` (the package 404s on a stale
+database; installing it waits on the maintainer). VS Code's Electron, launched
+plain, logs `Missing X server or $DISPLAY` / `The platform failed to
+initialize`. With **`--ozone-platform=headless`** it starts, and the
+extension's own runner drives it to 16/16 with the capture shim on `PATH`
+(`--version`, `--version`, `lsp --stdio`). `runTest.ts` has no hook for extra
+launch arguments, so the flag rides a wrapper named by
+`WOLF_VSCODE_EXECUTABLE`; nothing in the repository changed for it. Recipe in
+`clients/vscode/README.md`.
+
+### A fifth driver trap: facsimile writes its session into the nearest `.fac` workspace
+
+`fac -w <dir> file` sets the LSP root, and it does NOT stop `fac` from
+restoring and saving a whole editor session in the nearest enclosing
+workspace. On kasumi that is the maintainer's `$HOME`, whose
+`~/.fac/workspace.json` holds eight tabs: the driven session opened with
+those eight restored and `hello.lu` as a ninth, and `fac` wrote the ninth tab
+(and `active_tab: 9`) back into the maintainer's file on exit. `HOME=` a
+scratch directory moves `recents.json` and `state.json` but not
+`workspace.json`; an empty `.fac/` in an ancestor of the checkout did not
+redirect it either. No document the restored tabs name was modified (each
+one's mtime predates the run). The first run under those conditions lost both
+edit rungs and the hover (9 records); the second, keys unchanged, recorded
+the full 15. A third was not driven, so as not to write the maintainer's
+file a third time. Drive facsimile as a user with no `.fac/` above the
+checkout, and read the workspace file's mtime before and after.
+
+### fackr's series is fackr's trunk now
+
+`patches/wolf-integration.diff` still applies at the recorded base `496c7e2`
+(`git apply --check` exit 0, the capture's base, unchanged). At fackr trunk
+`e9ed924` it does **not** apply forward (ten files refused) because it is
+already there: `git apply --check -R` exits 0 at `e9ed924`, and `496c7e2`
+with the series applied has **the same tree** as `e9ed924`
+(`3f85d4cc…`, `git write-tree` against a scratch index), `src/lsp/smoke_wolf.rs`
+byte for byte. `e9ed924` is the one commit after `496c7e2`: "wolf language
+support: .lu filetype, wolf lsp server registration, …".
 
 <details><summary>The previous stamp (tl24, 1b37f36)</summary>
 
@@ -1240,12 +1318,12 @@ commit's run.
 
 | editor | tier | CI job | evidence | last verified |
 |---|---|---|---|---|
-| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | **2026-09-12, pin `a7f517e`, fackr 1.2.1 at `496c7e2`** — RE-CAPTURED at tl03; header-only, three runs byte-identical. `replay` no longer skips it. |
-| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | **2026-09-12, pin `a7f517e`, fac v0.35.0** — RE-CAPTURED at tl03, rung for rung with le08's; header-only, three runs byte-identical. `replay` no longer skips it. |
-| [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.5`) | **2026-09-12, pin `a7f517e`, NVIM v0.12.5** — RE-CAPTURED at tl03; 7/7. Header-only **plus `clientInfo.version`**, which is the client's build stamp and not a server change (see above). `replay` no longer skips it. |
-| [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 16 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | **2026-09-12, pin `a7f517e`, VS Code 1.120.0** — RE-CAPTURED at tl03; 16/16. Not byte-reproducible by construction, so the claim is the method multiset: every test-driven rung identical, one background `codeAction` rung fewer (see above). `replay` no longer skips it. |
-| [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | **2026-09-12, pin `a7f517e`, helix 25.07.1** — RE-CAPTURED at tl03; header-only, two runs byte-identical. `replay` no longer skips it. One row-adjacent correction: this client DOES sometimes send `shutdown` (wolf-lsp#17); since tl17 `replay` accepts that trailing `shutdown` for helix alone and names the shape (ruling #38). |
-| [Emacs (eglot)](../clients/emacs/README.md) | **T2** | `emacs-mode` (3 OS, 9 cases) + `emacs-check` | `clients/emacs/wolf-mode.el` loaded by `emacs --batch`; `transcripts/emacs/smoke` · `profiles/emacs.json` (`emacs@31.1`, eglot 1.24.31) | **2026-09-12, pin `a7f517e`, GNU Emacs 31.1** — RE-CAPTURED at tl03; header-only. `replay` no longer skips it. |
+| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | **2026-10-19, pin `72de141`, fackr 1.2.1 at `496c7e2` + the series, on kasumi (linux x86-64)** — RE-CAPTURED at tl26; header-only, three runs byte-identical. (tl03: 2026-09-12, `a7f517e`, darwin arm64.) |
+| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | **2026-10-19, pin `72de141`, fac v0.35.0 (`fpm`, `a121ab3`), on kasumi (linux x86-64)** — RE-CAPTURED at tl26, rung for rung; header-only. (tl03: 2026-09-12, `a7f517e`, darwin arm64.) |
+| [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.5`) | **2026-10-19, pin `72de141`, NVIM v0.12.5, on kasumi (linux x86-64)** — RE-CAPTURED at tl26; 7/7, four runs byte-identical. Header **plus `didChangeWatchedFiles.dynamicRegistration` `true` → `false`**, which linux NVIM declares (host, not server; see tl26 above). (tl03: 2026-09-12, `a7f517e`, darwin arm64.) |
+| [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 16 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | **2026-10-19, pin `72de141`, VS Code 1.136.1, on kasumi (linux x86-64) with no display (`--ozone-platform=headless`)** — RE-CAPTURED at tl26; 16/16 on three runs. Method multiset: every test-driven rung identical; background `$/setTrace`, `codeAction` and one `$/cancelRequest` moved (see tl26 above). (tl03: 2026-09-12, `a7f517e`, 1.120.0, darwin arm64.) |
+| [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | **2026-10-19, pin `72de141`, helix 25.07.1 (`4746c276` build), on kasumi (linux x86-64)** — RE-CAPTURED at tl26; header plus `clientInfo.version`'s build hash, three runs byte-identical. (tl03: 2026-09-12, `a7f517e`, darwin arm64.) One row-adjacent correction: this client DOES sometimes send `shutdown` (wolf-lsp#17); since tl17 `replay` accepts that trailing `shutdown` for helix alone and names the shape (ruling #38). |
+| [Emacs (eglot)](../clients/emacs/README.md) | **T2** | `emacs-mode` (3 OS, 9 cases) + `emacs-check` | `clients/emacs/wolf-mode.el` loaded by `emacs --batch`; `transcripts/emacs/smoke` · `profiles/emacs.json` (`emacs@31.1`, eglot 1.24.31) | **2026-10-19, pin `72de141`, GNU Emacs 31.1 (eglot 1.24.31), on kasumi (linux x86-64)** — RE-CAPTURED at tl26; header-only, three runs byte-identical. (tl03: 2026-09-12, `a7f517e`, darwin arm64.) |
 | [Zed](../clients/zed/README.md) | **T2** | `zed-extension` (wasm build) + `config-check` | wasm component builds; config statically checked | **wasm build: 2026-08-10.** **Manual run: NEVER — see below.** Config re-checked at pin `a7f517e` (tl02). |
 | [JetBrains (LSP4IJ)](../clients/jetbrains/README.md) | **T3** | *(none, by design)* | a written recipe | **NEVER — see below** |
 | [yew](../clients/yew/README.md) | **T3** | `config-check` (static: the row, no `wolfi`, README verbatim) | `clients/yew/init.fl`; a hand-driven pty session (ye01) | **2026-10-05, wolf 0.2.23 (`8edac3e`, darwin arm64 archive `92c918f2…`), yew `1.0.0-dev` at sagitta `d52f24d5`.** Walked by hand on nomad-1 by ye01. Without the row, yew starts no server (`no LSP server configured for wolf`). With it: `initialize` → utf-8 → `didOpen` (`languageId: wolf`) → one E0401 published and listed → `shutdown`/`exit`. No transcript or profile is committed. |

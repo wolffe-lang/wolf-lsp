@@ -263,6 +263,17 @@ jobs:
       - name: Grammar lane (tokenizer + reviewed scope snapshots)
         run: npm run test:grammar
 
+      # wolf-lsp#47: the suite's server half needs `wolf` at the pin, and this
+      # job never had one, so the half skipped on every run. The acquisition
+      # is the one every server job uses (`.github/actions/acquire-wolf`, the
+      # pin's own tag, `.wolf-bin/` at the workspace root: a composite
+      # action's steps do not take this job's `working-directory`). The
+      # binary reaches the suite as `WOLF_BIN`, which `runTest.ts` puts on the
+      # test window's `PATH` as a directory, the discovery path a user has.
+      - name: Acquire the wolf binary at the pin
+        id: acquire
+        uses: ./.github/actions/acquire-wolf
+
       # Headless VS Code. On linux `runTest.ts` passes
       # `--ozone-platform=headless` (wolf-lsp#48), so the lane needs no virtual
       # display, and none is given: `DISPLAY` and `WAYLAND_DISPLAY` are unset on
@@ -278,12 +289,14 @@ jobs:
         if: runner.os == 'Linux'
         env:
           WOLF_REQUIRE_SERVER: '1'
+          WOLF_BIN: ${{ github.workspace }}/.wolf-bin/wolf
         run: env -u DISPLAY -u WAYLAND_DISPLAY npm run test:extension
 
       - name: Extension lane (headless VS Code, macOS and windows)
         if: runner.os != 'Linux'
         env:
           WOLF_REQUIRE_SERVER: '1'
+          WOLF_BIN: ${{ github.workspace }}/.wolf-bin/wolf
         run: npm run test:extension
 
       # The install path `clients/vscode/README.md` documents, run as CI so the

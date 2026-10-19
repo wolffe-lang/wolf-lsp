@@ -1,5 +1,26 @@
 # Changelog
 
+## tl26 — 2026-10-19 — the six smokes, re-captured at 0.2.32 on linux
+
+**wolf-lsp#26: the six captured editor smokes are at the pin** (`72de141`,
+wolf 0.2.32), ten pins after tl07 captured them at `30731a6`, so `lspconf
+replay` covers 79 of 79 transcripts with nothing skipped. All six were driven
+on **one host, kasumi (linux x86-64)**, the first capture not on nomad-1
+(darwin arm64). Before any capture, the old traffic replayed at the new pin
+with only its header's pin swapped, and all six matched. **Nothing moved for
+the wolf pin but the header; no server→client record moved.** emacs, fackr and
+facsimile are header-only; helix's `clientInfo.version` carries a packager's
+build hash (editor build); linux NVIM declares
+`didChangeWatchedFiles.dynamicRegistration: false` (host); VS Code 1.136.1
+moved `clientInfo.version` and its client-timed rungs (`$/setTrace` ×5, more
+lightbulb `codeAction`s, a `$/cancelRequest`), with every test-driven rung's
+count unchanged (editor build). VS Code was driven with no display at all,
+through `--ozone-platform=headless` (`clients/vscode/README.md`). fackr's
+patch series is fackr trunk `e9ed924` now, tree for tree. A fifth driver trap:
+`fac` saves its session into the nearest enclosing `.fac` workspace whatever
+`-w` says. `docs/SMOKES-0232.md` has the contract, the prediction and the
+evidence.
+
 ## tl25 — 2026-10-18 — the pin at 0.2.32, and 0.2.31's seven prelude names
 
 **Pinned to wolf 0.2.32** (`72de141`, release 416327027), two releases on

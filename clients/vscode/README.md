@@ -344,7 +344,8 @@ Three lanes, split by what each needs, so a failure names its own cause:
 - **Server lane** (the same run, 6 more cases): diagnostics with the exact
   one-truth position, hover with an exact range, `documentSymbol`, a formatting
   round-trip, and a fully-resolved code action. Skips **loudly** with a reason
-  when there is no `wolf` at the pin (ls00 §3).
+  when there is no `wolf` at the pin (ls00 §3), and **fails** instead under
+  `WOLF_REQUIRE_SERVER=1`, which CI sets (wolf-lsp#47).
 - **In the harness**: the profile validates, the transcript replays, `lspconf
   onetruth` runs all 10 samples **under the vscode profile** as one of seven,
   and `lspconf fuzz --profile=vscode` puts a long edit session through this

@@ -269,12 +269,21 @@ jobs:
       # purpose, so a regression back to needing one is red here instead of
       # being papered over by `xvfb-run`. macOS and windows runners have a
       # display.
+      #
+      # `WOLF_REQUIRE_SERVER=1` (wolf-lsp#47): the suite's server half FAILS
+      # where it used to skip, so this job cannot be green while that half is
+      # dark. It skipped on every run before this, `no \`wolf\` on PATH in the
+      # test window`, and nothing noticed.
       - name: Extension lane (headless VS Code, linux, no display)
         if: runner.os == 'Linux'
+        env:
+          WOLF_REQUIRE_SERVER: '1'
         run: env -u DISPLAY -u WAYLAND_DISPLAY npm run test:extension
 
       - name: Extension lane (headless VS Code, macOS and windows)
         if: runner.os != 'Linux'
+        env:
+          WOLF_REQUIRE_SERVER: '1'
         run: npm run test:extension
 
       # The install path `clients/vscode/README.md` documents, run as CI so the

@@ -298,6 +298,13 @@ suite('wolf: the language server (needs `wolf` at the pin)', function () {
 	const status = server();
 
 	suiteSetup(function () {
+		if (!status.ok && process.env['WOLF_REQUIRE_SERVER'] === '1') {
+			// wolf-lsp#47: CI sets this, because a job that has a server and
+			// skips anyway is green while dark. The lane had skipped on every
+			// CI run since it was written, `no \`wolf\` on PATH in the test
+			// window`, and the job stayed green.
+			assert.fail(`REQUIRED: the wolf server lane cannot run — ${status.reason}`);
+		}
 		if (!status.ok) {
 			// LOUD. A skipped server lane that says nothing is a dark lane
 			// nobody notices is dark.

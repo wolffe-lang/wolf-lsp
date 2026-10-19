@@ -35,6 +35,13 @@ async function main(): Promise<void> {
 		extensionTestsEnv['PATH'] =
 			path.dirname(wolfBin) + path.delimiter + (process.env['PATH'] ?? '');
 	}
+	// `WOLF_REQUIRE_SERVER=1` turns the server half's loud skip into a
+	// failure (wolf-lsp#47), as `--require-server` does for `lspconf`. Handed
+	// on by name: the suite reads it inside the extension host.
+	const requireServer = process.env['WOLF_REQUIRE_SERVER'];
+	if (requireServer !== undefined && requireServer !== '') {
+		extensionTestsEnv['WOLF_REQUIRE_SERVER'] = requireServer;
+	}
 
 	const launchArgs = [
 		workspace,

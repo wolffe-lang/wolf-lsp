@@ -6,6 +6,68 @@ verified at, the evidence for that tier, and (for T1 and T2) the CI job that
 re-checks the evidence on every push. A row that claims a verification it does
 not have is a bug in this file.
 
+**Last reviewed against wolf pin `85dab5d`, 2026-10-19** (tl27, the pin at
+0.2.33). That is the wolf-lang release tag `v0.2.33`, the next release after
+the `v0.2.32` this file was last stamped at, so the pinned version string is
+the bare `wolf 0.2.33 (wolfgang, pin 85dab5d)` and `lspconf doctor` reports
+READY. The binary it reports is the **acquired release artifact**: the
+x86_64-unknown-linux-gnu archive of release 417610226, sha256 4f955e8d…,
+whose `wolf --version` printed the `PIN` string directly (and `paired with
+lupin 0.1.54 (reference interpreter), pin 294d626` on its second line). The
+darwin arm64 archive (sha256 9152dbd1…) was acquired and hashed member by
+member (eleven members each outside `std/`, by name, `vendor/upstream/PIN`),
+and both digests matched the release API's own, each read twice; never a
+local build, never wolf-lang's trunk. `PIN` records the peeled
+`v0.2.33^{commit}`, `85dab5d7e597680d6fd7034f1d7ed2acb9a92f97`. Full record:
+`docs/PIN-0233.md`.
+
+**ALL 79 REPLAY AT THIS PIN; THE SCRIPTED HALF WAS RE-RECORDED, THE CAPTURED
+HALF WAS REPLAYED AND RESTAMPED, NOT RE-CAPTURED.** `lspconf
+--require-server replay`: **79 transcripts, 79 ok, 0 mismatched, nothing
+skipped, exit 0**.
+
+- **The 73 scripted transcripts were re-recorded: `73 files changed, 73
+  insertions(+), 73 deletions(-)`, every hunk `@@ -1 +1 @@`.** Classified by
+  the `dir` field: 146 changed lines, all headers, **0 `s2c`, 0 `c2s`** —
+  `std/reach` and `std/no-std` included, though the std beside the binary
+  moved from wolf-std `d37c911` to `cceda63` (`list/list.lu`, the one std file
+  they reach, is the same blob at both). The sixteen samples are
+  blob-identical across `72de141f..85dab5d7`, and neither the server's crates
+  nor the front end moved. `onetruth`: 16 samples × 9 profiles, 0 known
+  divergences, zero unfiled.
+- **The six captured smokes were NOT re-captured, because no record moved.**
+  At the bump `replay` skipped them by name (`captured at 72de141, pin is
+  85dab5d`). Each was copied to scratch with only its header's `wolf_pin`
+  swapped and replayed against the 0.2.33 server: all six matched, emacs 10,
+  fackr 9, facsimile 7, helix 9, nvim 15, vscode 30 records, every teardown as
+  recorded. The committed six then moved by **their header's `wolf_pin`
+  alone** (`72de141f` → `85dab5d7`): `recorded` stays 2026-10-19, tl26's
+  capture date, and every record is tl26's, byte for byte. So a smoke's
+  client traffic below is tl26's capture at `72de141`, and its `wolf_pin`
+  names the pin that traffic last replayed green at. The rows say so.
+- **The declared range MOVED, it did not widen**: `min` and `max_tested` are
+  both `0.2.33`.
+
+**Two vendored data files moved; the EBNF did not.** `spec/anchors.json`
+gained 3 keys (664 anchors, key sets diffed both ways, 0 dropped, 0
+retargeted: `os.signal.disp.one`, `os.signal.exit`, `os.signal.gaps.note`);
+`spec/prelude.json` gained five names (187), **every one a `function`**
+(s246's `os_signal_ignore_one`, `os_signal_default_one`, `os_exit_signal`,
+`os_wait_status_core`, `os_wait_poll_core`), 0 removed. No type name was
+added, so `type-names-check` was green at the bump with no hand-list change:
+**26 prelude-list candidates, 18 painted, 9 unpainted**, all classified
+against 0.2.33. Prelude functions do not highlight as builtins (ruling #77),
+so the five join no list. `grammar-drift`, `nvim-check` and `emacs-check`
+found every EBNF-derived artifact current; only the two pin constants and the
+compat rows were regenerated.
+
+**The editors' grammar pin does not move: still `e738823`.** tree-sitter-wolf's
+tl27 branch changes only its corpus floor (1117 files at v0.2.33), its
+receiver comment and its record; helix and zed would get nothing from a new
+rev.
+
+The tl26 and tl25 stamps that follow are kept as written.
+
 **The six captured smokes are at the pin too, since tl26 (2026-10-19), and
 they were captured on linux**: all six driven on kasumi (linux x86-64), the
 first capture host that is not nomad-1 (darwin arm64). `replay`: 79 of 79,
@@ -1318,12 +1380,12 @@ commit's run.
 
 | editor | tier | CI job | evidence | last verified |
 |---|---|---|---|---|
-| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | **2026-10-19, pin `72de141`, fackr 1.2.1 at `496c7e2` + the series, on kasumi (linux x86-64)** — RE-CAPTURED at tl26; header-only, three runs byte-identical. (tl03: 2026-09-12, `a7f517e`, darwin arm64.) |
-| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | **2026-10-19, pin `72de141`, fac v0.35.0 (`fpm`, `a121ab3`), on kasumi (linux x86-64)** — RE-CAPTURED at tl26, rung for rung; header-only. (tl03: 2026-09-12, `a7f517e`, darwin arm64.) |
-| [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.5`) | **2026-10-19, pin `72de141`, NVIM v0.12.5, on kasumi (linux x86-64)** — RE-CAPTURED at tl26; 7/7, four runs byte-identical. Header **plus `didChangeWatchedFiles.dynamicRegistration` `true` → `false`**, which linux NVIM declares (host, not server; see tl26 above). (tl03: 2026-09-12, `a7f517e`, darwin arm64.) |
-| [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 16 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | **2026-10-19, pin `72de141`, VS Code 1.136.1, on kasumi (linux x86-64) with no display (`--ozone-platform=headless`)** — RE-CAPTURED at tl26; 16/16 on three runs. Method multiset: every test-driven rung identical; background `$/setTrace`, `codeAction` and one `$/cancelRequest` moved (see tl26 above). (tl03: 2026-09-12, `a7f517e`, 1.120.0, darwin arm64.) |
-| [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | **2026-10-19, pin `72de141`, helix 25.07.1 (`4746c276` build), on kasumi (linux x86-64)** — RE-CAPTURED at tl26; header plus `clientInfo.version`'s build hash, three runs byte-identical. (tl03: 2026-09-12, `a7f517e`, darwin arm64.) One row-adjacent correction: this client DOES sometimes send `shutdown` (wolf-lsp#17); since tl17 `replay` accepts that trailing `shutdown` for helix alone and names the shape (ruling #38). |
-| [Emacs (eglot)](../clients/emacs/README.md) | **T2** | `emacs-mode` (3 OS, 9 cases) + `emacs-check` | `clients/emacs/wolf-mode.el` loaded by `emacs --batch`; `transcripts/emacs/smoke` · `profiles/emacs.json` (`emacs@31.1`, eglot 1.24.31) | **2026-10-19, pin `72de141`, GNU Emacs 31.1 (eglot 1.24.31), on kasumi (linux x86-64)** — RE-CAPTURED at tl26; header-only, three runs byte-identical. (tl03: 2026-09-12, `a7f517e`, darwin arm64.) |
+| [fackr](../clients/fackr/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/fackr/smoke` · `profiles/fackr.json` (`fackr@496c7e2`) | **2026-10-19, pin `85dab5d`** (tl27: tl26's capture replayed at this pin and restamped, not re-captured; 9 records matched). **Captured 2026-10-19 at pin `72de141`, fackr 1.2.1 at `496c7e2` + the series, on kasumi (linux x86-64)** — RE-CAPTURED at tl26; header-only, three runs byte-identical. (tl03: 2026-09-12, `a7f517e`, darwin arm64.) |
+| [facsimile](../clients/facsimile/README.md) | **T1** | `server-lane` (glob fixed at le06) | `transcripts/facsimile/smoke` · `profiles/facsimile.json` (`facsimile@1242ffa`) | **2026-10-19, pin `85dab5d`** (tl27: tl26's capture replayed at this pin and restamped, not re-captured; 7 records matched). **Captured 2026-10-19 at pin `72de141`, fac v0.35.0 (`fpm`, `a121ab3`), on kasumi (linux x86-64)** — RE-CAPTURED at tl26, rung for rung; header-only. (tl03: 2026-09-12, `a7f517e`, darwin arm64.) |
+| [Neovim](../clients/nvim/README.md) | **T1** | `nvim-plugin` (3 OS, 14 cases) | `transcripts/nvim/smoke` · `profiles/nvim.json` (`neovim@v0.12.5`) | **2026-10-19, pin `85dab5d`** (tl27: tl26's capture replayed at this pin and restamped, not re-captured; 15 records matched). **Captured 2026-10-19 at pin `72de141`, NVIM v0.12.5, on kasumi (linux x86-64)** — RE-CAPTURED at tl26; 7/7, four runs byte-identical. Header **plus `didChangeWatchedFiles.dynamicRegistration` `true` → `false`**, which linux NVIM declares (host, not server; see tl26 above). (tl03: 2026-09-12, `a7f517e`, darwin arm64.) |
+| [VS Code](../clients/vscode/README.md) | **T1** | `vscode-extension` (ubuntu, 16 cases) | `transcripts/vscode/smoke` · `profiles/vscode.json` (`vscode@df53daa`) | **2026-10-19, pin `85dab5d`** (tl27: tl26's capture replayed at this pin and restamped, not re-captured; 30 records matched). **Captured 2026-10-19 at pin `72de141`, VS Code 1.136.1, on kasumi (linux x86-64) with no display (`--ozone-platform=headless`)** — RE-CAPTURED at tl26; 16/16 on three runs. Method multiset: every test-driven rung identical; background `$/setTrace`, `codeAction` and one `$/cancelRequest` moved (see tl26 above). (tl03: 2026-09-12, `a7f517e`, 1.120.0, darwin arm64.) |
+| [Helix](../clients/helix/README.md) | **T2** | `helix-config` (3 OS) + `config-check` | `clients/helix/languages.toml` parsed by `hx --health`; `transcripts/helix/smoke` · `profiles/helix.json` (`helix@25.07.1`) | **2026-10-19, pin `85dab5d`** (tl27: tl26's capture replayed at this pin and restamped, not re-captured; 9 records matched). **Captured 2026-10-19 at pin `72de141`, helix 25.07.1 (`4746c276` build), on kasumi (linux x86-64)** — RE-CAPTURED at tl26; header plus `clientInfo.version`'s build hash, three runs byte-identical. (tl03: 2026-09-12, `a7f517e`, darwin arm64.) One row-adjacent correction: this client DOES sometimes send `shutdown` (wolf-lsp#17); since tl17 `replay` accepts that trailing `shutdown` for helix alone and names the shape (ruling #38). |
+| [Emacs (eglot)](../clients/emacs/README.md) | **T2** | `emacs-mode` (3 OS, 9 cases) + `emacs-check` | `clients/emacs/wolf-mode.el` loaded by `emacs --batch`; `transcripts/emacs/smoke` · `profiles/emacs.json` (`emacs@31.1`, eglot 1.24.31) | **2026-10-19, pin `85dab5d`** (tl27: tl26's capture replayed at this pin and restamped, not re-captured; 10 records matched). **Captured 2026-10-19 at pin `72de141`, GNU Emacs 31.1 (eglot 1.24.31), on kasumi (linux x86-64)** — RE-CAPTURED at tl26; header-only, three runs byte-identical. (tl03: 2026-09-12, `a7f517e`, darwin arm64.) |
 | [Zed](../clients/zed/README.md) | **T2** | `zed-extension` (wasm build) + `config-check` | wasm component builds; config statically checked | **wasm build: 2026-08-10.** **Manual run: NEVER — see below.** Config re-checked at pin `a7f517e` (tl02). |
 | [JetBrains (LSP4IJ)](../clients/jetbrains/README.md) | **T3** | *(none, by design)* | a written recipe | **NEVER — see below** |
 | [yew](../clients/yew/README.md) | **T3** | `config-check` (static: the row, no `wolfi`, README verbatim) | `clients/yew/init.fl`; a hand-driven pty session (ye01) | **2026-10-05, wolf 0.2.23 (`8edac3e`, darwin arm64 archive `92c918f2…`), yew `1.0.0-dev` at sagitta `d52f24d5`.** Walked by hand on nomad-1 by ye01. Without the row, yew starts no server (`no LSP server configured for wolf`). With it: `initialize` → utf-8 → `didOpen` (`languageId: wolf`) → one E0401 published and listed → `shutdown`/`exit`. No transcript or profile is committed. |

@@ -95,3 +95,62 @@ records (lines minus the header).
 ## 4. Result
 
 *(scored after the captures; §3 is not edited.)*
+
+| # | result |
+|---|---|
+| P1 | **held.** On all six the header moved (`wolf_pin`, `recorded` 2026-09-14 → 2026-10-19) and no server→client record moved in any field (`rdiff.py`, record by record where the method sequence is equal; for vscode, keyed by method and ordinal). |
+| P2 | **half wrong.** nvim: 32 records, the same sequence, four runs byte-identical (the cold first one too). The field that moved is NOT `clientInfo.version` — the distribution build also reports `0.12.5+v0.12.5` — but `initialize` `capabilities.workspace.didChangeWatchedFiles.dynamicRegistration` `true` → `false`: **host**. Black-box: `vim.lsp.protocol.make_client_capabilities()` on kasumi answers `false` with and without a stub `inotifywait` first on `PATH`. |
+| P3 | **held.** helix: 19 records, three runs byte-identical, `clientInfo.version` `25.07.1 (a05c151b)` → `25.07.1 (4746c276)` and nothing else: **editor build** (`a05c151b` is helix's `25.07.1` release commit; `4746c276` is no helix commit, API 422). `workspaceFolders[0].name` stays `wolf-lsp`. |
+| P4 | **held.** emacs: 23 records, header-only, three runs byte-identical, 1/1. |
+| P5 | **held, and the reason is better than predicted.** fackr: 19 records, header-only, three runs byte-identical, `wolf_lsp_corpus_session ... ok`; `git apply --check` exit 0 at `496c7e2`. At trunk `e9ed924` the series refuses ten files — because trunk IS the series: `git apply --check -R` exits 0 there, and `496c7e2` + series has `e9ed924`'s tree (`3f85d4cc…`). |
+| P6 | **held.** facsimile: 15 records, rung for rung, header-only, from the `fpm` build at `a121ab3`. One full run, not two or three: see finding F2. |
+| P7 | **WRONG — vscode was captured.** VS Code's Electron starts with no display under `--ozone-platform=headless` (plain, it logs `Missing X server or $DISPLAY`); the extension's own runner, `WOLF_VSCODE_EXECUTABLE` pointed at a lane-local wrapper adding that flag, ran 16/16 three times (70, 67, 68 records; the third committed). Every test-driven rung's count equals tl07's; `clientInfo.version` `1.120.0` → `1.136.1` and the client-timed rungs moved (`$/setTrace` 1 → 5, all `"off"`, on all three runs; `codeAction` 9 → 14/13/13, the extra ones lightbulb probes of `hello.lu` line 0 answered `[]`; one `$/cancelRequest` for an already-answered id on two runs of three): **editor build**, not separable from the host on one host. The `initialize` capabilities are otherwise identical. |
+| P8 | **better than predicted: 79 of 79.** `lspconf --require-server replay`: 79 ok, 0 mismatched, no SKIP line, exit 0 (emacs 10, fackr 9, facsimile 7, helix 9, nvim 15, vscode 30 records matched). CI: below. |
+| P9 | **wrong in one field**: nvim's `didChangeWatchedFiles` is a host field (P2). No path leaked; `client_recorded` green. |
+| P10 | see §5. |
+
+### Findings
+
+- **F1 — no server change.** No moved record is a server answer; nothing to
+  file against wolf.
+- **F2 — the lane wrote the maintainer's facsimile session file on kasumi.**
+  `fac -w <dir> file` still restores and saves a session in the nearest
+  enclosing `.fac` workspace, which on kasumi is `$HOME`:
+  `~/.fac/workspace.json` gained a ninth tab (this lane's `hello.lu`) and
+  `active_tab: 9`, written by both facsimile runs. `HOME=` a scratch directory
+  and an empty `.fac/` above the checkout did not prevent it. No document the
+  restored tabs name was modified (all mtimes predate the run). Not reverted
+  by hand, because the file's previous `active_tab` was never read; the
+  orchestrator has the copy taken after the second run
+  (`~/lanes/tl26/cap/facsimile/maintainer-workspace-after-run2.json`). The
+  first run lost both edit rungs and the hover (9 records); the second,
+  keys unchanged, recorded all 15. Recorded as a driver trap in
+  `clients/facsimile/README.md` and `docs/MATRIX.md`.
+- **F3 — `clients/fackr/patches/STATUS.md` was stale**: "nothing here is
+  committed" was true of the worktree, not of upstream. Corrected.
+- **F4 — the shared signing home moved mid-lane on kasumi.** At 22:09 local
+  `/tmp/gitswitch-gpg-1000/current` was switched to another identity's
+  keyring by something outside this lane, and `git commit` (signing with the
+  global `user.signingkey`) failed `No secret key`. This lane's commits on
+  kasumi were signed with `GNUPGHOME=~/.gnupg` for the one command; nothing
+  was switched back.
+
+## 5. Evidence
+
+Logs on kasumi under `~/lanes/tl26/`: `setup.log` (acquisition), `b0.log` and
+`b0/` (baseline and the old traffic at the new pin), `cap-*.log` and
+`cap/<editor>/` (every run's transcript, driver output, shim log, version
+read), `r1/` (the placed captures' replay), `g1/` (the gauntlet).
+
+- **The gauntlet at `5b56564`** (`g1/summary.txt`, 2026-10-19T02:18Z): `fmt`,
+  `clippy -D warnings`; `cargo test --workspace -- --nocapture` 259 passed, 0
+  failed, **0 SKIP lines** (tl25's one vscode `node_modules` skip is gone,
+  the lane ran `npm ci` in `clients/vscode`); the nine xtask gates and
+  `type-names-check --require-server` (18 / 9 / 26); `verify`, `profiles`,
+  `doctor` READY; `replay` under `taskset -c 0-3`: 79 ok, 6 smokes, 0 SKIP;
+  `onetruth` 16 × 9, zero unfiled; the server suites plus `client_recorded`
+  under `taskset -c 0-3`, 47 passed, 0 SKIP; `fuzz regions.lu` three oracles
+  held; tree clean by `git diff HEAD -- . ':(exclude)upstream'` and
+  `ls-files --others` (wolf-lsp#45's method).
+- CI run ids and the plant are in the PR body (they cannot predate the
+  commits they test).

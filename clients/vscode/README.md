@@ -234,8 +234,12 @@ cd clients/vscode
 WOLF_LSP_ROOT=/path/to/wolf-lsp \
 WOLF_REAL=/path/to/wolf \
 WOLF_BIN=$SHIM/wolf \
-DISPLAY= xvfb-run -a node ./out/test/runTest.js
+env -u DISPLAY -u WAYLAND_DISPLAY node ./out/test/runTest.js
 ```
+
+On linux no `xvfb-run` is needed: `runTest.ts` passes
+`--ozone-platform=headless` there (wolf-lsp#48), so the editor starts with no
+display at all.
 
 On **macOS**, add `VSCODE_CLI=1` and point `WOLF_VSCODE_EXECUTABLE` at an
 installed VS Code (there is no `xvfb-run`, and the download path cannot launch
@@ -252,28 +256,24 @@ node ./out/test/runTest.js
 ```
 
 On **linux with no display and no `xvfb-run`**, Electron's headless Ozone
-platform is enough. Launched plain, VS Code logs `Missing X server or
-$DISPLAY` and `The platform failed to initialize`; with
-`--ozone-platform=headless` it starts and the suite runs. `runTest.ts` takes
-no extra launch arguments, so the flag rides a wrapper named by
-`WOLF_VSCODE_EXECUTABLE` (measured at tl26 on kasumi, VS Code 1.136.1, 16/16
-on three runs, the shim logging `--version`, `--version`, `lsp --stdio`):
-
-```sh
-# $SHIM/code-headless, chmod +x — the installed VS Code's Electron binary
-#!/bin/sh
-exec /usr/share/code/code --ozone-platform=headless "$@"
-```
+platform is enough, and `runTest.ts` asks for it itself since wolf-lsp#48:
+on linux it adds `--ozone-platform=headless` to the launch arguments. Launched
+without it, VS Code logs `Missing X server or $DISPLAY` and `The platform
+failed to initialize`. To run the suite against an installed VS Code rather
+than a downloaded one, name its binary directly (measured at tl27 on kasumi,
+VS Code 1.136.1, no wrapper):
 
 ```sh
 cd clients/vscode
 env -u DISPLAY -u WAYLAND_DISPLAY \
-WOLF_LSP_ROOT=/path/to/wolf-lsp \
-WOLF_REAL=/path/to/wolf \
-WOLF_BIN=$SHIM/wolf \
-WOLF_VSCODE_EXECUTABLE=$SHIM/code-headless \
-node ./out/test/runTest.js
+WOLF_BIN=/path/to/wolf \
+WOLF_VSCODE_EXECUTABLE=/usr/share/code/code \
+npm run test:extension
 ```
+
+Before wolf-lsp#48 the flag rode a two-line wrapper named by
+`WOLF_VSCODE_EXECUTABLE` (`exec /usr/share/code/code --ozone-platform=headless
+"$@"`); that is how tl26 captured `transcripts/vscode/smoke.jsonl` on kasumi.
 
 The linux capture at VS Code 1.136.1 sends `$/setTrace` five times (all
 `"off"`) where 1.120.0 on macOS sent it once, on every run, and its

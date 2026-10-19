@@ -263,11 +263,15 @@ jobs:
       - name: Grammar lane (tokenizer + reviewed scope snapshots)
         run: npm run test:grammar
 
-      # Headless VS Code. Linux needs a virtual display; macOS and windows
-      # runners have one.
-      - name: Extension lane (headless VS Code, linux)
+      # Headless VS Code. On linux `runTest.ts` passes
+      # `--ozone-platform=headless` (wolf-lsp#48), so the lane needs no virtual
+      # display, and none is given: `DISPLAY` and `WAYLAND_DISPLAY` are unset on
+      # purpose, so a regression back to needing one is red here instead of
+      # being papered over by `xvfb-run`. macOS and windows runners have a
+      # display.
+      - name: Extension lane (headless VS Code, linux, no display)
         if: runner.os == 'Linux'
-        run: xvfb-run -a npm run test:extension
+        run: env -u DISPLAY -u WAYLAND_DISPLAY npm run test:extension
 
       - name: Extension lane (headless VS Code, macOS and windows)
         if: runner.os != 'Linux'

@@ -49,6 +49,15 @@ async function main(): Promise<void> {
 		// Containers without a sandbox-capable kernel config, which is most
 		// CI images. Harmless where the sandbox would have worked.
 		launchArgs.push('--no-sandbox', '--disable-gpu');
+		// No display needed (wolf-lsp#48). Electron's headless Ozone platform
+		// starts with no X server and no Wayland compositor, so neither CI nor
+		// a display-less box needs `xvfb-run`. Measured at tl26 on kasumi (VS
+		// Code 1.136.1): plain, it logs `Missing X server or $DISPLAY` and
+		// never starts; with this flag the suite runs 16/16. The editor still
+		// opens its windows, it just paints them nowhere, so nothing the suite
+		// asserts changes. Before this line the flag had to ride a wrapper
+		// named by `WOLF_VSCODE_EXECUTABLE`.
+		launchArgs.push('--ozone-platform=headless');
 	}
 
 	// `WOLF_VSCODE_EXECUTABLE`, when set, runs the suite against an ALREADY

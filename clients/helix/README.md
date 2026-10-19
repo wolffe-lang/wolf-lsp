@@ -243,6 +243,14 @@ checkout named `wolf-lsp` — a detached worktree at the same commit will do,
 with its own `lspconf` build, since `capture` writes into the repo root
 compiled into the binary. Measured at tl07.
 
+**`clientInfo.version` carries the build's hash, and a packager's build has
+its own.** helix reports `25.07.1 (<hash>)`. The macOS build tl03 and tl07
+drove said `a05c151b`, which is helix's own `25.07.1` release commit; the
+linux package tl26 drove on kasumi (`helix 25.07.1-2.1`) says `4746c276`,
+which is not a helix commit at all. Same tag, different build: a diff
+confined to that hash is packaging, and no server answer moves with it.
+Measured at tl26, where it was the one field besides the header that moved.
+
 The driver script is not committed: it is scaffolding, and the transcript is the
 artifact. The recipe above plus the key table reproduce it.
 

@@ -251,6 +251,36 @@ WOLF_VSCODE_EXECUTABLE="/Applications/Visual Studio Code.app/Contents/MacOS/Elec
 node ./out/test/runTest.js
 ```
 
+On **linux with no display and no `xvfb-run`**, Electron's headless Ozone
+platform is enough. Launched plain, VS Code logs `Missing X server or
+$DISPLAY` and `The platform failed to initialize`; with
+`--ozone-platform=headless` it starts and the suite runs. `runTest.ts` takes
+no extra launch arguments, so the flag rides a wrapper named by
+`WOLF_VSCODE_EXECUTABLE` (measured at tl26 on kasumi, VS Code 1.136.1, 16/16
+on three runs, the shim logging `--version`, `--version`, `lsp --stdio`):
+
+```sh
+# $SHIM/code-headless, chmod +x — the installed VS Code's Electron binary
+#!/bin/sh
+exec /usr/share/code/code --ozone-platform=headless "$@"
+```
+
+```sh
+cd clients/vscode
+env -u DISPLAY -u WAYLAND_DISPLAY \
+WOLF_LSP_ROOT=/path/to/wolf-lsp \
+WOLF_REAL=/path/to/wolf \
+WOLF_BIN=$SHIM/wolf \
+WOLF_VSCODE_EXECUTABLE=$SHIM/code-headless \
+node ./out/test/runTest.js
+```
+
+The linux capture at VS Code 1.136.1 sends `$/setTrace` five times (all
+`"off"`) where 1.120.0 on macOS sent it once, on every run, and its
+lightbulb sends four or five more `codeAction` probes of `hello.lu`; two runs of
+three also carry a `$/cancelRequest` for a request already answered. All are
+client-timed; compare the method multiset of the test-driven rungs.
+
 **`VSCODE_CLI=1` is not optional on macOS, and without it the lane looks like
 it worked.** `runTest.ts` hands the extension host a `PATH` with the shim's
 directory first, which is the entire capture mechanism. But VS Code, when it

@@ -64,7 +64,6 @@ async function main(): Promise<void> {
 		// opens its windows, it just paints them nowhere, so nothing the suite
 		// asserts changes. Before this line the flag had to ride a wrapper
 		// named by `WOLF_VSCODE_EXECUTABLE`.
-		launchArgs.push('--ozone-platform=headless');
 	}
 
 	// `WOLF_VSCODE_EXECUTABLE`, when set, runs the suite against an ALREADY

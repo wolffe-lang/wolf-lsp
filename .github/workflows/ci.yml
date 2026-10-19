@@ -8,19 +8,81 @@
 #     be acquired, and when it cannot it emits an explicit `SKIP:` line naming
 #     the reason. Silence is what turns a dark lane into a lane nobody notices
 #     is dark (ls00 §3).
+#
+# THE TIERS (tl28, ruling #92). The org is on GitHub's free plan: 20
+# concurrent jobs shared by every repository, 5 of them macOS. Before this,
+# every push ran all nineteen jobs at once (about 14 job-minutes but nearly
+# the org's whole slot budget, the ten pull-request and push runs before
+# tl28), and the old concurrency group cancelled a trunk push's run when the
+# next landed. So the `plan` job (`ci/tiers.py plan`, proven by
+# `ci/tiers-test.py` in the same job) decides which jobs a run runs and on
+# which hosts, every other job runs only when the plan names it, and the
+# run's LAST job says which tier it was:
+#
+#   tier full   every job on every host. A push to trunk, the nightly
+#               `schedule`, a `workflow_dispatch` (tier full, the default),
+#               a pull request labelled `full-matrix`; and a pull request
+#               with a changed path no rule of `ci/tiers.py` names, or whose
+#               change cannot be read.
+#   tier pr     any other pull-request run (and a dispatch with tier pr):
+#               the jobs its changed paths name, on ubuntu alone. The
+#               harness, transcripts, profiles, pins and CI name every job;
+#               one editor's client names the server-free gate, that
+#               editor's lane and independence (ci/tiers.py RULES).
+#   tier noop   the plan and the verdict: a pull request whose changed
+#               paths are ALL prose (CONTRIBUTING.md), or a label other than
+#               `full-matrix`.
+#
+# Nothing a job checks changed and no job left the full tier: a pull
+# request's push no longer runs the macOS and windows legs or the lanes its
+# paths do not name, and they run before the merge, on every trunk push and
+# every night. The `tier` job fails unless the plan succeeded, the jobs and
+# hosts it chose are that tier's, every chosen job succeeded and every
+# other was skipped; so a green `tier full` is "every job on every host,
+# green", and a green `tier pr` is never that. A red nightly opens an issue
+# (`nightly-red`; nightly.yml's sweeps are report-only by construction and
+# unchanged).
+#
+# THE MERGE RULE: a lane's PR merges only with a green `tier full` at its
+# head. Add the `full-matrix` label once the head is the one to merge
+# (never when opening the PR: `opened` and `labeled` would start two full
+# runs). `wolf/tools/lane-audit.sh` reads the job's name.
 name: ci
 
 on:
-  pull_request:
   push:
-    branches: [trunk, main]
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    branches: [trunk]
+  pull_request:
+    # `labeled` so adding `full-matrix` starts the full run at once; any
+    # other label's run is a noop (the plan, then nothing).
+    types: [opened, synchronize, reopened, labeled]
+  schedule:
+    # Nightly, the full tier, on trunk. (nightly.yml is the long sweeps,
+    # report-only; it runs none of these jobs.)
+    - cron: "47 9 * * *"
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: "full: every job on every host; pr: this branch's change against trunk, as a pull request's (a path no rule names runs full)"
+        type: choice
+        options: [full, pr]
+        default: full
 
 permissions:
   contents: read
+
+# A pull request's runs: one group per branch and tier, cancel-in-progress,
+# so a new push frees the slots of the run it supersedes. The full run and
+# the pr run live in SEPARATE groups (adding the label must not cancel the
+# pr run at the same head: lane-audit.sh reads a cancelled run there as a
+# FAIL), and another label's noop run gets a group of its own so it cancels
+# nothing. Every other run (a trunk push, the nightly, a dispatch) gets a
+# group of its OWN run id: never cancelled, and never replaced while it
+# waits (in a shared group GitHub keeps a single pending run, and each
+# trunk push's full run is the coverage that merge is owed).
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('ci-pr-{0}-{1}', github.head_ref, (github.event.action == 'labeled' && github.event.label.name != 'full-matrix') && format('noop-{0}', github.run_id) || (contains(github.event.pull_request.labels.*.name, 'full-matrix') && 'full' || 'pr')) || format('ci-{0}-{1}', github.event_name, github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   CARGO_TERM_COLOR: always
@@ -28,14 +90,56 @@ env:
   PROPTEST_CASES: "256"
 
 jobs:
+  # Which jobs this run runs, and on which hosts (THE TIERS, above), decided
+  # once by `ci/tiers.py plan` from the event, the label and (for a pull
+  # request) the paths its merge commit changes, and printed path by path,
+  # so a run's log says why it has the jobs it has. The planner's own proof
+  # runs first: a planner that cannot say no plans nothing.
+  plan:
+    name: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tier: ${{ steps.plan.outputs.tier }}
+      jobs: ${{ steps.plan.outputs.jobs }}
+      matrix_test: ${{ steps.plan.outputs.matrix_test }}
+      matrix_nvim_plugin: ${{ steps.plan.outputs.matrix_nvim_plugin }}
+      matrix_vscode_extension: ${{ steps.plan.outputs.matrix_vscode_extension }}
+      matrix_server_lane: ${{ steps.plan.outputs.matrix_server_lane }}
+      matrix_helix_config: ${{ steps.plan.outputs.matrix_helix_config }}
+      matrix_emacs_mode: ${{ steps.plan.outputs.matrix_emacs_mode }}
+    steps:
+      # Depth 2: a pull request's run checks out its merge commit, and the
+      # plan reads that commit against its first parent. A dispatch reads
+      # its branch against trunk's merge base, so it takes the history.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: ${{ github.event_name == 'workflow_dispatch' && '0' || '2' }}
+      - name: the planner can say no (ci/tiers-test.py)
+        run: python3 ci/tiers-test.py
+      - name: the plan
+        id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          LABEL: ${{ github.event.label.name }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          IN_TIER: ${{ inputs.tier }}
+        run: python3 ci/tiers.py plan --merge --github-output "$GITHUB_OUTPUT"
+
   # The server-free gate, on the full D35 tier-1 host set.
   test:
     name: test (${{ matrix.os }})
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'test')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # The hosts are the plan's (ci/tiers.py MATRIX): ubuntu, macOS and
+        # windows in the full tier, ubuntu alone in a pull request's.
+        include: ${{ fromJSON(needs.plan.outputs.matrix_test || '[]') }}
     steps:
       # No `submodules:` key, deliberately. `upstream/` is the private wolf-lang
       # repo and org policy disables deploy keys, so CI cannot clone it at all;
@@ -141,11 +245,15 @@ jobs:
   # presence is checked first and its absence is a hard failure.
   nvim-plugin:
     name: nvim plugin (${{ matrix.os }})
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'nvim-plugin')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # The hosts are the plan's (ci/tiers.py MATRIX): ubuntu, macOS and
+        # windows in the full tier, ubuntu alone in a pull request's.
+        include: ${{ fromJSON(needs.plan.outputs.matrix_nvim_plugin || '[]') }}
     steps:
       - uses: actions/checkout@v5
       - name: Install the pinned toolchain
@@ -227,11 +335,14 @@ jobs:
     # was accurate); mac/windows verification is local-only until someone
     # owns that investigation. Honest matrix over aspirational matrix.
     name: vscode extension (${{ matrix.os }})
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'vscode-extension')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        # The host is the plan's (ci/tiers.py MATRIX): ubuntu, in every tier.
+        include: ${{ fromJSON(needs.plan.outputs.matrix_vscode_extension || '[]') }}
     defaults:
       run:
         working-directory: clients/vscode
@@ -324,6 +435,8 @@ jobs:
   # once on macOS runners.
   vscode-package:
     name: vscode package (publish dry run)
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'vscode-package')
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -384,11 +497,15 @@ jobs:
   # path is an unreleased (trunk) pin, and it announces itself.
   server-lane:
     name: server lane (${{ matrix.os }})
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'server-lane')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # The hosts are the plan's (ci/tiers.py MATRIX): ubuntu, macOS and
+        # windows in the full tier, ubuntu alone in a pull request's.
+        include: ${{ fromJSON(needs.plan.outputs.matrix_server_lane || '[]') }}
     steps:
       - uses: actions/checkout@v5
       - name: Install the pinned toolchain
@@ -537,11 +654,15 @@ jobs:
   # exactly that reason: the skip is the information.
   helix-config:
     name: helix config (${{ matrix.os }})
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'helix-config')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # The hosts are the plan's (ci/tiers.py MATRIX): ubuntu, macOS and
+        # windows in the full tier, ubuntu alone in a pull request's.
+        include: ${{ fromJSON(needs.plan.outputs.matrix_helix_config || '[]') }}
     steps:
       - uses: actions/checkout@v5
       - name: Install the pinned toolchain
@@ -620,6 +741,8 @@ jobs:
   # much to prove the same thing.
   zed-extension:
     name: zed extension (wasm build)
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'zed-extension')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -659,11 +782,15 @@ jobs:
   # the session it records is committed as transcripts/emacs/smoke.jsonl.
   emacs-mode:
     name: emacs mode (${{ matrix.os }})
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'emacs-mode')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # The hosts are the plan's (ci/tiers.py MATRIX): ubuntu, macOS and
+        # windows in the full tier, ubuntu alone in a pull request's.
+        include: ${{ fromJSON(needs.plan.outputs.matrix_emacs_mode || '[]') }}
     steps:
       - uses: actions/checkout@v5
 
@@ -705,6 +832,8 @@ jobs:
   # The editor layer talks to a process, or it does not talk (D34).
   independence:
     name: independence
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'independence')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -763,3 +892,55 @@ jobs:
             exit 1
           fi
           echo "no CRLF in tracked text files"
+
+  # The run's verdict, and its name: `tier full`, `tier pr` or `tier noop`.
+  # It needs every job, runs unless the run was cancelled, and fails unless
+  # the plan succeeded, the jobs and hosts it chose are the tier's, every
+  # chosen job succeeded and every other job was skipped (ci/tiers.py
+  # verdict). lane-audit.sh reads this job's name and conclusion.
+  tier:
+    name: tier ${{ needs.plan.outputs.tier || 'unplanned' }}
+    if: ${{ !cancelled() }}
+    needs:
+      - plan
+      - test
+      - nvim-plugin
+      - vscode-extension
+      - vscode-package
+      - server-lane
+      - helix-config
+      - zed-extension
+      - emacs-mode
+      - independence
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: every chosen job succeeded, every other was skipped
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: python3 ci/tiers.py verdict
+
+  # A red nightly opens an issue (ruling #92): a scheduled run has no lane
+  # watching it, so the red has to come and find one. One open issue per
+  # workflow, its title the dedupe key; a further red night comments on it
+  # (ci/nightly-red.sh, tested by ci/tiers-test.py T8). Never on a pull
+  # request, a push or a dispatch: those reds have a lane attached already.
+  nightly-red:
+    name: nightly red, an issue
+    needs: tier
+    if: ${{ failure() && github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+      - name: open or update the nightly-red issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          WORKFLOW: ${{ github.workflow }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: ci/nightly-red.sh

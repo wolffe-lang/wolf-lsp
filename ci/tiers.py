@@ -166,6 +166,9 @@ RULES = [
     (".editorconfig", EVERY_JOB),
 ]
 # --- end of this repository's -------------------------------------------------
+# Below: the planner itself, the same in every repository tl28 tiered (wolf-std,
+# pelt, wolf-book, lobo, boreutils, wolf-lsp). Only the docstring and the
+# block above are this repository's.
 
 
 def die(msg):
@@ -376,7 +379,7 @@ def verdict(needs):
     every = [j for j in needs if j != "plan"]
     bad = 0
     want_jobs = jobs_of(tier, every)
-    some = tier == "pr" or (tier in EXTRA_TIERS and len(EXTRA_TIERS[tier]) > 2 and not EXTRA_TIERS[tier][2])
+    some = tier == "pr" or (tier in EXTRA_TIERS and not EXTRA_TIERS[tier][2])
     if some:
         if not chosen or [j for j in chosen if j not in want_jobs]:
             print("tier: a %s run chose %s; it may choose one or more of %s" % (

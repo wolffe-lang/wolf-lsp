@@ -1,5 +1,33 @@
 # Changelog
 
+## tl27 — 2026-10-19 — the pin at 0.2.33, the five prelude names, the smokes replayed; #47, #48, #49
+
+**Pinned to wolf 0.2.33** (`85dab5d`, release 417610226), the next release
+after 0.2.32; both archives of the pair acquired by digest, each digest read
+twice, and hashed member by member, the release and never wolf-lang's trunk;
+the bundled std is wolf-std `cceda63`. Two vendored spec files moved:
+`anchors.json` (+3 keys, 0 dropped, 0 retargeted; 664) and `prelude.json`
+(+5 names, 0 removed, 0 changed; 187), **every new name a function**
+(s246's `os_signal_ignore_one`, `os_signal_default_one`, `os_exit_signal`,
+`os_wait_status_core`, `os_wait_poll_core`); no type name, so
+`type-names-check` was green at the bump with no hand-list change (18 / 9 /
+26), and no client paints the five (ruling #77). The EBNF, the sixteen
+samples and the server's own crates did not move. **The 73 scripted
+transcripts re-recorded header-only** (0 `s2c`, 0 `c2s`). **The six captured
+smokes were replayed, not re-captured**: their traffic, with only the
+header's pin swapped in scratch, matched the 0.2.33 server record for record
+(emacs 10, fackr 9, facsimile 7, helix 9, nvim 15, vscode 30), so each moved
+by its header's `wolf_pin` alone and `replay` reads 79 of 79. **wolf-lsp#48**:
+`runTest.ts` passes `--ozone-platform=headless` on linux, and CI's linux
+extension step runs with no display and no `xvfb-run`. **wolf-lsp#47**: the
+vscode extension job acquires wolf at the pin and hands it to the suite, and
+`WOLF_REQUIRE_SERVER=1` makes the suite's server half fail where it used to
+skip, so that half now runs in CI (it had skipped on every run). **wolf-lsp#49**:
+fackr's upstream is `tenseleyFlow/fackr` (README, `docs/UPSTREAM.md`,
+`profiles/fackr.json`), and `docs/UPSTREAM.md`'s eight written fackr rows are
+`MERGED`: its trunk `e9ed924` is `496c7e2` with the series, tree for tree.
+`docs/PIN-0233.md` has the contract, the prediction and the evidence.
+
 ## tl26 — 2026-10-19 — the six smokes, re-captured at 0.2.32 on linux
 
 **wolf-lsp#26: the six captured editor smokes are at the pin** (`72de141`,

@@ -28,7 +28,7 @@ of them; a row that says something else is a promise.
 
 A row is never deleted, so the table does not propose the same patch twice.
 
-## fackr — `wolffe-lang/fackr`, read at `496c7e2` (v1.2.1)
+## fackr — `tenseleyFlow/fackr`, read at `496c7e2` (v1.2.1)
 
 Series: [`clients/fackr/patches/`](../clients/fackr/patches/) ·
 decomposition and per-PR file lists:

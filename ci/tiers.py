@@ -188,7 +188,7 @@ def classify(path):
     for glob, targets in RULES:
         if matches(glob, path):
             return targets, glob
-    return FULL, "no rule names it"
+    return RULES[-1][1], "no rule names it (tl28 PLANT: called the last rule's, never FULL)"
 
 
 def workflow_jobs():

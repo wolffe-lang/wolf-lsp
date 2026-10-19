@@ -112,4 +112,22 @@ version = "wolf 0.2.33 (wolfgang, pin 85dab5d)"
 #   * `spec/grammar.ebnf` stays 29d5de10…: no production, keyword or operator.
 # The sixteen samples are blob-identical per `samples.toml` path. After the
 # re-vendor, all nineteen data files here are blob-identical to the tag's.
+#
+# THE TRANSCRIPTS, MEASURED. All 73 scripted sessions were re-recorded at this
+# pin against the acquired 0.2.33 linux binary, `std/` beside it and nothing
+# configured: `73 files changed, 73 insertions(+), 73 deletions(-)`, every hunk
+# `@@ -1 +1 @@` — line 1 alone (`wolf_pin`, `recorded`). Classified by the
+# `dir` field: 146 changed lines, all headers, 0 `s2c`, 0 `c2s`, as
+# docs/PIN-0233.md §3 (committed before the bump) predicted — `std/reach` and
+# `std/no-std` included, though the std beside the binary moved to cceda63.
+# THE SIX CAPTURED SMOKES were replayed, not re-captured: each one's traffic,
+# with only its header's pin swapped in scratch, matched the 0.2.33 server
+# record for record (emacs 10, fackr 9, facsimile 7, helix 9, nvim 15, vscode
+# 30), so each committed smoke moved by its header's `wolf_pin` alone; its
+# `recorded` date and records are tl26's capture at 72de141.
+# `type-names-check --require-server`: GREEN at the bump with no hand-list
+# change — 18 painted, 9 unpainted, 26 prelude-list candidates, all
+# classified. `doctor`: READY, serves LSP at pin 85dab5d. `replay`: 79 ok, 0
+# mismatched, nothing skipped, exit 0. `onetruth`: 16 samples x 9 profiles, 0
+# known divergences, zero unfiled.
 serves_lsp = true

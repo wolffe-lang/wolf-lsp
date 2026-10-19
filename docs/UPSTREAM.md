@@ -3,7 +3,8 @@
 A track whose value is integration must report integration status (ls07 §5).
 This file is that report, and its rule is that every row states a *state*.
 
-The facsimile series is MERGED; everything else is unsubmitted. For one
+The facsimile series is MERGED, and so is fackr's written series (measured at
+tl26 and tl27, below); everything else is unsubmitted. For one
 sprint this file said nothing had shipped anywhere while facsimile's whole
 wolf series sat merged in that repo's own trunk (`21e58aa`, 2026-08-10, on
 its origin); a reconciliation in le01 (2026-08-27) corrected six rows.
@@ -34,16 +35,28 @@ Series: [`clients/fackr/patches/`](../clients/fackr/patches/) ·
 decomposition and per-PR file lists:
 [`STATUS.md`](../clients/fackr/patches/STATUS.md)
 
+**The eight written rows landed upstream as one commit.** `e9ed924`, the
+local commit the PR1 note below describes, is `tenseleyFlow/fackr`'s trunk
+(2026-08-10, the one commit after `496c7e2`). Measured in a clean clone on
+kasumi, at tl26 and again at tl27: `git apply --check` of
+`wolf-integration.diff` exits 0 at `496c7e2`; `git apply --check -R` exits 0
+at `e9ed924`; and `496c7e2` with the diff applied **and** `Cargo.lock`'s
+one-line refresh (`fackr 1.1.2` → `1.2.1`, which `STATUS.md` names as part of
+the series but the diff file does not carry) has `e9ed924`'s tree,
+`3f85d4cc…`; the diff alone differs from it in that one lock line. The tree
+was compared, not the commit message. PR5 and PR-compat were never written
+and stay `NOT SUBMITTED`.
+
 | PR | change | state | note |
 |---|---|---|---|
-| PR1 registration | `.lu`/`.wolfi` → languageId `wolf`, `ServerConfig` row | `NOT SUBMITTED` | committed locally as `e9ed924` on `wolf-lsp-integration` (whole series, one commit); unpushed by working agreement. le01 re-based it onto trunk as `le01-wolf-land` — a fast-forward, trunk had not moved — with the suite green |
-| PR2 syntax | `Language::Wolf`, `wolf_def()` from the pinned grammar | `NOT SUBMITTED` | generated; regenerate before submitting if the pin moved |
-| PR3 installer panel | `KnownServer` row routing to the manual-info dialog | `NOT SUBMITTED` | |
-| PR4a framing | `FrameBuffer` — frame on bytes, decode whole messages | `NOT SUBMITTED` | the highest-value patch in the series; fixes a real split-multibyte bug |
-| PR4b stderr | bounded drain thread, 64-line tail | `NOT SUBMITTED` | fixes a ~64 KiB deadlock |
-| PR4c position encoding | declare `["utf-32"]`, read and honour the reply | `NOT SUBMITTED` | |
-| PR4d server messages | `window/logMessage` reaches a bounded client log | `NOT SUBMITTED` | |
-| PR-test live smoke | two `#[test]`s against a real `wolf lsp`, skipping loudly | `NOT SUBMITTED` | needs an installable `wolf` to be useful upstream |
+| PR1 registration | `.lu`/`.wolfi` → languageId `wolf`, `ServerConfig` row | `MERGED` | in `e9ed924` on upstream trunk, tree for tree (above); committed locally as `e9ed924` on `wolf-lsp-integration` (whole series, one commit); unpushed by working agreement. le01 re-based it onto trunk as `le01-wolf-land` — a fast-forward, trunk had not moved — with the suite green |
+| PR2 syntax | `Language::Wolf`, `wolf_def()` from the pinned grammar | `MERGED` | in `e9ed924` on upstream trunk, tree for tree (above); generated; regenerate before submitting if the pin moved |
+| PR3 installer panel | `KnownServer` row routing to the manual-info dialog | `MERGED` | in `e9ed924` on upstream trunk, tree for tree (above) |
+| PR4a framing | `FrameBuffer` — frame on bytes, decode whole messages | `MERGED` | in `e9ed924` on upstream trunk, tree for tree (above); the highest-value patch in the series; fixes a real split-multibyte bug |
+| PR4b stderr | bounded drain thread, 64-line tail | `MERGED` | in `e9ed924` on upstream trunk, tree for tree (above); fixes a ~64 KiB deadlock |
+| PR4c position encoding | declare `["utf-32"]`, read and honour the reply | `MERGED` | in `e9ed924` on upstream trunk, tree for tree (above) |
+| PR4d server messages | `window/logMessage` reaches a bounded client log | `MERGED` | in `e9ed924` on upstream trunk, tree for tree (above) |
+| PR-test live smoke | two `#[test]`s against a real `wolf lsp`, skipping loudly | `MERGED` | in `e9ed924` on upstream trunk, tree for tree (above); needs an installable `wolf` to be useful upstream |
 | PR5 CI lane | a minimal build+test workflow | `NOT SUBMITTED` | **offered, not written** — `clients/fackr/README.md` §"The CI lane fackr does not have" |
 | PR-compat version check | compare `wolf --version` against a declared range, once, into fackr's log surface | `NOT SUBMITTED` | **offered, not written.** The series predates `COMPAT.md`; the range statement travels with the patch, under fackr's version scheme, so this is a follow-up PR rather than a rider |
 

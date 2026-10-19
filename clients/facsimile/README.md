@@ -196,6 +196,15 @@ Three smaller traps — two measured at le08, the third at tl03:
   assertion that the fix publish is clean still passes, so nothing announces
   the damage. Use a flush key that cannot cross the last line — `ctrl-home`
   works. Measured at tl03.
+- **`-w` does not stop `fac` from restoring and SAVING a whole session in the
+  nearest enclosing `.fac` workspace.** On kasumi that is the account's
+  `$HOME`: the driven `fac` opened with the eight tabs in
+  `~/.fac/workspace.json` restored, `hello.lu` as a ninth, and wrote the
+  ninth tab and `active_tab` back into that file on exit. `HOME=` a scratch
+  directory moves `recents.json` and `state.json`, not `workspace.json`; an
+  empty `.fac/` above the checkout did not redirect it. The first such run lost
+  both edit rungs and the hover. Drive it as a user with no `.fac/` above the
+  checkout, and check that file's mtime before and after. Measured at tl26.
 
 The driver script is not committed to either repo: it is scaffolding, and the
 transcript is the artifact. The recipe above, the key table in `CLIENT.md`, and

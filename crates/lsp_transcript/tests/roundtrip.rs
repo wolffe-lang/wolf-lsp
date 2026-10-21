@@ -216,6 +216,85 @@ fn a_tilde_abbreviated_root_is_elided_too() {
     assert_eq!(params["workspaceFolders"][0]["uri"], "file://$REPO/");
 }
 
+/// A transcript whose one record is a client's `initialize` carrying
+/// `folders` as its `workspaceFolders`.
+fn initialize_with_folders(folders: Value) -> Transcript {
+    Transcript {
+        header: Header {
+            transcript: lsp_transcript::FORMAT_VERSION,
+            name: "helix/smoke".into(),
+            wolf_pin: "0".repeat(40),
+            profile: "helix".into(),
+            workspace: "vendor/upstream/samples".into(),
+            recorded: "2026-10-21".into(),
+        },
+        records: vec![Record {
+            seq: 1,
+            dir: Dir::C2s,
+            kind: Kind::Request,
+            id: Some(Value::from(1)),
+            method: Some("initialize".into()),
+            params: Some(serde_json::json!({ "workspaceFolders": folders })),
+            error: None,
+            result: None,
+            matcher: None,
+            normalize: Vec::new(),
+            t_us: None,
+        }],
+    }
+}
+
+/// wolf-lsp#18: a folder AT the repository root is named for the checkout.
+///
+/// helix (and nvim, vscode, fackr) name a workspace folder by its directory's
+/// basename, so a capture from a worktree at `/private/tmp/tl03` recorded
+/// `{"name": "tl03", "uri": "file://$REPO"}` against le08's `"wolf-lsp"`: the
+/// URI elided, its sibling not. The name of the folder that IS the repository
+/// root is the checkout's name, and elides to the root's placeholder.
+#[test]
+fn a_workspace_folder_at_the_repo_root_loses_the_checkout_name() {
+    let repo = std::path::PathBuf::from("/private/tmp/tl03");
+    for uri in ["file:///private/tmp/tl03", "file:///private/tmp/tl03/"] {
+        let mut t = initialize_with_folders(serde_json::json!([{ "name": "tl03", "uri": uri }]));
+        let norm = |t: &mut Transcript| {
+            Normalizer::new(Some(repo.join("vendor/upstream/samples")))
+                .with_repo_root(repo.clone())
+                .run(t);
+        };
+        norm(&mut t);
+        let folder = t.records[0].params.clone().expect("params")["workspaceFolders"][0].clone();
+        assert_eq!(folder["name"], "$REPO", "from {uri}: {folder}");
+        assert!(folder["uri"].as_str().unwrap().starts_with("file://$REPO"), "{folder}");
+        // Idempotent: a normalized record normalizes to itself.
+        let once = jsonl::to_string(&t);
+        norm(&mut t);
+        assert_eq!(jsonl::to_string(&t), once);
+    }
+}
+
+/// wolf-lsp#18's rule touches the repository root's own name and nothing else.
+///
+/// The 75 scripted transcripts name their folder `samples`, the workspace's
+/// basename, which the repository's layout fixes (`vendor/upstream/samples`)
+/// whatever the checkout is called: that is data, and stays. A folder that
+/// happens to share the checkout's name but is not the root keeps its name.
+#[test]
+fn a_folder_name_that_is_not_the_checkout_root_is_kept() {
+    let repo = std::path::PathBuf::from("/home/dev/wolf-lsp");
+    let mut t = initialize_with_folders(serde_json::json!([
+        { "name": "samples", "uri": "file:///home/dev/wolf-lsp/vendor/upstream/samples" },
+        { "name": "wolf-lsp", "uri": "file:///home/dev/elsewhere/wolf-lsp" },
+        { "name": "wolf-lsp", "uri": "file:///home/dev/wolf-lsp" },
+    ]));
+    Normalizer::new(Some(repo.join("vendor/upstream/samples")))
+        .with_repo_root(repo)
+        .run(&mut t);
+    let folders = t.records[0].params.clone().expect("params")["workspaceFolders"].clone();
+    assert_eq!(folders[0], serde_json::json!({ "name": "samples", "uri": "file://$WS" }));
+    assert_eq!(folders[1]["name"], "wolf-lsp", "{folders}");
+    assert_eq!(folders[2], serde_json::json!({ "name": "$REPO", "uri": "file://$REPO" }));
+}
+
 /// A windows URI elides to the SAME placeholder shape a unix one does.
 ///
 /// `file:` needs three slashes before an absolute path. On unix the workspace

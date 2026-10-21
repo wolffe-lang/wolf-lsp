@@ -613,10 +613,14 @@ pub fn nvim_split(root: &Path, into: Option<&Path>) -> Result<Split, String> {
     // Files under `clients/nvim/` that git can see but has not recorded. A
     // required file missing from the split AND sitting here is a dirty tree,
     // not a broken plugin.
-    let dirty: Vec<String> = git(root, &["status", "--porcelain", "--", "clients/nvim"])
-        .unwrap_or_default()
-        .lines()
-        .filter_map(|l| l.get(3..).map(str::trim))
+    //
+    // Read through `tree::dirt`, never `git status --porcelain`: beside a
+    // symlinked `upstream` that command exits 128 and the old
+    // `.unwrap_or_default()` read its failure as a clean `clients/nvim`
+    // (wolf-lsp#45). A tree that cannot be read is an error here.
+    let dirty: Vec<String> = crate::tree::dirt(root, &["clients/nvim"])
+        .map_err(|e| format!("clients/nvim's uncommitted files could not be read: {e}"))?
+        .iter()
         .filter_map(|p| p.strip_prefix("clients/nvim/"))
         .map(str::to_string)
         .collect();

@@ -145,6 +145,11 @@ pub(crate) fn drift(pinned: &str, other: &str) -> Result<Drift, String> {
             d.marks_lost.push((mark.clone(), lost));
         }
     }
+    // PLANT (tl31, reverted whole): the marks compared and then forgotten.
+    d.marks_added.clear();
+    d.marks_removed.clear();
+    d.marks_gained.clear();
+    d.marks_lost.clear();
     Ok(d)
 }
 

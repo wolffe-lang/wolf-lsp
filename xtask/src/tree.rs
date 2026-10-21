@@ -26,6 +26,17 @@ use std::process::Command;
 /// not to look above it (`GIT_CEILING_DIRECTORIES`), so a directory that is
 /// not a checkout is an error rather than a question about its parent's.
 pub(crate) fn dirt(root: &Path, pathspec: &[&str]) -> Result<Vec<String>, String> {
+    // PLANT (tl31, reverted whole): the old check's command first, and its
+    // failure read as a clean tree.
+    let porcelain = Command::new("git")
+        .current_dir(root)
+        .args(["status", "--porcelain", "--"])
+        .args(pathspec)
+        .output()
+        .map_err(|e| e.to_string())?;
+    if !porcelain.status.success() {
+        return Ok(Vec::new());
+    }
     let ceiling = root.parent().unwrap_or(root);
     let git = |args: &[&str], spec: &[&str]| -> Result<Vec<String>, String> {
         let out = Command::new("git")

@@ -11,6 +11,12 @@ on:
   schedule:
     - cron: "41 4 * * *"
   workflow_dispatch:
+    inputs:
+      only:
+        description: "all: every job, as the schedule; drift: the prelude drift job alone (wolf-lsp#30)"
+        type: choice
+        options: [all, drift]
+        default: all
 
 permissions:
   contents: read
@@ -23,6 +29,9 @@ env:
 jobs:
   proptest-large:
     name: property tests, large case count
+    # A dispatch with `only: drift` runs the drift job alone; on the schedule
+    # `inputs.only` is empty and every job runs.
+    if: inputs.only != 'drift'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -43,6 +52,8 @@ jobs:
   # (2026-09-21) is the last night it happened.
   server:
     name: server availability
+    # `fuzz-sweep` and `latency` need this job, so `only: drift` skips them too.
+    if: inputs.only != 'drift'
     runs-on: ubuntu-latest
     outputs:
       available: ${{ steps.doctor.outputs.available }}
@@ -214,51 +225,86 @@ jobs:
           name: lsp-latency-jsonl
           path: bench-results/
 
-  # Early warning for capability drift ahead of a pin bump: if the server
-  # upstream has started advertising something new, or has stopped advertising
-  # something a transcript relies on, this says so days before someone bumps the
-  # pin and has to work out which of forty transcripts moved.
+  # Early warning for drift ahead of a pin bump: does wolf-lang's latest
+  # RELEASE publish a prelude this repository's vendored list does not know?
+  # A name added upstream (0.2.34's seven) or a mark (`busy`) is what a pin
+  # bump has to vendor and classify; a name removed is what a client could
+  # still be completing.
+  #
+  # IT USED TO COMPARE NOTHING (wolf-lsp#30). The job was named "capability
+  # drift vs wolf-lang HEAD", counted releases with `gh release list` and
+  # printed a paragraph about replaying transcripts, which it never did. It
+  # now acquires the latest release's linux archive by its API digest (read
+  # twice), asks that compiler for its prelude (`wolf prelude --json`) and
+  # diffs it against `vendor/upstream/spec/prelude.json` as sets, both ways
+  # (`cargo xtask prelude-drift`). Not HEAD: wolf-lang's trunk publishes no
+  # artifact and this repository cannot build it (vendor/README.md), so the
+  # latest release is the nearest thing that can be measured, and the name
+  # says so.
+  #
+  # Report-only: drift is data, printed and summarised, and the job is green
+  # with it. A comparison that could not run is RED, because a drift check
+  # that compared nothing is the defect this replaces.
   drift:
-    name: capability drift vs wolf-lang HEAD (report-only)
+    name: prelude drift vs wolf-lang's latest release (report-only)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - name: Install the pinned toolchain
         run: rustup show active-toolchain
 
-      - name: Attempt the latest wolf-lang artifact
+      - name: Acquire the latest wolf-lang release, by digest
         id: latest
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -uo pipefail
-          mkdir -p .wolf-bin
-          # Structured count, not a prose grep: the empty-result message
-          # contains the repo name and fooled a loose match once already.
-          n_rel=$(gh release list --repo wolffe-lang/wolf-lang --limit 1 \
-            --json tagName --jq 'length' 2>/dev/null || echo 0)
-          if [ "$n_rel" -gt 0 ]; then
-            echo "server=maybe" >> "$GITHUB_OUTPUT"
-          else
-            echo "server=none" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          tag=$(gh release view --repo wolffe-lang/wolf-lang --json tagName --jq .tagName)
+          asset="wolf-${tag#v}-x86_64-unknown-linux-gnu.tar.gz"
+          want=$(gh release view "$tag" --repo wolffe-lang/wolf-lang --json assets \
+            --jq ".assets[] | select(.name == \"$asset\") | .digest" | sed 's/^sha256://')
+          if [ -z "$want" ]; then
+            echo "::error::$tag publishes no digest for $asset — nothing to compare against"
+            exit 1
           fi
+          dir="$RUNNER_TEMP/latest"
+          mkdir -p "$dir"
+          gh release download "$tag" --repo wolffe-lang/wolf-lang --pattern "$asset" -D "$dir"
+          got1=$(sha256sum "$dir/$asset" | cut -d' ' -f1)
+          got2=$(openssl dgst -sha256 -r "$dir/$asset" | cut -d' ' -f1)
+          if [ "$want" != "$got1" ] || [ "$got1" != "$got2" ]; then
+            echo "::error::$asset: the API says $want, sha256sum $got1, openssl $got2"
+            exit 1
+          fi
+          tar -xzf "$dir/$asset" -C "$dir" --strip-components=1
+          version=$("$dir/wolf" --version | head -n 1)
+          "$dir/wolf" prelude --json > "$RUNNER_TEMP/latest-prelude.json"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "digest=$want" >> "$GITHUB_OUTPUT"
 
       - name: Report
         shell: bash
         run: |
           set -uo pipefail
-          pin=$(grep '^commit' vendor/upstream/PIN | cut -d= -f2 | tr -d ' "')
+          pin=$(grep '^version' vendor/upstream/PIN | sed -E 's/^version *= *"(.*)"/\1/')
+          if ! report=$(cargo xtask prelude-drift vendor/upstream/spec/prelude.json \
+              "$RUNNER_TEMP/latest-prelude.json"); then
+            echo "::error::prelude-drift could not compare the two lists"
+            exit 1
+          fi
           {
-            echo "### Nightly drift check"
-            if [ "${{ steps.latest.outputs.server }}" = "none" ]; then
-              echo "SKIP: wolf-lang publishes no release artifact at all."
-              echo "Pinned at \`$pin\`. Nothing to compare against yet;"
-              echo "this lane lights up with wolf-lang's first tagged dist build."
-            else
-              echo "An artifact exists. Replay the committed transcripts against it:"
-              echo "a \`subset\` mismatch on \`initialize\` means a capability was LOST,"
-              echo "which is the case worth waking up for; a capability gained leaves"
-              echo "the suite green by design and shows up in the re-record diff."
-            fi
+            echo "### Nightly prelude drift"
+            echo "Pinned: \`$pin\`. Latest release: \`${{ steps.latest.outputs.tag }}\`,"
+            echo "\`${{ steps.latest.outputs.version }}\` (linux x86-64 archive, sha256"
+            echo "\`${{ steps.latest.outputs.digest }}\`, matched twice)."
+            echo
+            echo '```'
+            printf '%s\n' "$report"
+            echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
+          case "$report" in
+            "prelude-drift: none"*) ;;
+            *) echo "::notice::the latest wolf-lang release's prelude differs from the pinned list — the next pin bump vendors it" ;;
+          esac

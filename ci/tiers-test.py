@@ -4,10 +4,11 @@ ci/tiers-test.py, tl21, cut to wolf-lsp). python3, git and bash only.
 
     ci/tiers-test.py
 
-  T1  the tiers by event: a trunk push, the nightly, a dispatch (tier full,
-      or no tier) and the `full-matrix` label are full on every host;
-      another label's `labeled` event is a noop; a dispatch's tier must be
-      full or pr.
+  T1  the tiers by event: the nightly and a dispatch with tier all are
+      all, every job on every leg; a trunk push, a dispatch (tier full, or
+      no tier) and the `full-matrix` label are full, every job on the
+      merge's legs (tl30); another label's `labeled` event is a noop; a
+      dispatch's tier must be full, all or pr.
   T2  the pull-request tiers by path: each path names the jobs THIS
       repository's block below says, on the pull request's hosts; prose
       alone is noop; prose beside code is that code's tier.
@@ -22,12 +23,16 @@ ci/tiers-test.py, tl21, cut to wolf-lsp). python3, git and bash only.
       cancel-in-progress is for pull requests only and every other run has a
       concurrency group of its own run id; the trunk push (and no other
       branch's), the nightly, the label and the dispatch's `tier` input are
-      there; the full tier's hosts are the ones the jobs ran on before tl28.
+      there; the all tier's legs are the ones the jobs ran on before tl28,
+      the full tier's are those but the ones tl30 moved to the nightly,
+      and the full tier keeps a macOS leg (the smoke).
   T5  the tripwire: no line of this repository's code that reads a file
       names a path the planner calls prose (THIS repository's block). The
       search is shown to fire on paths it must find. (A WARN, not a
       failure: a tracked path no rule names; its pull request runs full.)
-  T6  the verdict: green for a full, a pr and a noop run; red for a chosen
+  T6  the verdict: green for an all, a full, a pr and a noop run; red for
+      an all run on the merge's legs, a full run on every leg (the merge
+      before tl30), a chosen
       job failed, skipped or cancelled, a job that ran unasked, a failed
       plan, a plan with no tier, a full run that chose less, a full run on
       the pull request's hosts, and green when GitHub drops an output that
@@ -65,8 +70,8 @@ def say(ok, what):
 
 
 # --- this repository's -------------------------------------------------------------
-NIGHTLY = None            # (its tier, its jobs); None: the full tier
-FULL_LEG_TIERS = ("full",)  # the tiers that run every leg
+NIGHTLY = None            # (its tier, its jobs); None: the all tier
+FULL_LEG_TIERS = ("all",)  # the tiers that run every leg
 WORKFLOW_FILE = "ci.yml"
 WORKFLOW_NAME = "ci"
 EVERY_JOB = ["test", "nvim-plugin", "vscode-extension", "vscode-package", "server-lane", "helix-config",
@@ -81,6 +86,12 @@ BEFORE_HOSTS = {"matrix_test": _H, "matrix_nvim_plugin": _H, "matrix_vscode_exte
                 "matrix_server_lane": _H, "matrix_helix_config": _H, "matrix_emacs_mode": _H}
 ALL_HOSTS = BEFORE_HOSTS
 PR_HOSTS = {k: _H[:1] for k in BEFORE_HOSTS}
+# The merge's legs (tl30, the macOS cap): on macOS the server-free gate
+# alone (the smoke); the server lane and the editor lanes there are the
+# nightly's.
+MOVED = {k: ([_H[1]] if k in ("matrix_nvim_plugin", "matrix_server_lane", "matrix_helix_config", "matrix_emacs_mode") else [])
+         for k in BEFORE_HOSTS}
+MERGE_HOSTS = {k: [l for l in v if l not in MOVED[k]] for k, v in BEFORE_HOSTS.items()}
 CODE_PATH = ("crates/lsp_harness/src/replay.rs", EVERY_JOB)
 NVIM = ["test", "nvim-plugin", "independence"]
 VSCODE = ["test", "vscode-extension", "vscode-package", "independence"]
@@ -134,7 +145,7 @@ def extra_checks(say, plan, expect, blocks, wf):
     say("github.ref }}" not in wf, "T4 the old per-ref group that cancelled trunk's runs is gone")
 # --- end of this repository's ------------------------------------------------------
 WORKFLOW = os.path.join(ROOT, ".github", "workflows", WORKFLOW_FILE)
-NIGHTLY = NIGHTLY or ("full", FULL_JOBS)
+NIGHTLY = NIGHTLY or ("all", FULL_JOBS)
 
 
 def clean_env(**more):
@@ -168,11 +179,15 @@ def expect(name, got, tier, jobs):
         why.append("tier %s, wanted %s" % (got["tier"], tier))
     if got["jobs"] != jobs:
         why.append("jobs %s, wanted %s" % (" ".join(got["jobs"]) or "none", " ".join(jobs) or "none"))
-    hosts = ALL_HOSTS if tier in FULL_LEG_TIERS else PR_HOSTS
+    hosts = ALL_HOSTS if tier in FULL_LEG_TIERS else MERGE_HOSTS if tier == "full" else PR_HOSTS
     if not got["tier"].startswith("ERROR") and got.get("matrix") != hosts:
         why.append("hosts %s, wanted %s" % (json.dumps(got.get("matrix")), json.dumps(hosts)))
-    shown = "every job (%d), every host" % len(jobs) if tier == "full" else (" ".join(jobs) or "no job")
-    shown += ", every host" if tier in FULL_LEG_TIERS and tier != "full" else ""
+    if tier == "all":
+        shown = "every job (%d), every leg" % len(jobs)
+    elif tier == "full":
+        shown = "every job (%d), the merge's legs" % len(jobs)
+    else:
+        shown = (" ".join(jobs) or "no job") + (", every leg" if tier in FULL_LEG_TIERS else "")
     say(not why, "%s: %s%s" % (name, tier, (" (" + "; ".join(why) + ")") if why else ", " + shown))
 
 
@@ -186,7 +201,8 @@ expect("T1 a push to trunk", plan(event="push"), "full", FULL_JOBS)
 expect("T1 the nightly", plan(event="schedule"), NIGHTLY[0], NIGHTLY[1])
 expect("T1 a dispatch, no tier", plan(event="workflow_dispatch"), "full", FULL_JOBS)
 expect("T1 a dispatch, tier full", plan(event="workflow_dispatch", tier="full"), "full", FULL_JOBS)
-say(plan(event="workflow_dispatch", tier="partial")["tier"].startswith("ERROR rc=2"), "T1 a dispatch's tier is full or pr, nothing else")
+expect("T1 a dispatch, tier all", plan(event="workflow_dispatch", tier="all"), "all", FULL_JOBS)
+say(plan(event="workflow_dispatch", tier="partial")["tier"].startswith("ERROR rc=2"), "T1 a dispatch's tier is full, all or pr, nothing else")
 expect("T1 a pull request labelled full-matrix, prose only",
        plan([PROSE_PATHS[0]], event="pull_request", action="synchronize", labels="bug,full-matrix"), "full", FULL_JOBS)
 expect("T1 the full-matrix label added",
@@ -232,7 +248,7 @@ def verdict(needs):
 
 def run_of(tier, chosen, results=None, drop=(), hosts=None):
     outs = {"tier": tier, "jobs": json.dumps(chosen)}
-    for k, v in (hosts if hosts is not None else (ALL_HOSTS if tier == "full" else PR_HOSTS)).items():
+    for k, v in (hosts if hosts is not None else (ALL_HOSTS if tier in FULL_LEG_TIERS else MERGE_HOSTS if tier == "full" else PR_HOSTS)).items():
         outs[k] = json.dumps(v, separators=(",", ":"))
     for k in drop:  # GitHub leaves an empty output out of `needs`
         del outs[k]
@@ -251,6 +267,11 @@ def vexpect(name, needs, want):
 failed = {"result": "failure", "outputs": {}}
 first, last = FULL_JOBS[0], FULL_JOBS[-1]
 vexpect("a green full run", run_of("full", FULL_JOBS), 0)
+vexpect("a green all run", run_of("all", FULL_JOBS), 0)
+if MERGE_HOSTS != ALL_HOSTS:
+    vexpect("a full run on every leg (the merge before tl30)", run_of("full", FULL_JOBS, hosts=ALL_HOSTS), 1)
+    vexpect("an all run on the merge's legs", run_of("all", FULL_JOBS, hosts=MERGE_HOSTS), 1)
+vexpect("an all run that chose less than every job", run_of("all", FULL_JOBS[:-1]), 1)
 vexpect("a green pr run", run_of("pr", in_order(code_jobs)), 0)
 vexpect("a noop run", run_of("noop", []), 0)
 vexpect("a noop run whose jobs output is absent", run_of("noop", [], drop=["jobs"]), 0)
@@ -331,10 +352,15 @@ say(re.search(r"^  push:\n    branches: \[%s\]\n" % re.escape(PUSH_BRANCHES), wf
 say(re.search(r"^  schedule:\n(\s+#.*\n)*\s+- cron: ", wf, re.M) is not None, "T4 the nightly runs")
 say("    types: [opened, synchronize, reopened, labeled]\n" in wf, "T4 adding a label starts a run")
 say(re.search(r"^  workflow_dispatch:\n    inputs:\n(?:      [a-z_]+:\n(?:        .*\n)+)*      tier:\n", wf, re.M) is not None
-    and "        options: [full, pr]\n" in wf, "T4 a dispatch takes the tier input, full or pr")
-say(plan(event="push")["matrix"] == ALL_HOSTS, "T4 the full tier's hosts are the ones before tl28: %s" % json.dumps(BEFORE_HOSTS))
+    and "        options: [full, all, pr]\n" in wf, "T4 a dispatch takes the tier input, full, all or pr")
+say(plan(event="schedule")["matrix"] == ALL_HOSTS, "T4 the all tier's (the nightly's) legs are the ones before tl28: %s" % json.dumps(BEFORE_HOSTS))
 say(all(e in ALL_HOSTS.get(k, []) for k, v in BEFORE_HOSTS.items() for e in v) and
-    all(len(ALL_HOSTS[k]) == len(v) for k, v in BEFORE_HOSTS.items()), "T4 no host left the full tier")
+    all(len(ALL_HOSTS[k]) == len(v) for k, v in BEFORE_HOSTS.items()), "T4 no host left the all tier (the nightly's)")
+say(plan(event="push")["matrix"] == MERGE_HOSTS, "T4 the full tier (the merge, a trunk push) runs the merge's legs: %s" % json.dumps(MERGE_HOSTS))
+left = {k: [l for l in v if l not in MERGE_HOSTS.get(k, [])] for k, v in ALL_HOSTS.items()}
+say(left == MOVED and all(l in ALL_HOSTS[k] for k, v in MERGE_HOSTS.items() for l in v),
+    "T4 what the merge leaves is exactly tl30's move, and every leg of it runs in the nightly: %s" % json.dumps({k: v for k, v in left.items() if v}))
+say(any(l.get("os") == "macos-latest" for v in MERGE_HOSTS.values() for l in v), "T4 the merge keeps a macOS smoke (tl30)")
 
 # --- T7 the change read from git ----------------------------------------------------
 def g_(repo, *args):

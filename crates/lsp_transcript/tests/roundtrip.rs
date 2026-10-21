@@ -264,7 +264,10 @@ fn a_workspace_folder_at_the_repo_root_loses_the_checkout_name() {
         norm(&mut t);
         let folder = t.records[0].params.clone().expect("params")["workspaceFolders"][0].clone();
         assert_eq!(folder["name"], "$REPO", "from {uri}: {folder}");
-        assert!(folder["uri"].as_str().unwrap().starts_with("file://$REPO"), "{folder}");
+        assert!(
+            folder["uri"].as_str().unwrap().starts_with("file://$REPO"),
+            "{folder}"
+        );
         // Idempotent: a normalized record normalizes to itself.
         let once = jsonl::to_string(&t);
         norm(&mut t);
@@ -290,9 +293,15 @@ fn a_folder_name_that_is_not_the_checkout_root_is_kept() {
         .with_repo_root(repo)
         .run(&mut t);
     let folders = t.records[0].params.clone().expect("params")["workspaceFolders"].clone();
-    assert_eq!(folders[0], serde_json::json!({ "name": "samples", "uri": "file://$WS" }));
+    assert_eq!(
+        folders[0],
+        serde_json::json!({ "name": "samples", "uri": "file://$WS" })
+    );
     assert_eq!(folders[1]["name"], "wolf-lsp", "{folders}");
-    assert_eq!(folders[2], serde_json::json!({ "name": "$REPO", "uri": "file://$REPO" }));
+    assert_eq!(
+        folders[2],
+        serde_json::json!({ "name": "$REPO", "uri": "file://$REPO" })
+    );
 }
 
 /// A windows URI elides to the SAME placeholder shape a unix one does.

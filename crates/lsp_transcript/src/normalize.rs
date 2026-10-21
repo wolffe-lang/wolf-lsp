@@ -339,10 +339,10 @@ impl Normalizer {
 fn name_the_root_folder(value: &mut Value, checkout: &str) {
     match value {
         Value::Object(map) => {
-            let at_root = map
-                .get("uri")
-                .and_then(Value::as_str)
-                .is_some_and(|u| u.strip_prefix("file://").is_some_and(|t| t.trim_end_matches('/') == REPO));
+            let at_root = map.get("uri").and_then(Value::as_str).is_some_and(|u| {
+                u.strip_prefix("file://")
+                    .is_some_and(|t| t.trim_end_matches('/') == REPO)
+            });
             if at_root && map.get("name").and_then(Value::as_str) == Some(checkout) {
                 map.insert("name".to_string(), Value::from(REPO));
             }

@@ -133,7 +133,14 @@ and `CLAUDE.md` are gitignored, as on the compiler and interpreter tracks.
 cargo xtask ci
 ```
 
-Green, on a clean tree. `wolf lsp` exists upstream as of s52, so the
+Green, on a clean tree, and checked: the last step is `cargo xtask
+clean-tree`, which names every file that differs from `HEAD` or is untracked
+and not ignored, and fails when `git` cannot answer. It reads the tree with
+`git diff HEAD` and `git ls-files --others`, the submodule path excluded,
+never `git status --porcelain`, which exits 128 beside a symlinked `upstream`
+(a lane's switch script points the submodule path at a tag clone) and so
+recorded an empty, "clean" tree whatever it held (wolf-lsp#45). Run it on its
+own as the last step of any gauntlet. `wolf lsp` exists upstream as of s52, so the
 server-dependent lanes light up as soon as a binary at the pinned version
 resolves. Without one, `lspconf doctor` reports `SERVER UNAVAILABLE`, which is
 a skip and not a failure, and `xtask ci` treats it as one.

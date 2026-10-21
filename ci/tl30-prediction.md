@@ -66,3 +66,21 @@ macOS slots a run** (test 0.9, server lane 2.3, nvim 0.5, helix 0.4, emacs
    is `tier pr`; the labelled run at the final head is the first `tier
    full` of the new shape and is the measurement (the orchestrator watches
    the run, RULES §6).
+
+## Evidence
+
+**Seen red locally, then in CI.** Branch `tl30-plant` (`4404484`, never
+merged) plants one break over `5342ada`: `full_leg` answers True for every
+leg, so the merge tier runs the macOS server and editor lanes again (the merge's shape before tl30).
+Locally, `ci/tiers-test.py` failed on exactly 24 checks (T1 five, T3 ten,
+T6 two, T4 one, T7 six: every `full` plan's legs, the verdict's green full
+run and its red full-on-every-leg run, the merge's legs); unplanted it
+passes, 161 checks; trunk's planner (`76cca08`) under the new test fails 27.
+The dispatch `gh workflow run --ref tl30-plant -f tier=pr` is **run
+39609663691**: the plan job (119254903340) failed at "the planner can say no" on the
+same 24 (`tiers-test: FAIL (24)`), every other job skipped, `tier unplanned`
+red, the nightly's issue skipped (a dispatch opens none).
+
+The pull request's own runs (its `tier pr`, and the labelled `tier full` at
+the final head, the first of the new shape and the measurement) are named
+in the pull request's body.

@@ -19,11 +19,14 @@
 # which hosts, every other job runs only when the plan names it, and the
 # run's LAST job says which tier it was:
 #
-#   tier full   every job on every host. A push to trunk, the nightly
-#               `schedule`, a `workflow_dispatch` (tier full, the default),
-#               a pull request labelled `full-matrix`; and a pull request
-#               with a changed path no rule of `ci/tiers.py` names, or whose
-#               change cannot be read.
+#   tier all    every job on every host. The nightly `schedule` and a
+#               `workflow_dispatch` with tier all (tl30).
+#   tier full   the merge gate: every job, on macOS the server-free gate
+#               alone (the merge's macOS smoke). A pull request labelled
+#               `full-matrix`, a push to trunk, a `workflow_dispatch` (tier
+#               full, the default); and a pull request with a changed path
+#               no rule of `ci/tiers.py` names, or whose change cannot be
+#               read.
 #   tier pr     any other pull-request run (and a dispatch with tier pr):
 #               the jobs its changed paths name, on ubuntu alone. The
 #               harness, transcripts, profiles, pins and CI name every job;
@@ -33,13 +36,20 @@
 #               paths are ALL prose (CONTRIBUTING.md), or a label other than
 #               `full-matrix`.
 #
-# Nothing a job checks changed and no job left the full tier: a pull
-# request's push no longer runs the macOS and windows legs or the lanes its
-# paths do not name, and they run before the merge, on every trunk push and
-# every night. The `tier` job fails unless the plan succeeded, the jobs and
-# hosts it chose are that tier's, every chosen job succeeded and every
-# other was skipped; so a green `tier full` is "every job on every host,
-# green", and a green `tier pr` is never that. A red nightly opens an issue
+# Nothing a job checks changed: a pull request's push runs ubuntu alone and
+# the lanes its paths name; the merge (the label, and again the trunk push)
+# every job, the server lane and the editor lanes on ubuntu and windows;
+# the nightly every job on every host. THE macOS CAP (tl30): the org has
+# five macOS slots for every repository, busy 55% of the time after the
+# Team plan (tl29), and the merge here asked for five of them for four and a
+# half minutes of work; in the last 60 runs with a macOS job no macOS job
+# was red where its ubuntu leg was green (ci/tl30-prediction.md), so the
+# macOS server and editor lanes run every night instead of twice a merge.
+# The `tier` job fails unless the plan succeeded, the jobs and hosts it
+# chose are that tier's, every chosen job succeeded and every other was
+# skipped; so a green `tier all` is "every job on every host, green", a
+# green `tier full` the merge's legs, and a green `tier pr` is never
+# either. A red nightly opens an issue
 # (`nightly-red`; nightly.yml's sweeps are report-only by construction and
 # unchanged).
 #
@@ -57,15 +67,16 @@ on:
     # other label's run is a noop (the plan, then nothing).
     types: [opened, synchronize, reopened, labeled]
   schedule:
-    # Nightly, the full tier, on trunk. (nightly.yml is the long sweeps,
+    # Nightly, the all tier, on trunk: every job on every host, the macOS
+    # lanes the merge leaves (tl30) among them. (nightly.yml is the long sweeps,
     # report-only; it runs none of these jobs.)
     - cron: "47 9 * * *"
   workflow_dispatch:
     inputs:
       tier:
-        description: "full: every job on every host; pr: this branch's change against trunk, as a pull request's (a path no rule names runs full)"
+        description: "full: the merge's legs (on macOS the server-free gate alone); all: every job on every host, as the nightly; pr: this branch's change against trunk, as a pull request's (a path no rule names runs full)"
         type: choice
-        options: [full, pr]
+        options: [full, all, pr]
         default: full
 
 permissions:
@@ -138,7 +149,8 @@ jobs:
       fail-fast: false
       matrix:
         # The hosts are the plan's (ci/tiers.py MATRIX): ubuntu, macOS and
-        # windows in the full tier, ubuntu alone in a pull request's.
+        # windows in the all and full tiers (on macOS the merge's smoke, tl30),
+        # ubuntu alone in a pull request's.
         include: ${{ fromJSON(needs.plan.outputs.matrix_test || '[]') }}
     steps:
       # No `submodules:` key, deliberately. `upstream/` is the private wolf-lang
@@ -252,7 +264,9 @@ jobs:
       fail-fast: false
       matrix:
         # The hosts are the plan's (ci/tiers.py MATRIX): ubuntu, macOS and
-        # windows in the full tier, ubuntu alone in a pull request's.
+        # windows in the all tier (the nightly), ubuntu and windows in the
+        # full tier (the merge; tl30, the macOS cap), ubuntu alone in a pull
+        # request's.
         include: ${{ fromJSON(needs.plan.outputs.matrix_nvim_plugin || '[]') }}
     steps:
       - uses: actions/checkout@v5
@@ -530,7 +544,9 @@ jobs:
       fail-fast: false
       matrix:
         # The hosts are the plan's (ci/tiers.py MATRIX): ubuntu, macOS and
-        # windows in the full tier, ubuntu alone in a pull request's.
+        # windows in the all tier (the nightly), ubuntu and windows in the
+        # full tier (the merge; tl30, the macOS cap), ubuntu alone in a pull
+        # request's.
         include: ${{ fromJSON(needs.plan.outputs.matrix_server_lane || '[]') }}
     steps:
       - uses: actions/checkout@v5
@@ -687,7 +703,9 @@ jobs:
       fail-fast: false
       matrix:
         # The hosts are the plan's (ci/tiers.py MATRIX): ubuntu, macOS and
-        # windows in the full tier, ubuntu alone in a pull request's.
+        # windows in the all tier (the nightly), ubuntu and windows in the
+        # full tier (the merge; tl30, the macOS cap), ubuntu alone in a pull
+        # request's.
         include: ${{ fromJSON(needs.plan.outputs.matrix_helix_config || '[]') }}
     steps:
       - uses: actions/checkout@v5
@@ -815,7 +833,9 @@ jobs:
       fail-fast: false
       matrix:
         # The hosts are the plan's (ci/tiers.py MATRIX): ubuntu, macOS and
-        # windows in the full tier, ubuntu alone in a pull request's.
+        # windows in the all tier (the nightly), ubuntu and windows in the
+        # full tier (the merge; tl30, the macOS cap), ubuntu alone in a pull
+        # request's.
         include: ${{ fromJSON(needs.plan.outputs.matrix_emacs_mode || '[]') }}
     steps:
       - uses: actions/checkout@v5

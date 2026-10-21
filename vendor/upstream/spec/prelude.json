@@ -154,6 +154,7 @@
     {"name": "os_wait_poll", "kind": "function", "anchor": "os.host.sigs", "w0304": true},
     {"name": "os_wait_status_core", "kind": "function", "anchor": "os.host.sigs", "w0304": true},
     {"name": "os_wait_poll_core", "kind": "function", "anchor": "os.host.sigs", "w0304": true},
+    {"name": "os_fork", "kind": "function", "anchor": "os.host.sigs", "w0304": true},
     {"name": "os_random", "kind": "function", "anchor": "os.host.sigs", "w0304": true},
     {"name": "os_error", "kind": "function", "anchor": "os.host.sigs", "w0304": true},
     {"name": "os_error_text", "kind": "function", "anchor": "os.host.sigs", "w0304": true},

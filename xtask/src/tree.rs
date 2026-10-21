@@ -55,7 +55,10 @@ pub(crate) fn dirt(root: &Path, pathspec: &[&str]) -> Result<Vec<String>, String
     spec.push(":(exclude)upstream");
     let mut found: BTreeSet<String> = BTreeSet::new();
     found.extend(git(&["diff", "HEAD", "--name-only", "-z"], &spec)?);
-    found.extend(git(&["ls-files", "--others", "--exclude-standard", "-z"], &spec)?);
+    found.extend(git(
+        &["ls-files", "--others", "--exclude-standard", "-z"],
+        &spec,
+    )?);
     // The gitlink, where git can read it: a moved submodule is dirt in a real
     // checkout. Beside a lane's symlink git refuses the path, so it is not
     // asked (the symlink is the lane's device, not the tree's content).
@@ -75,7 +78,9 @@ pub(crate) fn check(root: &Path) -> Vec<String> {
             .into_iter()
             .map(|p| format!("`{p}` differs from HEAD or is untracked"))
             .collect(),
-        Err(e) => vec![format!("the tree could not be read, so it is not known to be clean: {e}")],
+        Err(e) => vec![format!(
+            "the tree could not be read, so it is not known to be clean: {e}"
+        )],
     }
 }
 
@@ -110,7 +115,11 @@ mod tests {
     }
     fn ok(dir: &Path, args: &[&str]) {
         let out = git(dir, args);
-        assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+        assert!(
+            out.status.success(),
+            "git {args:?}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
     }
 
     /// A repository with one tracked file and, when asked, an `upstream`
@@ -127,7 +136,15 @@ mod tests {
             .unwrap();
             ok(dir, &["add", ".gitmodules"]);
             let sha = "85dab5d7e597680d6fd7034f1d7ed2acb9a92f97";
-            ok(dir, &["update-index", "--add", "--cacheinfo", &format!("160000,{sha},upstream")]);
+            ok(
+                dir,
+                &[
+                    "update-index",
+                    "--add",
+                    "--cacheinfo",
+                    &format!("160000,{sha},upstream"),
+                ],
+            );
             // A checkout that never ran `submodule update` has the path as
             // an empty directory, which git reads as the gitlink unchanged.
             std::fs::create_dir_all(dir.join("upstream")).unwrap();
@@ -152,10 +169,16 @@ mod tests {
         // The blindness, reproduced: the old check's command fails and says
         // nothing on stdout, so a record of its stdout reads clean.
         let porcelain = git(&dir, &["status", "--porcelain"]);
-        assert!(!porcelain.status.success(), "git status succeeded beside the symlink");
+        assert!(
+            !porcelain.status.success(),
+            "git status succeeded beside the symlink"
+        );
         assert!(porcelain.stdout.is_empty());
 
-        assert_eq!(dirt(&dir, &["."]).unwrap(), vec!["a.txt".to_string(), "b.txt".to_string()]);
+        assert_eq!(
+            dirt(&dir, &["."]).unwrap(),
+            vec!["a.txt".to_string(), "b.txt".to_string()]
+        );
         assert_eq!(dirt(&dir, &["b.txt"]).unwrap(), vec!["b.txt".to_string()]);
     }
 
@@ -176,7 +199,10 @@ mod tests {
         // Not a repository (and git's ceiling stops it looking above the
         // root it is handed): the check FAILS, it does not read as clean.
         let probe = git(&s.0, &["rev-parse", "--git-dir"]);
-        assert!(!probe.status.success(), "the scratch dir is inside a repository");
+        assert!(
+            !probe.status.success(),
+            "the scratch dir is inside a repository"
+        );
         let got = dirt(&s.0, &["."]);
         assert!(got.is_err(), "a failing git read as {got:?}");
     }

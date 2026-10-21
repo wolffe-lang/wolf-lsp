@@ -129,7 +129,8 @@ fn prelude_drift(args: &[String]) -> ExitCode {
         return ExitCode::from(2);
     };
     let read = |p: &String| std::fs::read_to_string(p).map_err(|e| format!("{p}: {e}"));
-    let compared = read(pinned).and_then(|a| read(other).and_then(|b| prelude_drift::drift(&a, &b)));
+    let compared =
+        read(pinned).and_then(|a| read(other).and_then(|b| prelude_drift::drift(&a, &b)));
     match compared {
         Ok(d) => {
             println!("{}", prelude_drift::render(&d));
@@ -240,7 +241,10 @@ fn ci() -> ExitCode {
         for d in &dirty {
             eprintln!("  {d}");
         }
-        eprintln!("xtask ci: the tree is not clean ({} problem(s))", dirty.len());
+        eprintln!(
+            "xtask ci: the tree is not clean ({} problem(s))",
+            dirty.len()
+        );
         return ExitCode::FAILURE;
     }
 

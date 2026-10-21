@@ -1,5 +1,43 @@
 # Changelog
 
+## tl31 — 2026-10-21 — the pin at 0.2.34, the seven prelude names, the smokes replayed; #45, #18, #30
+
+**Pinned to wolf 0.2.34** (`9da7bdc`, release 419552903), the next release
+after 0.2.33; both archives of the pair acquired by digest, each digest read
+twice, and hashed member by member, the release and never wolf-lang's trunk;
+the bundled std is wolf-std `e036bec`; the pairing is lupin 0.1.55. Two
+vendored spec files moved: `anchors.json` (+8 keys, 0 dropped, 0
+retargeted; 672) and `prelude.json` (+7 names, 0 removed, 0 changed; 194),
+**every new name a function** (s247's `os_fork`; s248's
+`os_term_restore_at_exit`, `os_signal_wait_fds`, `fs_sync`, `fs_sync_dir`,
+`fs_realpath`, `os_clock_ns`), and one new mark, `busy` (by `os_fork`); no
+type name moved, so `type-names-check` was green at the bump (26 candidates,
+18 painted, 9 unpainted) and no client paints the seven or the mark (ruling
+#77). The server's crates and the front end did not move across 0.2.34. **The
+73 scripted transcripts were re-recorded, header-only** (0 `s2c`, 0 `c2s`).
+**The six captured smokes were replayed, not re-captured**: each one's
+traffic, with only its header's pin swapped, matched the 0.2.34 server record
+for record (emacs 10, fackr 9, facsimile 7, helix 9, nvim 15, vscode 30), so
+each moved by its header's `wolf_pin` alone; replay 79 of 79.
+
+**wolf-lsp#45**: `cargo xtask clean-tree` names every file that differs from
+`HEAD` or is untracked, reading the tree with `git diff HEAD` and `git
+ls-files --others` (the submodule path excluded), never `git status
+--porcelain`, which exits 128 beside a symlinked `upstream`; a failing `git`
+is a failure, never a clean tree. `cargo xtask ci` runs it last, and the nvim
+mirror check reads `clients/nvim`'s dirt through the same helper.
+**wolf-lsp#18**: the normalizer writes a workspace folder at the repository
+root as `{"name": "$REPO", "uri": "file://$REPO"}`, so a capture records the
+same field whatever the checkout is called; no committed transcript moved.
+**wolf-lsp#30**: the nightly's drift job compares: it acquires the latest
+wolf-lang release by digest and diffs its `wolf prelude --json` against the
+vendored list with the new `cargo xtask prelude-drift` (names, entries, marks
+and their members, both ways); `only: drift` dispatches it alone. Eight new
+test rows (267 tests), each seen red before green and planted red in CI.
+`docs/PIN-0234.md` has the contract, the prediction and the evidence; the
+grammar's half (nothing moved at 0.2.34; tree-sitter-wolf#27's comment ranges
+fixed) is tree-sitter-wolf's `docs/spec-findings-tl31.md`.
+
 ## tl27 — 2026-10-19 — the pin at 0.2.33, the five prelude names, the smokes replayed; #47, #48, #49
 
 **Pinned to wolf 0.2.33** (`85dab5d`, release 417610226), the next release

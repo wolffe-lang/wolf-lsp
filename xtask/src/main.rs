@@ -13,6 +13,7 @@ use std::process::{Command, ExitCode};
 mod builtin_types;
 mod compat;
 mod config;
+mod prelude_drift;
 mod release;
 mod type_names;
 mod vscode;
@@ -92,6 +93,9 @@ fn main() -> ExitCode {
         // repository can execute it. Steps needing a marketplace, a token, a
         // tagged wolf-lang release or a person at a clean machine report
         // PENDING and never silently vanish.
+        // wolf-lsp#30: two prelude lists diffed as sets, both ways. The
+        // nightly's `drift` job hands it the latest release's own list.
+        Some("prelude-drift") => prelude_drift(&args[1..]),
         Some("release-check") => {
             if release::check(&repo_root()).render() == 0 {
                 ExitCode::SUCCESS
@@ -105,9 +109,31 @@ fn main() -> ExitCode {
                  <ci|sync-pin|vendor-check|independence|fixtures-check\
                  |nvim-check|nvim-generate|type-names-check|grammar-drift|grammar-generate\
                  |config-check|emacs-check|helix-health\
-                 |compat-check|compat-generate|nvim-split|release-check>"
+                 |compat-check|compat-generate|nvim-split|release-check\
+                 |prelude-drift <pinned.json> <other.json>>"
             );
             ExitCode::from(2)
+        }
+    }
+}
+
+/// `prelude-drift <pinned.json> <other.json>`: print what moved; exit 0
+/// whatever it is, 1 when the two could not be compared.
+fn prelude_drift(args: &[String]) -> ExitCode {
+    let [pinned, other] = args else {
+        eprintln!("usage: cargo xtask prelude-drift <pinned.json> <other.json>");
+        return ExitCode::from(2);
+    };
+    let read = |p: &String| std::fs::read_to_string(p).map_err(|e| format!("{p}: {e}"));
+    let compared = read(pinned).and_then(|a| read(other).and_then(|b| prelude_drift::drift(&a, &b)));
+    match compared {
+        Ok(d) => {
+            println!("{}", prelude_drift::render(&d));
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("prelude-drift: could not compare {pinned} with {other}: {e}");
+            ExitCode::FAILURE
         }
     }
 }

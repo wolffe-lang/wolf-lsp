@@ -97,6 +97,9 @@ fn main() -> ExitCode {
         // wolf-lsp#30: two prelude lists diffed as sets, both ways. The
         // nightly's `drift` job hands it the latest release's own list.
         Some("prelude-drift") => prelude_drift(&args[1..]),
+        // wolf-lsp#45: the clean-tree check, readable beside a symlinked
+        // `upstream` where `git status` exits 128.
+        Some("clean-tree") => report("clean-tree", tree::check(&repo_root())),
         Some("release-check") => {
             if release::check(&repo_root()).render() == 0 {
                 ExitCode::SUCCESS
@@ -111,7 +114,7 @@ fn main() -> ExitCode {
                  |nvim-check|nvim-generate|type-names-check|grammar-drift|grammar-generate\
                  |config-check|emacs-check|helix-health\
                  |compat-check|compat-generate|nvim-split|release-check\
-                 |prelude-drift <pinned.json> <other.json>>"
+                 |clean-tree|prelude-drift <pinned.json> <other.json>>"
             );
             ExitCode::from(2)
         }
@@ -224,6 +227,20 @@ fn ci() -> ExitCode {
     let failures = release::check(&repo_root()).render();
     if failures > 0 {
         eprintln!("xtask ci: release-check reported {failures} failure(s)");
+        return ExitCode::FAILURE;
+    }
+
+    // CONTRIBUTING's "green, on a clean tree", checked rather than assumed,
+    // and last, so a step above that wrote into the tree is caught too
+    // (wolf-lsp#45: `git status --porcelain` is blind beside a symlinked
+    // `upstream`; `tree::dirt` is not, and a `git` that fails is a failure).
+    eprintln!("== xtask ci: clean-tree");
+    let dirty = tree::check(&repo_root());
+    if !dirty.is_empty() {
+        for d in &dirty {
+            eprintln!("  {d}");
+        }
+        eprintln!("xtask ci: the tree is not clean ({} problem(s))", dirty.len());
         return ExitCode::FAILURE;
     }
 

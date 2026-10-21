@@ -16,7 +16,9 @@
 //! real directory. **A `git` that fails is a failure of the check, never a
 //! clean tree.**
 
+use std::collections::BTreeSet;
 use std::path::Path;
+use std::process::Command;
 
 /// The paths under `pathspec` (repo-relative, `/`-separated, sorted, each
 /// once) that differ from `HEAD` or are untracked and not ignored. `Err` when
@@ -24,15 +26,63 @@ use std::path::Path;
 /// not to look above it (`GIT_CEILING_DIRECTORIES`), so a directory that is
 /// not a checkout is an error rather than a question about its parent's.
 pub(crate) fn dirt(root: &Path, pathspec: &[&str]) -> Result<Vec<String>, String> {
-    let _ = (root, pathspec);
-    todo!("wolf-lsp#45: the clean-tree helper")
+    let ceiling = root.parent().unwrap_or(root);
+    let git = |args: &[&str], spec: &[&str]| -> Result<Vec<String>, String> {
+        let out = Command::new("git")
+            .current_dir(root)
+            .env("GIT_CEILING_DIRECTORIES", ceiling)
+            .args(args)
+            .arg("--")
+            .args(spec)
+            .output()
+            .map_err(|e| format!("git {}: {e}", args.join(" ")))?;
+        if !out.status.success() {
+            return Err(format!(
+                "git {} exited {}: {}",
+                args.join(" "),
+                out.status,
+                String::from_utf8_lossy(&out.stderr).trim()
+            ));
+        }
+        Ok(out
+            .stdout
+            .split(|b| *b == 0)
+            .filter(|p| !p.is_empty())
+            .map(|p| String::from_utf8_lossy(p).into_owned())
+            .collect())
+    };
+    let mut spec: Vec<&str> = pathspec.to_vec();
+    spec.push(":(exclude)upstream");
+    let mut found: BTreeSet<String> = BTreeSet::new();
+    found.extend(git(&["diff", "HEAD", "--name-only", "-z"], &spec)?);
+    found.extend(git(&["ls-files", "--others", "--exclude-standard", "-z"], &spec)?);
+    // The gitlink, where git can read it: a moved submodule is dirt in a real
+    // checkout. Beside a lane's symlink git refuses the path, so it is not
+    // asked (the symlink is the lane's device, not the tree's content).
+    let upstream = root.join("upstream");
+    let symlinked = std::fs::symlink_metadata(&upstream).is_ok_and(|m| m.file_type().is_symlink());
+    if !symlinked && pathspec.iter().any(|p| *p == "." || *p == "upstream") {
+        found.extend(git(&["diff", "HEAD", "--name-only", "-z"], &["upstream"])?);
+    }
+    Ok(found.into_iter().collect())
+}
+
+/// `cargo xtask clean-tree`: name what the tree holds that `HEAD` does not;
+/// exit 0 only when it holds nothing and every `git` answered.
+pub(crate) fn check(root: &Path) -> Vec<String> {
+    match dirt(root, &["."]) {
+        Ok(paths) => paths
+            .into_iter()
+            .map(|p| format!("`{p}` differs from HEAD or is untracked"))
+            .collect(),
+        Err(e) => vec![format!("the tree could not be read, so it is not known to be clean: {e}")],
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::path::PathBuf;
-    use std::process::Command;
 
     /// A scratch directory of this test's own, removed on drop.
     struct Scratch(PathBuf);
@@ -78,6 +128,9 @@ mod tests {
             ok(dir, &["add", ".gitmodules"]);
             let sha = "85dab5d7e597680d6fd7034f1d7ed2acb9a92f97";
             ok(dir, &["update-index", "--add", "--cacheinfo", &format!("160000,{sha},upstream")]);
+            // A checkout that never ran `submodule update` has the path as
+            // an empty directory, which git reads as the gitlink unchanged.
+            std::fs::create_dir_all(dir.join("upstream")).unwrap();
         }
         ok(dir, &["commit", "-q", "-m", "init"]);
     }
@@ -90,7 +143,8 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::create_dir_all(&elsewhere).unwrap();
         repo(&dir, true);
-        // The lane's switch script: the submodule path is a symlink.
+        // The lane's switch script: the submodule path becomes a symlink.
+        std::fs::remove_dir(dir.join("upstream")).unwrap();
         std::os::unix::fs::symlink(&elsewhere, dir.join("upstream")).unwrap();
         std::fs::write(dir.join("a.txt"), "a, changed\n").unwrap();
         std::fs::write(dir.join("b.txt"), "b\n").unwrap();

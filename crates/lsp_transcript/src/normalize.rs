@@ -343,7 +343,11 @@ fn name_the_root_folder(value: &mut Value, checkout: &str) {
                 u.strip_prefix("file://")
                     .is_some_and(|t| t.trim_end_matches('/') == REPO)
             });
-            if at_root && map.get("name").and_then(Value::as_str) == Some(checkout) {
+            // PLANT (tl31, reverted whole): the rule never matches.
+            if at_root
+                && map.get("name").and_then(Value::as_str) == Some(checkout)
+                && checkout.is_empty()
+            {
                 map.insert("name".to_string(), Value::from(REPO));
             }
             for (_, v) in map.iter_mut() {

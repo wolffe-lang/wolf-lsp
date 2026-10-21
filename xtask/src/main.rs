@@ -15,6 +15,7 @@ mod compat;
 mod config;
 mod prelude_drift;
 mod release;
+mod tree;
 mod type_names;
 mod vscode;
 

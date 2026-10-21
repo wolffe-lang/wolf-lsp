@@ -186,6 +186,17 @@ be silently green about a test it did not run — but "capability drift vs
 wolf-lang HEAD" has never compared anything to wolf-lang HEAD. Filed here for
 whoever takes it; this lane does not touch it.
 
+**Fixed at tl31 (wolf-lsp#30).** The job is now `prelude drift vs wolf-lang's
+latest release (report-only)`: it acquires the latest release's linux archive
+by its API digest (read twice), asks that compiler for its prelude (`wolf
+prelude --json`) and diffs it against `vendor/upstream/spec/prelude.json`
+with `cargo xtask prelude-drift`, as `(name, kind)` sets, entries, marks and
+each mark's members, both ways. Not HEAD: wolf-lang's trunk publishes no
+artifact and this repository never builds it. Drift is reported, not failed;
+a comparison that could not run is red. A `workflow_dispatch` with `only:
+drift` runs it alone. Witnessed in run 39684247805 (job 119514158886) at a
+head still pinned to 0.2.33: `names 7 added … marks 1 added (busy)`.
+
 ## 4. Evidence index
 
 Every run below is `wolffe-lang/wolf-lsp`. "Dark" means the server-dependent

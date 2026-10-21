@@ -241,7 +241,14 @@ committed one in every record but that field (`"wolf-lsp"` → `"tl07"`), which
 is neither a server answer nor a helix change. Drive the capture from a
 checkout named `wolf-lsp` — a detached worktree at the same commit will do,
 with its own `lspconf` build, since `capture` writes into the repo root
-compiled into the binary. Measured at tl07.
+compiled into the binary. Measured at tl07. **Retired at tl31
+(wolf-lsp#18):** the normalizer now writes a folder at the repository root as
+`{"name": "$REPO", "uri": "file://$REPO"}` whatever the checkout is called,
+so a capture from any worktree records the same field. The committed
+`transcripts/helix/smoke.jsonl` keeps the `"wolf-lsp"` tl26 captured (a
+captured record is not rewritten by hand); its next re-capture will move that
+one `c2s` field to `"$REPO"`, and replay, which sends client records as
+recorded and compares only the server's, matches either.
 
 **`clientInfo.version` carries the build's hash, and a packager's build has
 its own.** helix reports `25.07.1 (<hash>)`. The macOS build tl03 and tl07

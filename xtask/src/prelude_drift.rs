@@ -50,18 +50,81 @@ struct Doc {
 }
 
 fn read(label: &str, text: &str) -> Result<Doc, String> {
-    let _ = (label, text);
-    Ok(Doc {
-        names: BTreeMap::new(),
-        marks: BTreeMap::new(),
-    })
+    let v: serde_json::Value =
+        serde_json::from_str(text).map_err(|e| format!("{label}: not JSON: {e}"))?;
+    match v.get("schema").and_then(serde_json::Value::as_str) {
+        Some(PRELUDE_SCHEMA) => {}
+        other => {
+            return Err(format!(
+                "{label}: schema {other:?}, not {PRELUDE_SCHEMA:?} — a new schema is a new reader"
+            ));
+        }
+    }
+    let list = |key: &str| {
+        v.get(key)
+            .and_then(serde_json::Value::as_array)
+            .ok_or_else(|| format!("{label}: no `{key}` array"))
+    };
+    let mut names = BTreeMap::new();
+    for entry in list("names")? {
+        let field = |f: &str| entry.get(f).and_then(serde_json::Value::as_str);
+        let (Some(name), Some(kind)) = (field("name"), field("kind")) else {
+            return Err(format!("{label}: a `names` entry without a name and a kind: {entry}"));
+        };
+        if names.insert((name.to_string(), kind.to_string()), entry.clone()).is_some() {
+            return Err(format!("{label}: `{name}` ({kind}) is listed twice"));
+        }
+    }
+    let mut marks = BTreeMap::new();
+    for entry in list("marks")? {
+        let Some(name) = entry.get("name").and_then(serde_json::Value::as_str) else {
+            return Err(format!("{label}: a `marks` entry without a name: {entry}"));
+        };
+        let by: BTreeSet<String> = entry
+            .get("by")
+            .and_then(serde_json::Value::as_array)
+            .ok_or_else(|| format!("{label}: mark `{name}` has no `by` array"))?
+            .iter()
+            .filter_map(|b| b.as_str().map(str::to_string))
+            .collect();
+        if marks.insert(name.to_string(), by).is_some() {
+            return Err(format!("{label}: mark `{name}` is listed twice"));
+        }
+    }
+    Ok(Doc { names, marks })
 }
 
 /// Compare `pinned` (the vendored list) with `other` (another compiler's).
 pub(crate) fn drift(pinned: &str, other: &str) -> Result<Drift, String> {
-    let _ = (read("pinned", pinned)?, read("other", other)?);
-    let _ = PRELUDE_SCHEMA;
-    Ok(Drift::default())
+    let (a, b) = (read("pinned", pinned)?, read("other", other)?);
+    let only = |x: &Doc, y: &Doc| -> Vec<(String, String)> {
+        x.names.keys().filter(|k| !y.names.contains_key(*k)).cloned().collect()
+    };
+    let mut d = Drift {
+        names_added: only(&b, &a),
+        names_removed: only(&a, &b),
+        names_changed: a
+            .names
+            .iter()
+            .filter(|(k, v)| b.names.get(*k).is_some_and(|w| w != *v))
+            .map(|(k, _)| k.clone())
+            .collect(),
+        marks_added: b.marks.keys().filter(|m| !a.marks.contains_key(*m)).cloned().collect(),
+        marks_removed: a.marks.keys().filter(|m| !b.marks.contains_key(*m)).cloned().collect(),
+        ..Drift::default()
+    };
+    for (mark, before) in &a.marks {
+        let Some(after) = b.marks.get(mark) else { continue };
+        let gained: Vec<String> = after.difference(before).cloned().collect();
+        let lost: Vec<String> = before.difference(after).cloned().collect();
+        if !gained.is_empty() {
+            d.marks_gained.push((mark.clone(), gained));
+        }
+        if !lost.is_empty() {
+            d.marks_lost.push((mark.clone(), lost));
+        }
+    }
+    Ok(d)
 }
 
 /// The report, one line a fact, the names spelled out.
@@ -71,7 +134,39 @@ pub(crate) fn render(d: &Drift) -> String {
                 entries and marks"
             .to_string();
     }
-    String::from("prelude-drift: (unrendered)")
+    let pairs = |v: &[(String, String)]| {
+        v.iter().map(|(n, k)| format!("{n} ({k})")).collect::<Vec<_>>().join(", ")
+    };
+    let members = |v: &[(String, Vec<String>)]| {
+        v.iter()
+            .map(|(m, by)| format!("{m}: {}", by.join(", ")))
+            .collect::<Vec<_>>()
+            .join("; ")
+    };
+    let mut out = vec![format!(
+        "prelude-drift: names {} added, {} removed, {} changed; marks {} added, {} removed, \
+         {} gaining members, {} losing members",
+        d.names_added.len(),
+        d.names_removed.len(),
+        d.names_changed.len(),
+        d.marks_added.len(),
+        d.marks_removed.len(),
+        d.marks_gained.len(),
+        d.marks_lost.len()
+    )];
+    let mut line = |what: &str, text: String| {
+        if !text.is_empty() {
+            out.push(format!("  {what}: {text}"));
+        }
+    };
+    line("names added", pairs(&d.names_added));
+    line("names removed", pairs(&d.names_removed));
+    line("names changed", pairs(&d.names_changed));
+    line("marks added", d.marks_added.join(", "));
+    line("marks removed", d.marks_removed.join(", "));
+    line("marks gaining", members(&d.marks_gained));
+    line("marks losing", members(&d.marks_lost));
+    out.join("\n")
 }
 
 #[cfg(test)]

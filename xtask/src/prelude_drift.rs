@@ -69,9 +69,14 @@ fn read(label: &str, text: &str) -> Result<Doc, String> {
     for entry in list("names")? {
         let field = |f: &str| entry.get(f).and_then(serde_json::Value::as_str);
         let (Some(name), Some(kind)) = (field("name"), field("kind")) else {
-            return Err(format!("{label}: a `names` entry without a name and a kind: {entry}"));
+            return Err(format!(
+                "{label}: a `names` entry without a name and a kind: {entry}"
+            ));
         };
-        if names.insert((name.to_string(), kind.to_string()), entry.clone()).is_some() {
+        if names
+            .insert((name.to_string(), kind.to_string()), entry.clone())
+            .is_some()
+        {
             return Err(format!("{label}: `{name}` ({kind}) is listed twice"));
         }
     }
@@ -98,7 +103,11 @@ fn read(label: &str, text: &str) -> Result<Doc, String> {
 pub(crate) fn drift(pinned: &str, other: &str) -> Result<Drift, String> {
     let (a, b) = (read("pinned", pinned)?, read("other", other)?);
     let only = |x: &Doc, y: &Doc| -> Vec<(String, String)> {
-        x.names.keys().filter(|k| !y.names.contains_key(*k)).cloned().collect()
+        x.names
+            .keys()
+            .filter(|k| !y.names.contains_key(*k))
+            .cloned()
+            .collect()
     };
     let mut d = Drift {
         names_added: only(&b, &a),
@@ -109,12 +118,24 @@ pub(crate) fn drift(pinned: &str, other: &str) -> Result<Drift, String> {
             .filter(|(k, v)| b.names.get(*k).is_some_and(|w| w != *v))
             .map(|(k, _)| k.clone())
             .collect(),
-        marks_added: b.marks.keys().filter(|m| !a.marks.contains_key(*m)).cloned().collect(),
-        marks_removed: a.marks.keys().filter(|m| !b.marks.contains_key(*m)).cloned().collect(),
+        marks_added: b
+            .marks
+            .keys()
+            .filter(|m| !a.marks.contains_key(*m))
+            .cloned()
+            .collect(),
+        marks_removed: a
+            .marks
+            .keys()
+            .filter(|m| !b.marks.contains_key(*m))
+            .cloned()
+            .collect(),
         ..Drift::default()
     };
     for (mark, before) in &a.marks {
-        let Some(after) = b.marks.get(mark) else { continue };
+        let Some(after) = b.marks.get(mark) else {
+            continue;
+        };
         let gained: Vec<String> = after.difference(before).cloned().collect();
         let lost: Vec<String> = before.difference(after).cloned().collect();
         if !gained.is_empty() {
@@ -135,7 +156,10 @@ pub(crate) fn render(d: &Drift) -> String {
             .to_string();
     }
     let pairs = |v: &[(String, String)]| {
-        v.iter().map(|(n, k)| format!("{n} ({k})")).collect::<Vec<_>>().join(", ")
+        v.iter()
+            .map(|(n, k)| format!("{n} ({k})"))
+            .collect::<Vec<_>>()
+            .join(", ")
     };
     let members = |v: &[(String, Vec<String>)]| {
         v.iter()
@@ -193,17 +217,46 @@ mod tests {
     fn prelude_drift_names_added_and_removed_both_ways() {
         // 0.2.34's shape: a function added; plus a removal and a kind change,
         // which is a removal of one pair and the addition of another.
-        let pinned = doc(&[("print", "function"), ("os_exit_signal", "function"), ("Old", "type"), ("x", "function")], &[]);
-        let other = doc(&[("print", "function"), ("os_exit_signal", "function"), ("os_fork", "function"), ("x", "type")], &[]);
+        let pinned = doc(
+            &[
+                ("print", "function"),
+                ("os_exit_signal", "function"),
+                ("Old", "type"),
+                ("x", "function"),
+            ],
+            &[],
+        );
+        let other = doc(
+            &[
+                ("print", "function"),
+                ("os_exit_signal", "function"),
+                ("os_fork", "function"),
+                ("x", "type"),
+            ],
+            &[],
+        );
         let d = drift(&pinned, &other).unwrap();
-        assert_eq!(d.names_added, vec![pair("os_fork", "function"), pair("x", "type")]);
-        assert_eq!(d.names_removed, vec![pair("Old", "type"), pair("x", "function")]);
+        assert_eq!(
+            d.names_added,
+            vec![pair("os_fork", "function"), pair("x", "type")]
+        );
+        assert_eq!(
+            d.names_removed,
+            vec![pair("Old", "type"), pair("x", "function")]
+        );
         assert!(d.names_changed.is_empty(), "{d:?}");
         // A pair in both whose anchor moved is CHANGED, not added or removed.
-        let moved = pinned.replacen("\"anchor\":\"os.host.sigs\"", "\"anchor\":\"os.host.other\"", 1);
+        let moved = pinned.replacen(
+            "\"anchor\":\"os.host.sigs\"",
+            "\"anchor\":\"os.host.other\"",
+            1,
+        );
         let d = drift(&pinned, &moved).unwrap();
         assert_eq!(d.names_changed.len(), 1, "{d:?}");
-        assert!(d.names_added.is_empty() && d.names_removed.is_empty(), "{d:?}");
+        assert!(
+            d.names_added.is_empty() && d.names_removed.is_empty(),
+            "{d:?}"
+        );
         let text = render(&drift(&pinned, &other).unwrap());
         assert!(text.contains("os_fork") && text.contains("Old"), "{text}");
     }
@@ -212,20 +265,43 @@ mod tests {
     fn prelude_drift_reads_marks_both_ways() {
         // 0.2.34's `busy` (by os_fork) and `io` gaining a member; plus a mark
         // dropped and a member lost.
-        let pinned = doc(&[], &[("io", &["fs_read"]), ("gone", &["a"]), ("invalid", &["a", "b"])]);
-        let other = doc(&[], &[("io", &["fs_read", "os_fork"]), ("busy", &["os_fork"]), ("invalid", &["a"])]);
+        let pinned = doc(
+            &[],
+            &[
+                ("io", &["fs_read"]),
+                ("gone", &["a"]),
+                ("invalid", &["a", "b"]),
+            ],
+        );
+        let other = doc(
+            &[],
+            &[
+                ("io", &["fs_read", "os_fork"]),
+                ("busy", &["os_fork"]),
+                ("invalid", &["a"]),
+            ],
+        );
         let d = drift(&pinned, &other).unwrap();
         assert_eq!(d.marks_added, vec!["busy".to_string()]);
         assert_eq!(d.marks_removed, vec!["gone".to_string()]);
-        assert_eq!(d.marks_gained, vec![("io".to_string(), vec!["os_fork".to_string()])]);
-        assert_eq!(d.marks_lost, vec![("invalid".to_string(), vec!["b".to_string()])]);
+        assert_eq!(
+            d.marks_gained,
+            vec![("io".to_string(), vec!["os_fork".to_string()])]
+        );
+        assert_eq!(
+            d.marks_lost,
+            vec![("invalid".to_string(), vec!["b".to_string()])]
+        );
         let text = render(&d);
         assert!(text.contains("busy") && text.contains("gone"), "{text}");
     }
 
     #[test]
     fn identical_prelude_documents_drift_none_and_a_bad_one_is_an_error() {
-        let a = doc(&[("print", "function"), ("int", "builtin_type")], &[("io", &["print"])]);
+        let a = doc(
+            &[("print", "function"), ("int", "builtin_type")],
+            &[("io", &["print"])],
+        );
         let d = drift(&a, &a).unwrap();
         assert!(d.is_none(), "{d:?}");
         assert!(render(&d).contains("none"));

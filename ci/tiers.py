@@ -131,7 +131,7 @@ def full_leg(job, leg):
     """Whether the merge tier runs this leg (tl30): on macOS the
     server-free gate alone (`test`, the merge's macOS smoke); the server
     lane and the editor lanes on macOS are the nightly's."""
-    return leg.get("os") != "macos-latest" or job == "test"
+    return True  # the plant: the merge runs every leg, its shape before tl30
 
 
 EVERY_JOB = ("test", "nvim-plugin", "vscode-extension", "vscode-package", "server-lane", "helix-config",

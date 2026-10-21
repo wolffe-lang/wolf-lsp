@@ -251,10 +251,18 @@ impl Normalizer {
                         repo_root: self.repo_root.clone(),
                         tmp: self.tmp.clone(),
                     };
+                    let checkout = self
+                        .repo_root
+                        .as_deref()
+                        .and_then(std::path::Path::file_name)
+                        .map(|n| n.to_string_lossy().into_owned());
                     for v in rec.values_mut() {
                         // KEYS TOO — see `map_strings_and_keys`. This is the
                         // one stage that walks them, and the one that has to.
                         map_strings_and_keys(v, &mut |s| elide_paths(s, &roots));
+                        if let Some(checkout) = checkout.as_deref() {
+                            name_the_root_folder(v, checkout);
+                        }
                     }
                 }
                 Stage::Pid => {
@@ -311,6 +319,43 @@ impl Normalizer {
             n
         });
         rec.id = Some(Value::from(renumbered));
+    }
+}
+
+/// wolf-lsp#18: the folder that IS the repository root is named for the
+/// checkout, so its `name` elides with its `uri`.
+///
+/// helix, nvim, vscode and fackr name a workspace folder by its directory's
+/// basename. After [`elide_paths`] its `uri` reads `file://$REPO`, but the
+/// sibling `name` still carried the directory's own name: `tl03` from a
+/// worktree at `/private/tmp/tl03` (tl03's re-capture), `wolf-lsp` from a
+/// checkout named so, a one-field difference that looked like a client change
+/// and was not. Only that object moves — a `uri` of exactly `file://$REPO`
+/// (or with its trailing slash) beside a `name` equal to the root's basename.
+/// The workspace's own name (`samples`, which `vendor/upstream/samples` fixes
+/// whatever the checkout is called) is data and stays, as does any other
+/// folder that merely shares the checkout's name. Runs after the paths are
+/// elided, and is idempotent.
+fn name_the_root_folder(value: &mut Value, checkout: &str) {
+    match value {
+        Value::Object(map) => {
+            let at_root = map
+                .get("uri")
+                .and_then(Value::as_str)
+                .is_some_and(|u| u.strip_prefix("file://").is_some_and(|t| t.trim_end_matches('/') == REPO));
+            if at_root && map.get("name").and_then(Value::as_str) == Some(checkout) {
+                map.insert("name".to_string(), Value::from(REPO));
+            }
+            for (_, v) in map.iter_mut() {
+                name_the_root_folder(v, checkout);
+            }
+        }
+        Value::Array(items) => {
+            for item in items {
+                name_the_root_folder(item, checkout);
+            }
+        }
+        _ => {}
     }
 }
 

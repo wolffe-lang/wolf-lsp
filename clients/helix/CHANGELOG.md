@@ -16,6 +16,10 @@ against on which date.
   v0 is a binary format and `wolf lsp` discovers modules by `.lu` alone (D32).
   Attaching the server there would produce a buffer that looks supported and is
   not.
+- The live grammar revision is `936a96f` (tl32, tree-sitter-wolf#27), the
+  same revision Zed names. Its external scanner keeps a newline separate from
+  a following `//`, so line-comment highlighting begins at that comment's
+  first slash rather than at the preceding line's end.
 - `[[grammar]]` is **live**, pinning `wolffe-lang/tree-sitter-wolf` by `rev`
   (`1834e73` at tl16; the comment above the block says why that rev). It
   shipped commented out at first — tree-sitter-wolf was a seed commit with no

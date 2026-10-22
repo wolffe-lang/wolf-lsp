@@ -16,6 +16,10 @@ not registered in Zed's extension registry and installing it means
 - `languages/wolf/config.toml` and `languages/wolfi/config.toml`: comment form,
   brackets, indent.
 - The server is attached to `Wolf` only, never to `Wolfi` (D32).
+- The live grammar commit is `936a96f` (tl32, tree-sitter-wolf#27), the
+  same revision Helix names. Its external scanner keeps a newline separate
+  from a following `//`, so line-comment highlighting begins at that comment's
+  first slash rather than at the preceding line's end.
 - `[grammars.wolf]` is **live**, pinning `wolffe-lang/tree-sitter-wolf` by
   commit (`1834e73` at tl16, the same rev helix names), and
   `languages/wolf/highlights.scm` ships beside it — since tl16 byte-identical

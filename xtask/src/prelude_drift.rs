@@ -297,6 +297,24 @@ mod tests {
     }
 
     #[test]
+    fn v0235_prelude_carries_the_released_editor_names_only() {
+        let empty = doc(&[], &[]);
+        let current = include_str!("../../vendor/upstream/spec/prelude.json");
+        let names: BTreeSet<_> = drift(&empty, current)
+            .unwrap()
+            .names_added
+            .into_iter()
+            .map(|(name, _)| name)
+            .collect();
+        for name in ["fs_access", "fs_write_some", "os_name"] {
+            assert!(names.contains(name), "missing released prelude name {name}");
+        }
+        for name in ["env_arg0", "env_args_bytes"] {
+            assert!(!names.contains(name), "unreleased name {name} leaked into the pin");
+        }
+    }
+
+    #[test]
     fn identical_prelude_documents_drift_none_and_a_bad_one_is_an_error() {
         let a = doc(
             &[("print", "function"), ("int", "builtin_type")],

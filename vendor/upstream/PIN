@@ -1,6 +1,47 @@
-# Vendored wolf-lang release data. Keep byte-identical to upstream/.
+# The wolf-lang commit this repo is keyed to. A bump is its own commit, with
+# the re-vendored data, and nothing else (vendor/README.md).
 #
-# tl33 pins the annotated release tag v0.2.35, peeled to this commit.
+# tl33 pins RELEASE TAG `v0.2.35`, annotated object `4bb355ca…`, peeled below.
+# The pin is the release, never wolf-lang's trunk.
 commit = cf0c13d38479f444b69bb8356ad5709d07eff323
+# D57: a release build stamps WOLF_COMMIT and WOLF_RELEASE. The archive, not
+# a hand-built checkout, prints this exact line. Seven hex are deliberate:
+# wolf-lang#199 says the release builder chooses its abbreviation width.
 version = "wolf 0.2.35 (wolfgang, pin cf0c13d)"
+# The second line is `paired with lupin 0.1.56 (reference interpreter), pin
+# 294d626`; the pairing SHA is wolf-lang's. `wolf lsp` exists at this pin.
 serves_lsp = true
+#
+# RELEASE. GitHub release 421239566, published 2026-10-23T08:45:33Z, target
+# trunk. API digest and downloaded archive sha256 were each read twice:
+#   darwin arm64  19,131,022  240b84d079b1b9a0d88681ac08fca4816f84778e2d6c94c435ceb2dd6a5f042a
+#   linux arm64   76,991,895  30ccded432264b7ddd4ebf738d4f895d12091ca604e2da4c2f831da807886f3e
+#   windows x64   16,058,245  1ccba47c61369f48be292c1e847ef673372637f14e8a9d4abbbf86190bb4214b
+#   linux x64     81,369,914  4cc4045bbbb605c07835bc4f32685953c784eeef4cd3139a48b457dfc90dad1a
+#
+# ARCHIVE PAIR. Each non-std member was hashed by name on hasu twice.
+#                                linux x64                             darwin arm64
+# wolf                 def1d450147beaed53780481abb124bfa2882e3f8a79b095ae39107b63de7bcc  8a88813e434bdbbe4ea2b2b718c9771f982d588597fe3e44af776c9c42029bcb
+# libwolf_rt.a         9efc68e1d0c3a1e1c5c1b43ab1448a3c1b42963596b8d8d106e4fbda12ebbee7  62eeafa9d275220e7ca5fff9ab1c34a688adfd0a658983f4d8c2057eb8f73f19
+# libwolf_rt_none.a    6b9c4852077eee62c059a01c723686f057f0c010239d137fb90c1791203961b6  93d1ad30d9cc84913fcffeecbe396b5b5278e522f4d3823830f2d7baec3f3fa8
+# wolf-cimport-worker  470447d6c355f883ef3bf6d5d79c2b52aeda35948c7d8a300387260a372d6f57  806d01669d13656059fda0f488b9e437a261f98c1a26abc9daa80f8d658f2fbc
+# wolf.1               10490238b979eef7b1faeae7cde9710fc78d2837e9a3c0f1413d6ffeb23a26ac  same
+# README.md            124fafb29c3515df9883631b20b688ddd1c8a7ec8b30d4482254bfd33f33fe00  same
+# _wolf                a368c8eccce8b1800c80aa818ae482e541aa9636b676540851e23863d333eb8b  same
+# wolf.bash            1b1d88530b5ae44120cb7e93b80c7054e3e28c61347fe3723f2608e44ebf0550  same
+# wolf.fish            180de0ecb67f49ff127fc84d92ad6c6182b5195db1ce2b0fc63734e7abe46407  same
+# LICENSE              3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986  same
+# LICENSE-EXCEPTION    a0eec20d7b98b1cd0e5b4d23c3965667c97b68fb365ec95a9516b0c3cbc4fec4  same
+# std/: STD-REV 2386522e, 59 files (55 .lu); sorted `sha256  path` list
+# hashes to 9c7be4b7f7e92561e348fbcb419fb76503af4ea6c1fc6de7e9169efdcc49abf3.
+# Linux imports at most GLIBC_2.34.
+#
+# WHAT v0.2.34..v0.2.35 ADDS THAT THIS REPO CAN SEE. `crates/wolf_query/`,
+# `crates/wolf_lsp/`, and spec/grammar.ebnf are byte-identical. anchors key
+# sets: 672 -> 693, 21 added, 0 removed, 0 retargeted. prelude: 194 -> 207
+# names (13 functions; 26 types and 19 marks unchanged by count); no marks
+# added or removed. Member lists grow: busy 1->3, denied 44->47, exists 9->10,
+# invalid 35->42, io 103->111, not_found 39->41, unsupported 48->57.
+# The thirteen functions are fs_access, fs_adopt, fs_fstat_record, fs_lock,
+# fs_mkfifo, fs_set_nonblock, fs_unlock, fs_write_some, os_arch, os_core_limit,
+# os_core_off, os_name, os_set_core_limit.

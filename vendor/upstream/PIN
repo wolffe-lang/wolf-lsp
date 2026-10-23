@@ -12,7 +12,9 @@ version = "wolf 0.2.35 (wolfgang, pin cf0c13d)"
 # 294d626`; the pairing SHA is wolf-lang's. `wolf lsp` exists at this pin.
 serves_lsp = true
 #
-# RELEASE. GitHub release 421239566, published 2026-10-23T08:45:33Z, target
+# RELEASE. GitHub release 421613621, published 2026-10-23T08:45:33Z, target
+# The prior 421239566 was a tl33 manual transcription error, corrected against
+# `gh api repos/wolffe-lang/wolf-lang/releases/tags/v0.2.35 -q .id`.
 # trunk. API digest and downloaded archive sha256 were each read twice:
 #   darwin arm64  19,131,022  240b84d079b1b9a0d88681ac08fca4816f84778e2d6c94c435ceb2dd6a5f042a
 #   linux arm64   76,991,895  30ccded432264b7ddd4ebf738d4f895d12091ca604e2da4c2f831da807886f3e

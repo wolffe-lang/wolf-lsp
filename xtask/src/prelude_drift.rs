@@ -310,7 +310,10 @@ mod tests {
             assert!(names.contains(name), "missing released prelude name {name}");
         }
         for name in ["env_arg0", "env_args_bytes"] {
-            assert!(!names.contains(name), "unreleased name {name} leaked into the pin");
+            assert!(
+                !names.contains(name),
+                "unreleased name {name} leaked into the pin"
+            );
         }
     }
 

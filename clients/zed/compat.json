@@ -3,15 +3,16 @@
   "client_version": "0.0.1",
   "artifact": "wasm32-wasip2 component + manifest — clients/zed/",
   "wolf": {
-    "min": "0.2.34",
-    "max_tested": "0.2.34",
-    "pin": "9da7bdcf2aea9adf48df6570bedc58e16e9ef853",
-    "pin_version_string": "wolf 0.2.34 (wolfgang, pin 9da7bdc)"
+    "min": "0.2.35",
+    "max_tested": "0.2.35",
+    "pin": "cf0c13d38479f444b69bb8356ad5709d07eff323",
+    "pin_version_string": "wolf 0.2.35 (wolfgang, pin cf0c13d)"
   },
   "verified": {
-    "date": "2026-10-21",
-    "host": "kasumi (linux x86_64), against the ACQUIRED v0.2.34 x86_64-unknown-linux-gnu artifact (sha256 88a9dd3d…), not a local build — every cargo invocation runs there (wave 45). The PIN `version` string was read off that same linux artifact: `wolf --version` printed \"wolf 0.2.34 (wolfgang, pin 9da7bdc)\". The darwin arm64 archive (sha256 29c8331f…) was acquired and hashed member by member all the same, and both digests matched the release API's own before anything was unpacked",
+    "date": "2026-10-23",
+    "host": "hasu (Linux x86-64, CPU block B), acquired v0.2.35 archive and bundled std; tl33 replay and onetruth evidence in docs/PIN-0235.md; no new editor capture",
     "evidence": [
+      "docs/PIN-0235.md — tl33 at cf0c13d: doctor READY; 73 scripted sessions re-recorded, six captured smokes replayed and header-restamped; replay 79 matched, nothing skipped; onetruth 16 samples × 9 profiles, zero known or unfiled divergences. Earlier entries below describe prior-pin measurements, not new editor captures at 0.2.35.",
       "tree-sitter-wolf `936a96f565be29b871bb8a94806e49a9b1b33c33` (tl32, merged #27) is the live `[grammars.wolf]` commit. Its external scanner makes the terminator newline its own token, so the shipped `languages/wolf/highlights.scm` captures a following `//` line comment from its own first slash rather than the prior line end; the comment stays `@comment.line`. The before/after witness was run on kasumi against the exact pinned parser and query.",
       "cargo build --target wasm32-wasip2 (CI job `zed-extension`)",
       "cargo xtask config-check",

@@ -296,8 +296,11 @@ mod tests {
         assert!(text.contains("busy") && text.contains("gone"), "{text}");
     }
 
+    // tl33 also asserted `env_arg0` and `env_args_bytes` ABSENT: unreleased
+    // at 0.2.35 (wolf-lang#904). 0.2.36 releases both (s261), so that half
+    // retires and the row below asserts them present.
     #[test]
-    fn v0235_prelude_carries_the_released_editor_names_only() {
+    fn v0235_prelude_carries_the_released_editor_names() {
         let empty = doc(&[], &[]);
         let current = include_str!("../../vendor/upstream/spec/prelude.json");
         let names: BTreeSet<_> = drift(&empty, current)
@@ -309,10 +312,33 @@ mod tests {
         for name in ["fs_access", "fs_write_some", "os_name"] {
             assert!(names.contains(name), "missing released prelude name {name}");
         }
-        for name in ["env_arg0", "env_args_bytes"] {
+    }
+
+    /// 0.2.36's whole prelude delta, with its kinds (tl34): s263's C list
+    /// type and its four raw-tier builtins ([abi.c.variadic.list],
+    /// [abi.c.variadic.builtins]) and s261's two argv readers
+    /// ([os.env.argv]). `VaList` is a `type`, not a `builtin_type`.
+    #[test]
+    fn v0236_prelude_carries_the_variadic_and_argv_names() {
+        let empty = doc(&[], &[]);
+        let current = include_str!("../../vendor/upstream/spec/prelude.json");
+        let pairs: BTreeSet<_> = drift(&empty, current)
+            .unwrap()
+            .names_added
+            .into_iter()
+            .collect();
+        for (name, kind) in [
+            ("VaList", "type"),
+            ("va_start", "function"),
+            ("va_arg", "function"),
+            ("va_copy", "function"),
+            ("va_end", "function"),
+            ("env_arg0", "function"),
+            ("env_args_bytes", "function"),
+        ] {
             assert!(
-                !names.contains(name),
-                "unreleased name {name} leaked into the pin"
+                pairs.contains(&pair(name, kind)),
+                "the pin lacks 0.2.36's prelude name {name} ({kind})"
             );
         }
     }

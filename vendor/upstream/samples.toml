@@ -76,6 +76,10 @@ reason = "the cost of guessing `error` from a word list (s158, wolf-lang#36, wol
 path = "typecheck/method_home_no_std.lu"
 reason = "the standard library, reached and not (wolf-lsp#42, tl24): `xs.any(…)` on a `List` is no builtin method — it resolves to `std.list`'s `any`, so this is the one sample whose answers depend on which std the SERVER loads. Since 0.2.29 (s235) `wolf lsp` loads the `std/` beside its binary: under the installed toolchain the file is clean, hover names `std.list`, definition lands in the std's own `list/list.lu` (elided `$STD`) and `xs.` completes the module's functions (`transcripts/std/reach`). Its own pinned verdict, `fail(E0301)` with 'no std root is configured for this directory', is the other half: a server with no std beside it answers exactly that (`transcripts/std/no-std`, `std none`). The corpus pins the no-std reading because wolf-lang's corpus runs a checkout build with nothing beside it; a released server reads it the other way, and both transcripts are meant to be read together. Vendored at the v0.2.30 pin; the bytes are unchanged since 0.2.29."
 
+[[sample]]
+path = "os/arg0.lu"
+reason = "the two argv readers 0.2.36 adds (s261, [os.env.argv]): `env_arg0()` and `env_args_bytes()`, each the right-hand side of a `let`, so hover reads the type of the call each name heads (`str`, `List[List[byte]]`) and of the binding that takes it, signature help sits inside each empty argument list, and completion runs partway through each name (`transcripts/requests/hover-argv`). s261's own witness, `phase: run`, so it is a clean-diagnostics document on every host, which the variadic names are not: `VaList` is E0826 off x86-64 Linux, even as a type (docs/PIN-0236.md), so no portable sample can carry s263's half of the delta. Vendored at the v0.2.36 pin, where the file first appears."
+
 # --- Known gap, deliberately not papered over -------------------------------
 #
 # ls01 §5 requires **astral-plane** text (an emoji: one char, two UTF-16 units,

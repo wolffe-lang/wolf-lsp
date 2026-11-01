@@ -1,5 +1,32 @@
 # Changelog
 
+## tl34 — 2026-10-31 — the pin at 0.2.36, the seven prelude names, the argv readers on the wire
+
+**Pinned to wolf 0.2.36** (`5adf3d9`, release 427033151); both archives of
+the pair acquired by digest, each digest read twice against the release API
+and `sprints/release/r41-evidence.md`, and hashed member by member, the
+release and never wolf-lang's trunk; the bundled std is wolf-std `78b9d3c`;
+the pairing is lupin 0.1.58. Three vendored spec files moved:
+`grammar.ebnf` gains one terminal, `'...'` (s263's C variadic tail), which
+joins the TextMate operator inventory; `anchors.json` +13 keys (706, 0
+dropped, 0 retargeted); `prelude.json` +7 names (214, 0 removed, 0 changed):
+`VaList`, the release's one new type, classified unpainted with its reason
+(`type-names: 18 painted, 10 unpainted, 27 candidates`), and six functions
+(`va_start`, `va_arg`, `va_copy`, `va_end`, `env_arg0`, `env_args_bytes`)
+that no client lists (ruling #77). The server's crates did not move.
+**73 scripted transcripts re-recorded**: 72 header-only, and `std/reach`'s
+definition answer moved with the std's `list/list.lu` (line 576 to 565).
+**The six captured smokes were replayed, not re-captured**, each restamped by
+its header's `wolf_pin` alone. **New**: the sample `os/arg0.lu` and the
+transcript `requests/hover-argv`, the argv readers' hover, signature help and
+completion at 0.2.36 (red against the 0.2.35 server, which diagnoses both
+names E0301); replay 80 of 80, onetruth 17 × 9. The variadics get no
+transcript: `VaList` is E0826 off x86-64 Linux, at the name itself, so their
+answers (hover, and signature help, which signs `va_start()` and `va_arg`) are
+measured on linux in the record. `docs/PIN-0236.md` has the contract, the
+prediction and the evidence; the grammar's half is tree-sitter-wolf's
+`docs/spec-findings-tl34.md`.
+
 ## tl31 — 2026-10-21 — the pin at 0.2.34, the seven prelude names, the smokes replayed; #45, #18, #30
 
 **Pinned to wolf 0.2.34** (`9da7bdc`, release 419552903), the next release

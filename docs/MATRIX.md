@@ -6,6 +6,57 @@ verified at, the evidence for that tier, and (for T1 and T2) the CI job that
 re-checks the evidence on every push. A row that claims a verification it does
 not have is a bug in this file.
 
+**Last reviewed against wolf pin `5adf3d9`, 2026-10-31** (tl34, the pin at
+0.2.36). That is the wolf-lang release tag `v0.2.36`; the 0.2.35 pin between
+(tl33, `cf0c13d`) did not restamp this file, and its record is
+`docs/PIN-0235.md`. The pinned version string is the bare `wolf 0.2.36
+(wolfgang, pin 5adf3d9)` and `lspconf doctor` reports READY against the
+**acquired release artifact**: the x86_64-unknown-linux-gnu archive of release
+427033151, sha256 `d383c74c…`, on hasu, whose `wolf --version` printed the
+`PIN` string (and `paired with lupin 0.1.58 (reference interpreter), pin
+a5378e3`). The darwin arm64 archive (`b79d5584…`) was acquired and hashed
+member by member too; every digest was read twice and matches the release API
+and `sprints/release/r41-evidence.md`. `PIN` records the peeled
+`v0.2.36^{commit}`, `5adf3d91f75b3545ff8d38e5b6693b0b9f367a05`. Full record:
+`docs/PIN-0236.md`.
+
+**ALL 80 REPLAY AT THIS PIN**: the 73 scripted transcripts re-recorded, one
+new (`requests/hover-argv`), the six captured smokes replayed and restamped,
+not re-captured. `lspconf --require-server replay`: 80 transcripts, 80 ok,
+exit 0.
+
+- **72 of the 73 re-recorded files moved by their header alone; `std/reach`
+  moved in one `s2c` record**, its `definition` answer, from line 576 to 565
+  of the std's `list/list.lu`: the bundled std moved `2386522e` → `78b9d3c`
+  and sc72 rewrote that module's doc above `pub fn any`, whose signature did
+  not move. 0 `c2s` lines changed. The server's crates did not move across
+  0.2.36 and the sixteen old samples are blob-identical.
+- **`requests/hover-argv` is new**, on the new sample `os/arg0.lu`: hover on
+  `env_arg0` and `env_args_bytes` answers `str` and `List[List[byte]]` over
+  each call, signature help inside both empty argument lists `null`, and
+  completion partway through either name offers neither (the prelude is
+  absent from completion, as `requests/completion-s137` measured). Against
+  the 0.2.35 server the same script diagnoses both names E0301.
+- **The variadics have no transcript**: `VaList` is E0826 off x86-64 Linux,
+  at the type's name itself, so a document naming it diagnoses differently on
+  the three OSes the replay runs on. Their hover, signature help and
+  completion are measured in `docs/PIN-0236.md`.
+- **The six smokes were not re-captured, because no record moved**: each,
+  with only its header's `wolf_pin` swapped, replayed against the 0.2.36
+  server (emacs 10, fackr 9, facsimile 7, helix 9, nvim 15, vscode 30
+  records), so each moved by that value alone; `recorded` stays 2026-10-19.
+- `onetruth`: 17 samples × 9 profiles, 0 known divergences, zero unfiled.
+- **The declared range MOVED, it did not widen**: `min` and `max_tested` are
+  both `0.2.36`.
+- **One type name joined, classified**: `VaList`, unpainted with its reason
+  (`type-names: 18 painted, 10 unpainted, 27 prelude-list candidates`). The
+  EBNF's one new terminal, `'...'`, joined the TextMate operator inventory.
+- **The editors' grammar pin does not move: still `936a96f`.** tree-sitter-wolf's
+  tl34 branch teaches the grammar the variadic tail; helix and zed get it when
+  their `rev`/`commit` move to the merged sha.
+
+The tl31 stamp that follows is kept as written.
+
 **Last reviewed against wolf pin `9da7bdc`, 2026-10-21** (tl31, the pin at
 0.2.34). That is the wolf-lang release tag `v0.2.34`, the next release after
 the `v0.2.33` this file was last stamped at, so the pinned version string is

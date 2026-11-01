@@ -23,7 +23,10 @@ It holds exactly five things:
   whose eleven new names are all functions; 26 still at v0.2.32, whose
   seven new names, all at v0.2.31, are all functions; 26 still at v0.2.33,
   whose five new names are all functions; 26 still at v0.2.34, whose seven
-  new names are all functions and whose one new mark, `busy`, is no type), and the gate also requires the pinned compiler's
+  new names are all functions and whose one new mark, `busy`, is no type; 26
+  still at v0.2.35, whose thirteen new names are all functions; 27 at
+  v0.2.36, `VaList` the one new `type` beside six functions), and the gate
+  also requires the pinned compiler's
   `wolf prelude --json` to be the same bytes; `vendor-check` compares the
   file with the submodule both ways.
 - `samples/` + `samples.toml` — the only `.lu` files any test in this repo may

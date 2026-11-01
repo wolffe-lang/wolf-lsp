@@ -321,6 +321,17 @@ pub(crate) const TYPE_POSITION_UNPAINTED: &[(&str, &str)] = &[
          semantic tokens and to tree-sitter-wolf, which paints it `@type.builtin` scoped to a \
          one-segment `type_path` (tl19).",
     ),
+    (
+        "VaList",
+        "s263 [abi.c.variadic.list] (wolf-lang#515): C's `va_list` record, written `*VaList` \
+         as the decayed C parameter (`extern \"c\" fn vprintf(fmt: *u8, ap: *VaList) -> i32`). \
+         NEW at v0.2.36, the prelude list's one new name of kind `type`, not `builtin_type`: \
+         it sits with `List`, `Scope` and `Proc`, not with the scalars `TYPE_NAMES` mirrors. \
+         And it is target-specific: E0826 on every target but x86-64 Linux and \
+         x86_64-unknown-none, at the name itself (the acquired darwin binary refuses `x: VaList`, \
+         docs/PIN-0236.md), so a word list would paint a name the compiler refuses on two of \
+         the three hosts the clients ship to. Painting it is a ruling, R-tl34-1.",
+    ),
 ];
 
 /// Which scope each reserved keyword is painted with.

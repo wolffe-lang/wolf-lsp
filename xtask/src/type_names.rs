@@ -676,11 +676,12 @@ mod tests {
 
     /// Type names wolf published AFTER `6b5db762`'s list, each classified in
     /// the hand lists at the pin that first carried it: `never` at v0.2.26
-    /// (tl19). The fixture is s212's first list and stays byte for byte, so a
-    /// claim about it is made against the hand lists as they would have stood
-    /// then — the real lists minus these rows. The real lists against the
-    /// list at the PIN are `the_vendored_list_at_the_pin_is_exactly_ours`.
-    const PUBLISHED_AFTER_6B5DB762: &[&str] = &["never"];
+    /// (tl19), `VaList` at v0.2.36 (tl34). The fixture is s212's first list
+    /// and stays byte for byte, so a claim about it is made against the hand
+    /// lists as they would have stood then — the real lists minus these rows.
+    /// The real lists against the list at the PIN are
+    /// `the_vendored_list_at_the_pin_is_exactly_ours`.
+    const PUBLISHED_AFTER_6B5DB762: &[&str] = &["never", "VaList"];
 
     fn unpainted_at_6b5db762() -> Vec<(&'static str, &'static str)> {
         TYPE_POSITION_UNPAINTED

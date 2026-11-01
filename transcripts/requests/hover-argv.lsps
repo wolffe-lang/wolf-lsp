@@ -1,0 +1,44 @@
+#! 0.2.36's argv readers on the wire (tl34): s261's `env_arg0` and
+#! `env_args_bytes` ([os.env.argv]), the two prelude functions of the
+#! release's seven that a portable document can name. The other five are
+#! s263's `VaList` and its four `va_*` builtins, and those are E0826 on
+#! every target but x86-64 Linux, at the type's name itself (measured on
+#! the acquired darwin binary, docs/PIN-0236.md §2), so a session naming
+#! them would diagnose differently on each OS the replay runs on; they are
+#! measured on hasu's linux server in docs/PIN-0236.md instead.
+#!
+#! Three surfaces, the three the contract names, on s261's own witness:
+#!
+#!   HOVER. 9:15 and 10:15 are the builtin FUNCTION names; `hover-net-wait`
+#!   measured that such a name hovers to the type of the CALL it heads,
+#!   over the call's range, so `str` and `List[List[byte]]` are expected
+#!   over `env_arg0()` and `env_args_bytes()`. 9:8 and 10:8 are the
+#!   bindings that take them: the same two types, now through a `let`.
+#!
+#!   SIGNATURE HELP. 9:24 and 10:30 sit inside the empty argument lists.
+#!   `annotate/signatureHelp-*` measured `null` on `print(...)`, a builtin
+#!   call, so `null` is expected: the server signs user functions only.
+#!
+#!   COMPLETION. 9:18 and 10:18 are partway through each name (`env|_arg0`,
+#!   `env|_args_bytes`), invoked. `completion-s137` measured the prelude
+#!   absent from completion entirely, so neither name is expected among
+#!   the items; the whole list is recorded, so the day the prelude reaches
+#!   completion this record moves by a knowable amount.
+#!
+#! Recorded against the acquired 0.2.35 server the same script diagnoses
+#! both names E0301 (neither exists there): that is this file's red.
+name      requests/hover-argv
+profile   minimal
+
+initialize
+open      os/arg0.lu
+wait      diagnostics os/arg0.lu
+req       hover os/arg0.lu 9:15
+req       hover os/arg0.lu 10:15
+req       hover os/arg0.lu 9:8
+req       hover os/arg0.lu 10:8
+req       signatureHelp os/arg0.lu 9:24
+req       signatureHelp os/arg0.lu 10:30
+req       completion os/arg0.lu 9:18
+req       completion os/arg0.lu 10:18
+shutdown

@@ -1,3 +1,5 @@
+# Local PR evidence is cheap unless ci/full-matrix opts in.
+# Existing nightly commands and publication jobs are preserved.
 # PR + trunk CI (ls00). Thin wrappers over `cargo xtask` — the commands are
 # the truth; this file is plumbing.
 #
@@ -62,9 +64,24 @@ name: ci
 on:
   push:
     branches: [trunk]
+    paths:
+      - '.github/**'
+      - 'ci/**'
+      - '!ci/*.md'
+      - '!ci/**/*.md'
+      - 'tools/**'
+      - 'spec/**'
+      - '**/wolf-toolchain.toml'
+      - '**/rust-toolchain.toml'
+      - '**/*.pin'
+      - '**/PAIRING'
+      - '**/STD-PIN'
+      - 'vendor/tools.toml'
+      - 'gnu-oracle.toml'
+      - '.gitmodules'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
   pull_request:
-    # `labeled` so adding `full-matrix` starts the full run at once; any
-    # other label's run is a noop (the plan, then nothing).
     types: [opened, synchronize, reopened, labeled]
   schedule:
     # Nightly, the all tier, on trunk: every job on every host, the macOS
@@ -124,14 +141,17 @@ jobs:
       # plan reads that commit against its first parent. A dispatch reads
       # its branch against trunk's merge base, so it takes the history.
       - uses: actions/checkout@v5
+        if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-matrix') || contains(github.event.pull_request.labels.*.name, 'ci') || contains(github.event.pull_request.labels.*.name, 'release-matrix') }}
         with:
           fetch-depth: ${{ github.event_name == 'workflow_dispatch' && '0' || '2' }}
       - name: the planner can say no (ci/tiers-test.py)
+        if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-matrix') || contains(github.event.pull_request.labels.*.name, 'ci') || contains(github.event.pull_request.labels.*.name, 'release-matrix') }}
         run: python3 ci/tiers-test.py
       - name: the plan
+        if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-matrix') || contains(github.event.pull_request.labels.*.name, 'ci') || contains(github.event.pull_request.labels.*.name, 'release-matrix') }}
         id: plan
         env:
-          EVENT: ${{ github.event_name }}
+          EVENT: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'release-matrix') && 'push' || github.event_name }}
           ACTION: ${{ github.event.action }}
           LABEL: ${{ github.event.label.name }}
           LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
@@ -140,10 +160,16 @@ jobs:
         run: python3 ci/tiers.py plan --merge --github-output "$GITHUB_OUTPUT"
 
   # The server-free gate, on the full D35 tier-1 host set.
+      - name: local gate wiring proof
+        if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-matrix') || contains(github.event.pull_request.labels.*.name, 'ci') || contains(github.event.pull_request.labels.*.name, 'release-matrix') }}
+        run: python3 -I ci/local-gate-test.py
+      - name: local evidence gate
+        if: ${{ !(github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-matrix') || contains(github.event.pull_request.labels.*.name, 'ci') || contains(github.event.pull_request.labels.*.name, 'release-matrix')) }}
+        run: echo 'Local gauntlet evidence is the gate; request ci or full-matrix for CI.'
   test:
     name: test (${{ matrix.os }})
     needs: plan
-    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'test')
+    if: ${{ (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-matrix') || contains(github.event.pull_request.labels.*.name, 'ci') || contains(github.event.pull_request.labels.*.name, 'release-matrix')) && (contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'test')) }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -258,7 +284,7 @@ jobs:
   nvim-plugin:
     name: nvim plugin (${{ matrix.os }})
     needs: plan
-    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'nvim-plugin')
+    if: ${{ (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-matrix') || contains(github.event.pull_request.labels.*.name, 'ci') || contains(github.event.pull_request.labels.*.name, 'release-matrix')) && (contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'nvim-plugin')) }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -350,7 +376,7 @@ jobs:
     # owns that investigation. Honest matrix over aspirational matrix.
     name: vscode extension (${{ matrix.os }})
     needs: plan
-    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'vscode-extension')
+    if: ${{ (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-matrix') || contains(github.event.pull_request.labels.*.name, 'ci') || contains(github.event.pull_request.labels.*.name, 'release-matrix')) && (contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'vscode-extension')) }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -476,7 +502,7 @@ jobs:
   vscode-package:
     name: vscode package (publish dry run)
     needs: plan
-    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'vscode-package')
+    if: ${{ (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-matrix') || contains(github.event.pull_request.labels.*.name, 'ci') || contains(github.event.pull_request.labels.*.name, 'release-matrix')) && (contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'vscode-package')) }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -538,7 +564,7 @@ jobs:
   server-lane:
     name: server lane (${{ matrix.os }})
     needs: plan
-    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'server-lane')
+    if: ${{ (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-matrix') || contains(github.event.pull_request.labels.*.name, 'ci') || contains(github.event.pull_request.labels.*.name, 'release-matrix')) && (contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'server-lane')) }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -697,7 +723,7 @@ jobs:
   helix-config:
     name: helix config (${{ matrix.os }})
     needs: plan
-    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'helix-config')
+    if: ${{ (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-matrix') || contains(github.event.pull_request.labels.*.name, 'ci') || contains(github.event.pull_request.labels.*.name, 'release-matrix')) && (contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'helix-config')) }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -786,7 +812,7 @@ jobs:
   zed-extension:
     name: zed extension (wasm build)
     needs: plan
-    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'zed-extension')
+    if: ${{ (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-matrix') || contains(github.event.pull_request.labels.*.name, 'ci') || contains(github.event.pull_request.labels.*.name, 'release-matrix')) && (contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'zed-extension')) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -827,7 +853,7 @@ jobs:
   emacs-mode:
     name: emacs mode (${{ matrix.os }})
     needs: plan
-    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'emacs-mode')
+    if: ${{ (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-matrix') || contains(github.event.pull_request.labels.*.name, 'ci') || contains(github.event.pull_request.labels.*.name, 'release-matrix')) && (contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'emacs-mode')) }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -879,7 +905,7 @@ jobs:
   independence:
     name: independence
     needs: plan
-    if: contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'independence')
+    if: ${{ (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-matrix') || contains(github.event.pull_request.labels.*.name, 'ci') || contains(github.event.pull_request.labels.*.name, 'release-matrix')) && (contains(fromJSON(needs.plan.outputs.jobs || '[]'), 'independence')) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -946,7 +972,7 @@ jobs:
   # verdict). lane-audit.sh reads this job's name and conclusion.
   tier:
     name: tier ${{ needs.plan.outputs.tier || 'unplanned' }}
-    if: ${{ !cancelled() }}
+    if: ${{ (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-matrix') || contains(github.event.pull_request.labels.*.name, 'ci') || contains(github.event.pull_request.labels.*.name, 'release-matrix')) && (!cancelled()) }}
     needs:
       - plan
       - test

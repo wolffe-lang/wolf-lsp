@@ -122,7 +122,7 @@ class Gate(unittest.TestCase):
             self.assertIn("types: [opened, synchronize, reopened, labeled]", event_block(text, "pull_request"))
             for job, old in old_jobs.items():
                 new = actual[job]
-                new = re.sub(r"^    if: \$\{\{ \(" + re.escape(GATE) + r"\)(?: && \((.*)\))? \}\}\n", lambda m: "    if: " + ("${{ " + m[1] + " }}" if old.find("    if: ${{") >= 0 else m[1]) + "\n" if m[1] else "", new, flags=re.M)
+                new = re.sub(r"^    if: \$\{\{ \(" + re.escape(GATE) + r"\)(?: && \((.*)\))? \}\}\n", lambda m: "    if: " + ("${{ " + m[1] + " }}" if re.search(r"^    if: \$\{\{", old, re.M) is not None else m[1]) + "\n" if m[1] else "", new, flags=re.M)
                 new = new.replace("        if: ${{ " + GATE + " }}\n", "")
                 new = new.replace("          EVENT: ${{ " + EVENT + " }}", "          EVENT: ${{ github.event_name }}")
                 new = new.replace(CHEAP, "").replace("      - name: local gate wiring proof\n        run: python3 -I ci/local-gate-test.py\n", "")

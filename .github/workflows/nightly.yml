@@ -32,7 +32,7 @@ jobs:
     # A dispatch with `only: drift` runs the drift job alone; on the schedule
     # `inputs.only` is empty and every job runs.
     if: inputs.only != 'drift'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - name: Install the pinned toolchain
@@ -54,7 +54,7 @@ jobs:
     name: server availability
     # `fuzz-sweep` and `latency` need this job, so `only: drift` skips them too.
     if: inputs.only != 'drift'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       available: ${{ steps.doctor.outputs.available }}
       pin: ${{ steps.doctor.outputs.pin }}
@@ -118,7 +118,7 @@ jobs:
   fuzz-sweep:
     name: fuzzed partial-edit sweep (15 min)
     needs: server
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
@@ -172,7 +172,7 @@ jobs:
   latency:
     name: latency budgets (D5 JSONL, report-only)
     needs: server
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
@@ -247,7 +247,7 @@ jobs:
   # that compared nothing is the defect this replaces.
   drift:
     name: prelude drift vs wolf-lang's latest release (report-only)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - name: Install the pinned toolchain

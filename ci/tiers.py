@@ -111,11 +111,11 @@ def full_leg(job, leg):
 # hosts, as before tl28; the VS Code extension lane is ubuntu's alone, its
 # own comment says why). The full tier runs them all; every other tier the
 # legs PR_LEG keeps.
-HOSTS = [{"os": "ubuntu-latest"}, {"os": "macos-latest"}, {"os": "windows-latest"}]
+HOSTS = [{"os": "ubuntu-24.04"}, {"os": "macos-latest"}, {"os": "windows-latest"}]
 MATRIX = {
     "test": list(HOSTS),
     "nvim-plugin": list(HOSTS),
-    "vscode-extension": [{"os": "ubuntu-latest"}],
+    "vscode-extension": [{"os": "ubuntu-24.04"}],
     "server-lane": list(HOSTS),
     "helix-config": list(HOSTS),
     "emacs-mode": list(HOSTS),
@@ -124,7 +124,7 @@ MATRIX = {
 
 def pr_leg(job, leg):
     """Whether the pull-request tier runs this leg of a matrix job."""
-    return leg.get("os") == "ubuntu-latest"
+    return leg.get("os") == "ubuntu-24.04"
 
 
 def full_leg(job, leg):

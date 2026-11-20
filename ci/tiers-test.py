@@ -81,7 +81,7 @@ FULL_JOBS = EVERY_JOB
 PUSH_BRANCHES = "trunk"
 OTHER_HOST_JOBS = ()
 # The hosts before tl28 (.github/workflows/ci.yml at trunk 5528bc1).
-_H = [{"os": "ubuntu-latest"}, {"os": "macos-latest"}, {"os": "windows-latest"}]
+_H = [{"os": "ubuntu-24.04"}, {"os": "macos-latest"}, {"os": "windows-latest"}]
 BEFORE_HOSTS = {"matrix_test": _H, "matrix_nvim_plugin": _H, "matrix_vscode_extension": _H[:1],
                 "matrix_server_lane": _H, "matrix_helix_config": _H, "matrix_emacs_mode": _H}
 ALL_HOSTS = BEFORE_HOSTS

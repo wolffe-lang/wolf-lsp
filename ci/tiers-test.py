@@ -581,5 +581,27 @@ else:
 
 extra_checks(say, plan, expect, blocks, wf)
 
+# T8, what the reporter writes is public: the issue's title and body, a comment,
+# the label's description. The plain rule holds in every run: no lane, ruling,
+# crawl or sprint word and no internal tag (two letters and two or three digits). A
+# local record also passes PUBLIC_TEXT_REFUSE, a file of further words kept outside
+# this repository; a word from that file is reported by its line number, never spelt.
+PLAIN = re.compile(r"\b(?:lanes?|rulings?|crawls?|sprints?)\b|\b[a-z]{2}\d{2,3}[a-z]?\b", re.I)
+LISTED = []
+if os.environ.get("PUBLIC_TEXT_REFUSE"):
+    with open(os.environ["PUBLIC_TEXT_REFUSE"], encoding="utf-8") as fh:
+        LISTED = [(n, re.compile(r"(?<![A-Za-z0-9_-])%s(?![A-Za-z0-9_-])" % re.escape(w.strip()), re.I))
+                  for n, w in enumerate(fh, 1) if w.strip() and not w.startswith("#")]
+
+
+def _log_lines(x):
+    return x.splitlines() if isinstance(x, str) else list(x)
+
+
+written = "\n".join(c for e in ("", "41") for c in _log_lines(nightly_red(existing=e)[1]) if not c.startswith("issue list"))
+said = sorted({m.group(0) for m in PLAIN.finditer(written)}) + ["listed word %d" % n for n, rx in LISTED if rx.search(written)]
+say(bool(written) and not said, "T8 nothing the reporter writes in public carries an internal word (%s)%s" % (
+    "the plain rule and %d listed words" % len(LISTED) if LISTED else "the plain rule", ": " + ", ".join(said) if said else ""))
+
 print("tiers-test: %s" % ("PASS" if fails == 0 else "FAIL (%d)" % fails))
 sys.exit(1 if fails else 0)

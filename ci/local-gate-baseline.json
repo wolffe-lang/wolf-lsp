@@ -129,7 +129,7 @@
     }
   },
   "schedules": {
-    "ci.yml": "    - cron: \"47 9 * * *\""
+    "ci.yml": "    - cron: \"7 15 * * *\""
   },
   "unchanged": {
     "nightly.yml": "ee3b8d1f7412cd997d0789185dfd63b50bc6fe11420fd3a8a6726b49f7d667d2"

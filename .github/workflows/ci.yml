@@ -87,7 +87,7 @@ on:
     # Nightly, the all tier, on trunk: every job on every host, the macOS
     # lanes the merge leaves (tl30) among them. (nightly.yml is the long sweeps,
     # report-only; it runs none of these jobs.)
-    - cron: "47 9 * * *"
+    - cron: "7 15 * * *"
   workflow_dispatch:
     inputs:
       tier:

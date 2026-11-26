@@ -3,15 +3,16 @@
   "client_version": "0.0.1",
   "artifact": "wasm32-wasip2 component + manifest — clients/zed/",
   "wolf": {
-    "min": "0.2.36",
-    "max_tested": "0.2.36",
-    "pin": "5adf3d91f75b3545ff8d38e5b6693b0b9f367a05",
-    "pin_version_string": "wolf 0.2.36 (wolfgang, pin 5adf3d9)"
+    "min": "0.2.41",
+    "max_tested": "0.2.41",
+    "pin": "0261597230b46f17f7a894c5558452c19fa31b96",
+    "pin_version_string": "wolf 0.2.41 (wolfgang, pin 0261597)"
   },
   "verified": {
-    "date": "2026-10-31",
-    "host": "hasu (Linux x86-64, CPU block B), acquired v0.2.36 archive and bundled std; tl34 replay and onetruth evidence in docs/PIN-0236.md; no new editor capture",
+    "date": "2026-11-26",
+    "host": "the macOS development machine (darwin arm64), acquired v0.2.41 archive and bundled std; replay and onetruth evidence in docs/PIN-0241.md; no new editor capture",
     "evidence": [
+      "docs/PIN-0241.md — at 0261597, on the macOS development machine: doctor READY; 74 scripted sessions re-recorded (72 header-only; requests/document-symbol and requests/hover-nothing-there carry 0.2.41's E0301 on errors.lu's undefined provisional names, wolf-lang#1083); five captured smokes replayed and header-restamped, and the emacs smoke re-captured, where only errors.lu's open publish moved; replay 80 matched, nothing skipped; onetruth 17 samples × 9 profiles, zero known or unfiled divergences. Earlier entries below describe prior-pin measurements.",
       "docs/PIN-0236.md — tl34 at 5adf3d9: doctor READY; 73 scripted sessions re-recorded (72 header-only; std/reach's definition answer follows wolf-std 78b9d3c's list.lu, line 576 to 565), one new (requests/hover-argv, the argv readers); six captured smokes replayed and header-restamped; replay 80 matched, nothing skipped; onetruth 17 samples × 9 profiles, zero known or unfiled divergences. Earlier entries below describe prior-pin measurements, not new editor captures at 0.2.36.",
       "docs/PIN-0235.md — tl33 at cf0c13d: doctor READY; 73 scripted sessions re-recorded, six captured smokes replayed and header-restamped; replay 79 matched, nothing skipped; onetruth 16 samples × 9 profiles, zero known or unfiled divergences. Earlier entries below describe prior-pin measurements, not new editor captures at 0.2.35.",
       "tree-sitter-wolf `936a96f565be29b871bb8a94806e49a9b1b33c33` (tl32, merged #27) is the live `[grammars.wolf]` commit. Its external scanner makes the terminator newline its own token, so the shipped `languages/wolf/highlights.scm` captures a following `//` line comment from its own first slash rather than the prior line end; the comment stays `@comment.line`. The before/after witness was run on kasumi against the exact pinned parser and query.",

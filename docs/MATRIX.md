@@ -25,11 +25,13 @@ captured smokes replayed and restamped, the emacs smoke re-captured. `lspconf
 
 - **72 of the 74 re-recorded files moved by their header alone;
   `requests/document-symbol` and `requests/hover-nothing-there` moved in one
-  `s2c` record each**, `errors.lu`'s open `publishDiagnostics`: `[]` at 0.2.36,
-  three E0301 at 0.2.41 ("nothing defines `acquire`" and its siblings). 0.2.41
-  makes that change on purpose (wolf-lang#1083): a provisional prelude stand-in
-  that nothing defines is E0301, and its release note names `errors.lu` as the
-  one corpus file that moves. 0 `c2s` lines changed. The server's crates
+  `s2c` record each**, `errors.lu`'s open `publishDiagnostics`: `[]` at 0.2.36;
+  at 0.2.41 two E0301 ("nothing defines `acquire`", "nothing defines
+  `release`") and one E0808 (`io.Error(_)` binds a value `io.Error` does not
+  carry). 0.2.41 makes that change on purpose (wolf-lang#1083): a provisional
+  prelude stand-in that nothing defines is E0301, and its release note names
+  `errors.lu` as the one corpus file that moves. The file now reaches typecheck,
+  where the older E0808 rule fires too. 0 `c2s` lines changed. The server's crates
   (`crates/wolf_query`, `crates/wolf_lsp`) moved across these five releases;
   this record is the only answer the library shows moving.
 - **The emacs smoke was re-captured, the other five were not**: each of the

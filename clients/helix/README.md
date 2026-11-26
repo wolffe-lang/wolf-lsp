@@ -253,7 +253,7 @@ recorded and compares only the server's, matches either.
 **`clientInfo.version` carries the build's hash, and a packager's build has
 its own.** helix reports `25.07.1 (<hash>)`. The macOS build tl03 and tl07
 drove said `a05c151b`, which is helix's own `25.07.1` release commit; the
-linux package tl26 drove on kasumi (`helix 25.07.1-2.1`) says `4746c276`,
+linux package tl26 drove on the CachyOS host (`helix 25.07.1-2.1`) says `4746c276`,
 which is not a helix commit at all. Same tag, different build: a diff
 confined to that hash is packaging, and no server answer moves with it.
 Measured at tl26, where it was the one field besides the header that moved.

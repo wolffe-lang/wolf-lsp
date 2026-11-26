@@ -7,6 +7,6 @@
 -- define, and this repo's only honest fact today is one exact pin.
 return {
   commit = "0261597230b46f17f7a894c5558452c19fa31b96",
-  version = "wolf 0.2.41 (wolfgang, pin 0261597)",
+  version = "wolf 0.2.36 (wolfgang, pin 5adf3d9)",
   serves_lsp = true,
 }

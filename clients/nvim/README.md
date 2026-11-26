@@ -278,7 +278,7 @@ tarball's string because Homebrew's neovim would not start on that box at all
 
 **A note on `didChangeWatchedFiles`, measured at tl26.** The same NVIM
 v0.12.5 declares `workspace.didChangeWatchedFiles.dynamicRegistration: true`
-on macOS and `false` on linux. Captured on kasumi (linux x86-64, the
+on macOS and `false` on linux. Captured on the CachyOS host (linux x86-64, the
 distribution's `neovim 0.12.5-1.1`), that is the one field besides the header
 that moved; `vim.lsp.protocol.make_client_capabilities()` answers `false`
 there with or without an `inotifywait` on `PATH`, so it follows the platform,

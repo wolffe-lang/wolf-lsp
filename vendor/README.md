@@ -25,7 +25,8 @@ It holds exactly five things:
   whose five new names are all functions; 26 still at v0.2.34, whose seven
   new names are all functions and whose one new mark, `busy`, is no type; 26
   still at v0.2.35, whose thirteen new names are all functions; 27 at
-  v0.2.36, `VaList` the one new `type` beside six functions), and the gate
+  v0.2.36, `VaList` the one new `type` beside six functions; 27 still at
+  v0.2.41, whose thirty-four new names are all functions), and the gate
   also requires the pinned compiler's
   `wolf prelude --json` to be the same bytes; `vendor-check` compares the
   file with the submodule both ways.

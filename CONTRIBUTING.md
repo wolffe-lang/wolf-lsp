@@ -157,5 +157,5 @@ be able to run the server-free half.
 
 ## Where the plan lives
 
-The sprint plan is the `lsp` track (`lsNN`) in the wolf metarepo. Sprint files
-are the implementation contract, and the decision log is the design authority.
+Work here is planned before it is built: each change has a written contract
+that is its implementation authority, and recorded decisions are the design authority.

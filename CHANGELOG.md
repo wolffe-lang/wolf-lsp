@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-11-26 — the pin at 0.2.41
+
+**Pinned to wolf 0.2.41** (`0261597`, release 458496472), five releases in one
+move. All five release assets were acquired by digest, each digest read twice
+against the release API and each download hashed twice, and the linux x64 and
+darwin arm64 archives hashed member by member. It is the release, never
+wolf-lang's trunk. The bundled std is wolf-std `32a1cd06`; the pairing is
+lupin 0.1.63.
+
+Three vendored spec files moved:
+- `prelude.json` gains 34 names (248), all functions, none of which any client
+  lists; there is no new type (`type-names: 18 painted, 10 unpainted, 27
+  candidates`).
+- `anchors.json` gains 48 keys (754, 0 dropped, 0 retargeted).
+- `grammar.ebnf` gains the binding header (`if let x = e; cond`). Its `';'` is
+  the first `;` the EBNF quotes, and it is listed as punctuation, so the
+  TextMate grammar does not move.
+
+**74 scripted transcripts re-recorded**:
+- 72 moved by their header alone.
+- `requests/document-symbol` and `requests/hover-nothing-there` moved in
+  `errors.lu`'s open publish: two E0301 for the undefined provisional names
+  (wolf-lang#1083) and the E0808 the file now reaches.
+
+**Captured smokes**: five replayed and restamped. The emacs smoke, whose
+`errors.lu` publish moved the same way, was re-captured with GNU Emacs 31.1 and
+eglot 1.24.31.
+
+Replay 80 of 80, onetruth 17 × 9. The compatibility statement moves to
+`0.2.41` for every client. Record: `docs/PIN-0241.md`.
+
 ## tl34 — 2026-10-31 — the pin at 0.2.36, the seven prelude names, the argv readers on the wire
 
 **Pinned to wolf 0.2.36** (`5adf3d9`, release 427033151); both archives of

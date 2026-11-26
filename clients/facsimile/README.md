@@ -197,7 +197,7 @@ Three smaller traps — two measured at le08, the third at tl03:
   the damage. Use a flush key that cannot cross the last line — `ctrl-home`
   works. Measured at tl03.
 - **`-w` does not stop `fac` from restoring and SAVING a whole session in the
-  nearest enclosing `.fac` workspace.** On kasumi that is the account's
+  nearest enclosing `.fac` workspace.** On the CachyOS host that is the account's
   `$HOME`: the driven `fac` opened with the eight tabs in
   `~/.fac/workspace.json` restored, `hello.lu` as a ninth, and wrote the
   ninth tab and `active_tab` back into that file on exit. `HOME=` a scratch

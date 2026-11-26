@@ -36,7 +36,7 @@ artifact; the branch is the working copy.
 `github.com/tenseleyFlow/fackr` trunk is `e9ed924` (2026-08-10), the one
 commit after `496c7e2`: "wolf language support: .lu filetype, wolf lsp server
 registration, syntax entries, utf-32 position encoding declared and verified,
-stderr drain, smoke module". In a clean clone on kasumi:
+stderr drain, smoke module". In a clean clone on the CachyOS host:
 `git apply --check` of `wolf-integration.diff` exits 0 at `496c7e2` and
 refuses ten files at `e9ed924`; `git apply --check -R` exits 0 at `e9ed924`;
 and `496c7e2` with the series applied has the same tree as `e9ed924`

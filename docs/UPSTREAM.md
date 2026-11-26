@@ -38,7 +38,7 @@ decomposition and per-PR file lists:
 **The eight written rows landed upstream as one commit.** `e9ed924`, the
 local commit the PR1 note below describes, is `tenseleyFlow/fackr`'s trunk
 (2026-08-10, the one commit after `496c7e2`). Measured in a clean clone on
-kasumi, at tl26 and again at tl27: `git apply --check` of
+the CachyOS host, at tl26 and again at tl27: `git apply --check` of
 `wolf-integration.diff` exits 0 at `496c7e2`; `git apply --check -R` exits 0
 at `e9ed924`; and `496c7e2` with the diff applied **and** `Cargo.lock`'s
 one-line refresh (`fackr 1.1.2` → `1.2.1`, which `STATUS.md` names as part of

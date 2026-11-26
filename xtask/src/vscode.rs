@@ -186,6 +186,13 @@ const DELIMITERS: &[&str] = &[
     // the backslash and the `\x`/`\u{` escape openers, and the bare `0` of
     // `'\0'` — matched inside the hand-written char rule, never operators.
     "'", "0", "\\", "\\u{", "\\x",
+    // `';'`, new at the 0261597 pin (v0.2.41): the binding header's
+    // terminator, `binding_header ::= ('let' | 'var') binder ';'`, the first
+    // time the extracted EBNF quotes it. It is the statement separator a
+    // program already writes (`print("ok"); return 0`), punctuation beside `,`
+    // and `:`, so it stays unpainted as before rather than turning every
+    // separator into `keyword.operator.wolf`.
+    ";",
 ];
 
 /// The type names the grammar paints, and the one thing in this file that the

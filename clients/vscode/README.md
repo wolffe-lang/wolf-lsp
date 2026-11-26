@@ -260,7 +260,7 @@ platform is enough, and `runTest.ts` asks for it itself since wolf-lsp#48:
 on linux it adds `--ozone-platform=headless` to the launch arguments. Launched
 without it, VS Code logs `Missing X server or $DISPLAY` and `The platform
 failed to initialize`. To run the suite against an installed VS Code rather
-than a downloaded one, name its binary directly (measured at tl27 on kasumi,
+than a downloaded one, name its binary directly (measured at tl27 on the CachyOS host,
 VS Code 1.136.1, no wrapper):
 
 ```sh
@@ -273,7 +273,7 @@ npm run test:extension
 
 Before wolf-lsp#48 the flag rode a two-line wrapper named by
 `WOLF_VSCODE_EXECUTABLE` (`exec /usr/share/code/code --ozone-platform=headless
-"$@"`); that is how tl26 captured `transcripts/vscode/smoke.jsonl` on kasumi.
+"$@"`); that is how tl26 captured `transcripts/vscode/smoke.jsonl` on the CachyOS host.
 
 The linux capture at VS Code 1.136.1 sends `$/setTrace` five times (all
 `"off"`) where 1.120.0 on macOS sent it once, on every run, and its

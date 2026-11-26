@@ -6,6 +6,58 @@ verified at, the evidence for that tier, and (for T1 and T2) the CI job that
 re-checks the evidence on every push. A row that claims a verification it does
 not have is a bug in this file.
 
+**Last reviewed against wolf pin `0261597`, 2026-11-26** (the pin at 0.2.41).
+That is the wolf-lang release tag `v0.2.41`; the five releases since `5adf3d9`
+are crossed in one move. The pinned version string is the bare `wolf 0.2.41
+(wolfgang, pin 0261597)` and `lspconf doctor` reports READY against the
+**acquired release artifact**: the aarch64-apple-darwin archive of release
+458496472, sha256 `979dbb22…`, on the macOS development machine, whose `wolf
+--version` printed the `PIN` string (and `paired with lupin 0.1.63 (reference
+interpreter), pin 5f1f1c9…`). The four host archives and the musl runtime were
+downloaded and hashed twice, equal to the release API, and the linux x64 and
+darwin arm64 archives member by member. `PIN` records the peeled
+`v0.2.41^{commit}`, `0261597230b46f17f7a894c5558452c19fa31b96`. Full record:
+`docs/PIN-0241.md`.
+
+**ALL 80 REPLAY AT THIS PIN**: the 74 scripted transcripts re-recorded, five
+captured smokes replayed and restamped, the emacs smoke re-captured. `lspconf
+--require-server replay`: 80 transcripts, 80 ok, exit 0.
+
+- **72 of the 74 re-recorded files moved by their header alone;
+  `requests/document-symbol` and `requests/hover-nothing-there` moved in one
+  `s2c` record each**, `errors.lu`'s open `publishDiagnostics`: `[]` at 0.2.36,
+  three E0301 at 0.2.41 ("nothing defines `acquire`" and its siblings). 0.2.41
+  makes that change on purpose (wolf-lang#1083): a provisional prelude stand-in
+  that nothing defines is E0301, and its release note names `errors.lu` as the
+  one corpus file that moves. 0 `c2s` lines changed. The server's crates
+  (`crates/wolf_query`, `crates/wolf_lsp`) moved across these five releases;
+  this record is the only answer the library shows moving.
+- **The emacs smoke was re-captured, the other five were not**: each of the
+  five, with only its header's `wolf_pin` swapped, replayed record for record
+  against the 0.2.41 server (fackr 9, facsimile 7, helix 9, nvim 15, vscode 30
+  records). The emacs smoke's record 20, the same `errors.lu` publish, moved,
+  so it was re-captured by `clients/emacs/README.md`'s recipe on the macOS
+  development machine, with GNU Emacs 31.1 and eglot 1.24.31, the versions of
+  its previous capture. The suite passed 1/1 while recording, and only the
+  header and that record moved. Of three runs the second and third are
+  byte-identical; the first ordered two independent notifications
+  (`workspace/didChangeConfiguration` and `hello.lu`'s first publish) the other
+  way round.
+- `onetruth`: 17 samples × 9 profiles, 0 known divergences, zero unfiled.
+- **The declared range MOVED, it did not widen**: `min` and `max_tested` are
+  both `0.2.41`.
+- **No type name joined**: the 34 new prelude names are all functions
+  (`type-names: 18 painted, 10 unpainted, 27 prelude-list candidates`). The
+  EBNF's one new terminal, `';'`, the binding header's terminator, is listed
+  with the punctuation, so the TextMate grammar does not move and `;` keeps its
+  look.
+- **The editors' grammar pin does not move: still `936a96f`.** Whether that
+  tree-sitter-wolf commit parses the binding header (`if let x = e; cond`) is
+  tree-sitter-wolf's question; helix and zed follow it when their `rev` and
+  `commit` move.
+
+The stamp at `5adf3d9` that follows is kept as written.
+
 **Last reviewed against wolf pin `5adf3d9`, 2026-10-31** (tl34, the pin at
 0.2.36). That is the wolf-lang release tag `v0.2.36`; the 0.2.35 pin between
 (tl33, `cf0c13d`) did not restamp this file, and its record is

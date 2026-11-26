@@ -46,7 +46,9 @@ serves_lsp = true
 # WHAT v0.2.36..v0.2.41 ADDS THAT THIS REPO CAN SEE. `crates/wolf_query/` and
 # `crates/wolf_lsp/` both move (trees 0827b664 -> 21928aa6, 9b91e8ed ->
 # 147b9fc3). spec/grammar.ebnf gains `binding_header ::= ('let' | 'var') binder
-# ';'`, optional at the head of `if_expr` and of `while`; no new terminal.
+# ';'`, optional at the head of `if_expr` and of `while`; its `';'` is the first
+# `;` the EBNF quotes, so one new terminal (the TextMate grammar lists it as
+# punctuation, not an operator).
 # anchors key sets: 706 -> 754, 48 added, 0 removed, 0 retargeted; the new
 # `type.*` keys are type.min, type.min.zip and type.rec. prelude: 214 -> 248
 # names, 34 added, 0 removed, every one a function; `min` gains its anchor and
